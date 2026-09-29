@@ -1,30 +1,28 @@
 import { defineStore } from 'pinia'
-//import { useApiConfig } from '@/composables/useUrls'
 import { useEndPoints } from '@/composables/useEndPoints'
-
-const { apiBase, getBoletasHeaders } = useEndPoints()
-
-//const { apiBaseDev } = useApiConfig()
 
 export const useLiqStore = defineStore('liq', {
   state: () => ({
-    liqitems: [],
+    liqitems: []
   }),
   getters: {
-    getLiqItems: (state) => { return state.liqitems }
+    getLiqItems: (state) => state.liqitems
   },
   actions: {
-    setLiqItems(idliq) {
-      fetch(`${apiBase.value}/api/view/liqItem?LiquidacionId=${idliq}`, {
-        headers: getBoletasHeaders()
-      })
-        .then((res) => res.json())
-        .then((_data) => {
-          this.liqitems = _data
+    async setLiqItems(idliq) {
+      const { apiBase, getBoletasHeaders } = useEndPoints()
+      try {
+        const res = await fetch(`${apiBase.value}/api/view/liqItem?LiquidacionId=${idliq}`, {
+          headers: getBoletasHeaders()
         })
-        .catch((err) => {
-          console.log(err)
-        })
-    },
-  },
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`)
+        }
+        const data = await res.json()
+        this.liqitems = data
+      } catch (err) {
+        console.error('[liqStore setLiqItems]', err)
+      }
+    }
+  }
 })

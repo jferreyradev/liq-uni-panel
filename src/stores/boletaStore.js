@@ -6,9 +6,8 @@ import logo from '../assets/logo.png'
 import { useApiClient } from '@/composables/useApiClient'
 import { useTenantStore } from '@/stores/tenantStore'
 
-const apiClient = useApiClient()
-
 export const useBoletatxt = defineStore('boletatxt', () => {
+  const apiClient = useApiClient()
   const text = ref('')
   const cab = ref({})
   const det = ref([])

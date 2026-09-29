@@ -1,12 +1,19 @@
-// Ejemplo implementando el metodo POST:
-
 import { useEndPoints } from '@/composables/useEndPoints'
 
-const { apiBase, apiSp, getBoletasHeaders } = useEndPoints()
+function getUrlApi() {
+  const { apiBase } = useEndPoints()
+  return `${apiBase.value}/api/`
+}
 
-const urlAPI_sp = apiSp.value + '/'
-const urlAPI = apiBase.value + '/api/'
-//const urlAPI = 'http://www.serverburru2.duckdns.org:3005/api/'
+function getUrlApiSp() {
+  const { apiSp } = useEndPoints()
+  return `${apiSp.value}/`
+}
+
+function getHeaders(extraHeaders = {}) {
+  const { getBoletasHeaders } = useEndPoints()
+  return getBoletasHeaders(extraHeaders)
+}
 
 export async function grabarRegistro(url = '', data = {}, metodo = 'POST') {
   let estado = 0
@@ -14,19 +21,17 @@ export async function grabarRegistro(url = '', data = {}, metodo = 'POST') {
   let errmsg = ''
   let datos = null
   try {
-    const response = await fetch(urlAPI + url, {
-      method: metodo, // *GET, POST, PUT, DELETE, etc.
-      mode: 'cors', // no-cors, *cors, same-origin
-      cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-      //credentials: 'same-origin', // include, *same-origin, omit
+    const response = await fetch(getUrlApi() + url, {
+      method: metodo,
+      mode: 'cors',
+      cache: 'no-cache',
       headers: {
         'Content-Type': 'application/json',
-        ...getBoletasHeaders()
-        // 'Content-Type': 'application/x-www-form-urlencoded',
+        ...getHeaders()
       },
-      redirect: 'follow', // manual, *follow, error
-      referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-      body: JSON.stringify(data) // body data type must match "Content-Type" header
+      redirect: 'follow',
+      referrerPolicy: 'no-referrer',
+      body: JSON.stringify(data)
     })
     estado = response.status
     operacionOk = response.ok
@@ -49,24 +54,17 @@ export async function eliminarRegistro(url = '', metodo = 'DELETE') {
   let operacionOk = false
   let errmsg = ''
   let datos = null
-  // Opciones por defecto estan marcadas con un *
   try {
-    const response = await fetch(urlAPI + url, {
-      method: metodo, // *GET, POST, PUT, DELETE, etc.
-      mode: 'cors', // no-cors, *cors, same-origin
-      //cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-      //credentials: 'same-origin' // include, *same-origin, omit
+    const response = await fetch(getUrlApi() + url, {
+      method: metodo,
+      mode: 'cors',
       headers: {
         'Content-Type': 'application/json',
-        ...getBoletasHeaders()
-        // 'Content-Type': 'application/x-www-form-urlencoded',
+        ...getHeaders()
       }
-      //redirect: 'follow', // manual, *follow, error
-      //referrerPolicy: 'no-referrer'
     })
     estado = response.status
     operacionOk = response.ok
-    console.log(response)
     if (response.ok) {
       datos = await response.json()
     } else {
@@ -81,27 +79,29 @@ export async function eliminarRegistro(url = '', metodo = 'DELETE') {
   return { estado, operacionOk, errmsg, datos }
 }
 
-export async function leerDatos(url) {
+export async function leerDatos(url = '') {
   let estado = 0
   let operacionOk = false
   let errmsg = ''
   let datos = null
   let response = null
   try {
-    response = await fetch(urlAPI + url, {
+    response = await fetch(getUrlApi() + url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...getBoletasHeaders()
+        ...getHeaders()
       }
     })
     estado = response.status
 
     if (response.ok) {
       datos = await response.json()
+      operacionOk = true
+    } else {
+      errmsg = 'Error al intentar leer los datos'
+      operacionOk = false
     }
-    operacionOk = response.ok
-    if (response.status == 404) operacionOk = true
   } catch (error) {
     estado = 999
     operacionOk = false
@@ -114,47 +114,39 @@ export async function leerDatos(url) {
 export async function ejecutarSP(url = '', data = {}, metodo = 'POST') {
   let estado = 0
   let operacionOk = false
-  let errmsg = ''
-  let valorError = -1
   let valorSalida = 0
   let errorMsg = ''
   let datos = null
-  console.log('dirección: ', urlAPI_sp + url)
-  //console.log('datos:', JSON.stringify(data))
+  console.log('dirección: ', getUrlApiSp() + url)
 
   try {
-    const response = await fetch(urlAPI_sp + url, {
-      method: metodo, // *GET, POST, PUT, DELETE, etc.
-      mode: 'cors', // no-cors, *cors, same-origin
-      cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: 'same-origin', // include, *same-origin, omit
+    const response = await fetch(getUrlApiSp() + url, {
+      method: metodo,
+      mode: 'cors',
+      cache: 'no-cache',
+      credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
-        ...getBoletasHeaders()
-        // 'Content-Type': 'application/x-www-form-urlencoded',
+        ...getHeaders()
       },
-      redirect: 'follow', // manual, *follow, error
-      referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-      body: JSON.stringify(data) // body data type must match "Content-Type" header
+      redirect: 'follow',
+      referrerPolicy: 'no-referrer',
+      body: JSON.stringify(data)
     })
     estado = response.status
     operacionOk = response.ok
-    datos = await response.json()
-    console.log(datos)
     if (response.ok) {
-      //let datos = await response.json()
-      valorError = datos.out.vError
-      valorSalida = datos.out.vSALIDA
-      errorMsg = datos.out.vErrorMsg
+      datos = await response.json()
     } else {
-      errmsg = 'Error al intentar grabar el registro'
+      errorMsg = 'Error al intentar ejecutar el proceso'
     }
   } catch (error) {
-    console.log('se produjo un error')
     estado = 999
     operacionOk = false
-    errmsg = 'Error en la Red'
+    errorMsg = 'Error en la Red'
+    datos = null
   }
-
-  return { estado, operacionOk, errmsg, valorError, valorSalida, errorMsg, datos }
+  return { estado, operacionOk, errorMsg, datos, valorSalida }
 }
+
+export const ejecutaSP = ejecutarSP

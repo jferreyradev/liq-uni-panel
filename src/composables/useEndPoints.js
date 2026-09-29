@@ -1,14 +1,25 @@
 import { ref, computed } from 'vue'
+import { getActivePinia } from 'pinia'
 import { useTenantStore } from '@/stores/tenantStore'
-import { DEFAULT_ENDPOINTS } from '@/config/tenants'
+import { DEFAULT_ENDPOINTS, TENANTS } from '@/config/tenants'
 
 const env = ref('Prod')
 
 export function useEndPoints() {
-  const tenantStore = useTenantStore()
+  function getTenantStoreSafe() {
+    if (getActivePinia()) {
+      try {
+        return useTenantStore()
+      } catch {
+        return null
+      }
+    }
+    return null
+  }
 
   const currentEndpoints = computed(() => {
-    const tEndpoints = tenantStore.activeTenant?.endpoints || DEFAULT_ENDPOINTS
+    const tStore = getTenantStoreSafe()
+    const tEndpoints = tStore?.activeTenant?.endpoints || DEFAULT_ENDPOINTS
     return env.value === 'Desa' ? tEndpoints.desa : tEndpoints.prod
   })
 
@@ -17,10 +28,14 @@ export function useEndPoints() {
   const apiSp = computed(() => currentEndpoints.value.sp)
 
   function buildApiHeaders(extraHeaders = {}) {
+    const tStore = getTenantStoreSafe()
+    const projectKey = tStore?.tenantKey || TENANTS[0].projectKey
+    const projectPort = tStore?.tenantPort || TENANTS[0].projectPort
+
     const headers = {
       'Content-Type': 'application/json',
-      'x-project-key': tenantStore.tenantKey,
-      'x-project-port': String(tenantStore.tenantPort)
+      'x-project-key': projectKey,
+      'x-project-port': String(projectPort)
     }
 
     if (extraHeaders && typeof extraHeaders === 'object') {
