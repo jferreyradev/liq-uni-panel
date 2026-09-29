@@ -58,7 +58,7 @@ async function selectTenant(tenantId) {
           :key="tenant.id"
           :value="tenant.id"
           :active="tenant.id === activeTenant.id"
-          active-color="primary"
+          color="primary"
           @click="selectTenant(tenant.id)"
           class="py-2"
         >
