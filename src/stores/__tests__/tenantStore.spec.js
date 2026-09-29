@@ -68,4 +68,16 @@ describe('TenantStore and Multi-Tenant Integration', () => {
     expect(headers['x-project-key']).toBe('ServerTrancas')
     expect(headers['x-project-port']).toBe('3005')
   })
+
+  it('respeta la asignación de reportes permitidos según el municipio', () => {
+    const store = useTenantStore()
+    expect(store.activeTenant.allowedReports).toEqual([4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+
+    store.setTenant('trancas')
+    expect(store.activeTenant.allowedReports).toEqual([1, 2, 4, 5])
+
+    store.setTenant('tafiviejo')
+    expect(store.activeTenant.allowedReports).toEqual([4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+  })
 })
+

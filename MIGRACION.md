@@ -112,7 +112,7 @@ flowchart TD
 | **Boletas** | `BoletasView.vue`, `LiqBoletas.vue`, `boletaStore.js` | Descarga de boletas en PDF con spinner individual, generación local mediante `pdf-lib` con escudo del municipio, y nomenclatura estándar: `MMYYYY_TIPO_APELLIDO_NOMBRE.pdf`. |
 | **Acreditaciones** | `AcreditacionView.vue`, `AbreditacionBase.vue`, `AcreditacionTXT.vue`, `ResumenAcred.vue`, `ResumenAcredDetalle.vue` | Interfaz dual con pestañas: generación y exportación formal de archivos bancarios TXT + control y resumen de cuentas de acreditación. |
 | **Previsional** | `PrevisionalView.vue`, `ArchivosView.vue`, `DDJJMarco.vue`, `ParametrosDDJJ_List.vue`, `ArchIPSST.vue`, `ResumenIPSST.vue` | Generación de Declaraciones Juradas previsionales, parámetros y archivos magnéticos para el IPSST. |
-| **Reportes** | `RepoView.vue` + 14 componentes `Repo*.vue` | Colección completa de planillas oficiales (Detalle de Liquidación, Ley, Retenciones, Resumen de Sueldos, Resumen CPA, Bajas de Ley, etc.). |
+| **Reportes** | `RepoView.vue` + 14 componentes `Repo*.vue` | Colección completa de planillas oficiales con catálogo reactivo por municipio (`allowedReports` en `tenants.js`: Trancas con [1, 2, 4, 5], Concepción/Burruyacú/Tafí con [4, 6..15]) y switch para "Mostrar todos los reportes". |
 | **Seguridad** | `LoginView.vue`, `UsersPanelView.vue`, `ChangePassword.vue`, `PanelUsers.vue` | Control de acceso por roles, recuperación y cambio de clave, y administración de usuarios. |
 
 ---

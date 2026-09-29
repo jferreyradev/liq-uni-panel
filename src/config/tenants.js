@@ -27,6 +27,7 @@ export const TENANTS = [
     logo: logoDefault,
     boletaLogo: logoDefault,
     themeColor: '#1976D2',
+    allowedReports: [4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     endpoints: { ...DEFAULT_ENDPOINTS }
   },
   {
@@ -39,6 +40,7 @@ export const TENANTS = [
     logo: logoBurru,
     boletaLogo: logoBurru,
     themeColor: '#2E7D32',
+    allowedReports: [4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     endpoints: { ...DEFAULT_ENDPOINTS }
   },
   {
@@ -51,6 +53,7 @@ export const TENANTS = [
     logo: logoTafi,
     boletaLogo: logoTafi,
     themeColor: '#00838F',
+    allowedReports: [4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     endpoints: { ...DEFAULT_ENDPOINTS }
   },
   {
@@ -63,6 +66,7 @@ export const TENANTS = [
     logo: logoTrancas,
     boletaLogo: logoTrancas,
     themeColor: '#6A1B9A',
+    allowedReports: [1, 2, 4, 5],
     endpoints: { ...DEFAULT_ENDPOINTS }
   }
 ]

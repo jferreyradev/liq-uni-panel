@@ -15,13 +15,16 @@ import RepoBajasLey from '@/components/RepoBajasLey.vue'
 import RepoPlanillaResSueldoComp from '@/components/RepoPlanillaResSueldoComp.vue'
 import RepoPlanillaResumenCargos from '@/components/RepoPlanillaResumenCargos.vue'
 
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useTenantStore } from '@/stores/tenantStore'
 
-const reportes = [
-  //{ title: 'Resumen Liquidacion', value: 1 },
-  //{ title: 'Detalle por concepto (153)', value: 2 },
+const tenantStore = useTenantStore()
+
+const ALL_REPORTES = [
+  { title: 'Resumen Liquidacion', value: 1 },
+  { title: 'Detalle por concepto (153)', value: 2 },
   { title: 'Resumen de liquidación por codigos', value: 4 },
-  //{ title: 'Resumen pedido FDO', value: 5 },
+  { title: 'Resumen pedido FDO', value: 5 },
   { title: 'Resumen Aportes Patronales', value: 6 },
   { title: 'Planilla de Det. Liq.', value: 7 },
   { title: 'Planilla de Retenciones', value: 8 },
@@ -34,13 +37,44 @@ const reportes = [
   { title: 'Resumen cargos', value: 15 },
 ]
 
+const showAllReports = ref(false)
+
+const reportes = computed(() => {
+  if (showAllReports.value) return ALL_REPORTES
+  const allowed = tenantStore.activeTenant?.allowedReports
+  if (!allowed || allowed.length === 0) return ALL_REPORTES
+  return ALL_REPORTES.filter((r) => allowed.includes(r.value))
+})
+
 const repo = ref()
+
+watch(
+  () => reportes.value,
+  (newList) => {
+    if (repo.value && !newList.some((r) => r.value === repo.value)) {
+      repo.value = null
+    }
+  }
+)
 </script>
 
 <template>
   <v-container>
-    <v-row justify="space-around" class="bg-primary">
-      <h3>Reportes</h3>
+    <v-row justify="space-between" align="center" class="bg-primary px-4 py-2 rounded mb-3">
+      <div class="d-flex align-center">
+        <h3 class="text-white mb-0">Reportes</h3>
+        <v-chip class="ml-3" size="small" variant="elevated" color="white" text-color="primary">
+          {{ tenantStore.activeTenant?.shortName || 'General' }}
+        </v-chip>
+      </div>
+      <v-switch
+        v-model="showAllReports"
+        label="Mostrar todos los reportes"
+        color="info"
+        density="compact"
+        hide-details
+        class="text-white"
+      ></v-switch>
     </v-row>
     <v-row>
       <LiqInputPanel>
