@@ -1,3 +1,4 @@
+import logoConcepcion from '@/assets/tenants/concepcion.png'
 import logoBurru from '@/assets/tenants/burruyacu.png'
 import logoTafi from '@/assets/tenants/tafiviejo.png'
 import logoTrancas from '@/assets/tenants/trancas.png'
@@ -24,8 +25,8 @@ export const TENANTS = [
     location: 'Concepción - Tucumán',
     projectKey: 'concecpcion',
     projectPort: '3007',
-    logo: logoDefault,
-    boletaLogo: logoDefault,
+    logo: logoConcepcion,
+    boletaLogo: logoConcepcion,
     themeColor: '#1976D2',
     allowedReports: [4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     endpoints: { ...DEFAULT_ENDPOINTS }
