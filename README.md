@@ -30,7 +30,8 @@ Este proyecto consolida los paneles municipales de:
    - **Reportes**: Colección completa de planillas oficiales con catálogo reactivo por municipio y switch global (consulte la especificación detallada en [REPORTES.md](REPORTES.md)).
    - **Usuarios y Seguridad**: Login, cambio de clave y administración de roles.
 
-Para conocer la arquitectura completa del proyecto y el proceso de migración, consulte [MIGRACION.md](MIGRACION.md).
+Para conocer la arquitectura completa del proyecto y el proceso de migración, consulte [MIGRACION.md](MIGRACION.md).  
+Para trabajar de forma ágil por módulos sin reanalizar todo el proyecto, consulte [INSTRUCTIVO.md](INSTRUCTIVO.md) e [INSTRUCCIONES.md](INSTRUCCIONES.md).
 
 3. **Conmutación de Entorno (Prod / Desa)**:
    - Para usuarios administradores, alternancia entre servidores de Producción y Desarrollo con endpoints reactivos.

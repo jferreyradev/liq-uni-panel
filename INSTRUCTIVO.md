@@ -4,6 +4,8 @@ Este instructivo está diseñado para que el desarrollador o el asistente de IA 
 
 Cada módulo funcional está fraccionado en su propia ficha técnica independiente dentro de la carpeta [`docs/`](file:///Users/jferreyradev/projects/ag/liq-panel/docs/).
 
+> 💡 **Para saber cómo solicitar ajustes rápidamente con plantillas y ejemplos, consulta [INSTRUCCIONES.md](INSTRUCCIONES.md).**
+
 ---
 
 ## 🧭 Índice Rápido por Módulo
