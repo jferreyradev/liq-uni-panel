@@ -27,8 +27,10 @@ Este proyecto consolida los paneles municipales de:
    - **Boletas de Sueldo**: Visor de recibos, descarga con indicador de progreso por ítem, generación en cliente (`pdf-lib`) o servidor, y nomenclatura normalizada (`MMYYYY_TIPO_APELLIDO_NOMBRE.pdf`).
    - **Acreditaciones**: Generación de archivos TXT bancarios, consulta de detalle y resumen de cuentas.
    - **Previsional**: Declaraciones Juradas, configuración de parámetros y archivos para el IPSST.
-   - **Reportes**: Colección completa de planillas oficiales (Detalle de Liquidación, Ley, Retenciones, Resumen de Sueldos, CPA, Bajas de Ley, etc.).
+   - **Reportes**: Colección completa de planillas oficiales con catálogo reactivo por municipio y switch global (consulte la especificación detallada en [REPORTES.md](REPORTES.md)).
    - **Usuarios y Seguridad**: Login, cambio de clave y administración de roles.
+
+Para conocer la arquitectura completa del proyecto y el proceso de migración, consulte [MIGRACION.md](MIGRACION.md).
 
 3. **Conmutación de Entorno (Prod / Desa)**:
    - Para usuarios administradores, alternancia entre servidores de Producción y Desarrollo con endpoints reactivos.
