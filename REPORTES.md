@@ -19,8 +19,8 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 | **8** | **Planilla de Retenciones** | `RepoPlanillaRet.vue` | `/api/view/planillaRet` | 🟢 **Activo** | 🟢 **Activo** | 🟢 **Activo** | ⚪ *(Opcional)* |
 | **9** | **Planilla de Ley** | `RepoPlanillaLey.vue` | `/api/view/planillaLey` | 🟢 **Activo** | 🟢 **Activo** | 🟢 **Activo** | ⚪ *(Opcional)* |
 | **10** | **Resumen de Sueldos** | `RepoPlanillaResSueldo.vue` | `/api/view/resumenSueldos` | 🟢 **Activo** | 🟢 **Activo** | 🟢 **Activo** | ⚪ *(Opcional)* |
-| **11** | **Retenciones de CPA** | `RepoPlanillaRetencionesCPA.vue` | `/api/view/planillaRetCpa` | 🟢 **Activo** | 🟢 **Activo** | 🟢 **Activo** | ⚪ *(Opcional)* |
-| **12** | **Retenciones de Cargo** | `RepoPlanillaRetCargo.vue` | `/api/view/planillaRetCargo` | 🟢 **Activo** | 🟢 **Activo** | 🟢 **Activo** | ⚪ *(Opcional)* |
+| **11** | **Retenciones de CPA** | `RepoPlanillaRetencionesCPA.vue` | `/api/view/planillaRetCPA` | 🟢 **Activo** | 🟢 **Activo** | 🟢 **Activo** | ⚪ *(Opcional)* |
+| **12** | **Retenciones de Cargo** | `RepoPlanillaRetCargo.vue` | `/api/view/retencionesCargo` | 🟢 **Activo** | 🟢 **Activo** | 🟢 **Activo** | ⚪ *(Opcional)* |
 | **13** | **Bajas de Ley** | `RepoBajasLey.vue` | `/api/view/bajasLey` | 🟢 **Activo** | 🟢 **Activo** | 🟢 **Activo** | ⚪ *(Opcional)* |
 | **14** | **Res. de Sue. - Inas. - Ley** | `RepoPlanillaResSueldoComp.vue` | `/api/view/resumenSueldosComp` | 🟢 **Activo** | 🟢 **Activo** | 🟢 **Activo** | ⚪ *(Opcional)* |
 | **15** | **Resumen cargos** | `RepoPlanillaResumenCargos.vue` | `/api/view/resumenCargos` | 🟢 **Activo** | 🟢 **Activo** | 🟢 **Activo** | ⚪ *(Opcional)* |
