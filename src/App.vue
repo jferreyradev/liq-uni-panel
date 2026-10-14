@@ -89,6 +89,39 @@ async function changeEnv() {
         </v-tooltip>
       </v-btn>
 
+      <!-- Indicador de Base de Datos Conectada (view/configServer) -->
+      <v-chip
+        size="small"
+        class="me-1 font-weight-medium"
+        :color="storeFilter.hasServerConfig ? 'white' : (storeFilter.serverConfigError ? 'error' : 'grey-lighten-2')"
+        :variant="storeFilter.hasServerConfig ? 'outlined' : 'tonal'"
+        @click="logStore.openDialog"
+        style="cursor: pointer;"
+      >
+        <v-icon
+          :icon="storeFilter.serverConfigLoading ? 'mdi-loading mdi-spin' : (storeFilter.hasServerConfig ? 'mdi-database-check' : (storeFilter.serverConfigError ? 'mdi-database-alert' : 'mdi-database-clock-outline'))"
+          start
+          size="x-small"
+          :color="storeFilter.hasServerConfig ? 'light-green-accent-3' : undefined"
+        ></v-icon>
+        <span class="text-caption font-weight-bold">
+          BD: {{ storeFilter.serverDescripcion || storeFilter.serverAmbiente || (storeFilter.serverConfigLoading ? 'Conectando...' : 'Sin BD') }}
+        </span>
+        <v-tooltip activator="parent" location="bottom">
+          <div class="text-caption">
+            <div><strong>Base de Datos Conectada (view/configServer):</strong></div>
+            <div>&bull; Descripción: <strong>{{ storeFilter.serverDescripcion || 'Pendiente' }}</strong></div>
+            <div>&bull; Ambiente: <strong>{{ storeFilter.serverAmbiente || 'Pendiente' }}</strong></div>
+            <div v-if="storeFilter.serverCela">&bull; CELA: {{ storeFilter.serverCela }}</div>
+            <div v-if="storeFilter.serverIdConf">&bull; ID Config: {{ storeFilter.serverIdConf }} (Rep: {{ storeFilter.serverIdRep }})</div>
+            <div v-if="storeFilter.serverConfigError" class="text-red-accent-2 mt-1">
+              Error al consultar configServer: {{ storeFilter.serverConfigError }}
+            </div>
+            <div class="mt-1 text-grey-lighten-2">Clic para abrir Diagnóstico y Logs.</div>
+          </div>
+        </v-tooltip>
+      </v-chip>
+
       <!-- Conmutador Tema Claro/Oscuro -->
       <v-btn @click="toggleTheme" icon="mdi-theme-light-dark" size="small" class="me-1">
         <v-tooltip activator="parent" location="bottom">Cambiar tema</v-tooltip>
@@ -223,6 +256,21 @@ async function changeEnv() {
           {{ new Date().getFullYear() }} —
           <strong>{{ tenantStore.tenantName }}</strong> &bull;
           <span>{{ tenantStore.tenantLocation }}</span>
+          <span class="mx-2 text-grey-lighten-1">|</span>
+          <v-icon
+            :icon="storeFilter.hasServerConfig ? 'mdi-database-check' : (storeFilter.serverConfigError ? 'mdi-database-alert' : 'mdi-database-clock-outline')"
+            size="14"
+            :color="storeFilter.hasServerConfig ? 'success' : (storeFilter.serverConfigError ? 'error' : 'warning')"
+            class="me-1"
+          ></v-icon>
+          <span>
+            BD Conectada:
+            <strong :class="storeFilter.hasServerConfig ? 'text-success' : (storeFilter.serverConfigError ? 'text-error' : '')">
+              {{ storeFilter.serverDescripcion || storeFilter.serverAmbiente || (storeFilter.serverConfigLoading ? 'Consultando BD...' : 'Sin conexión a BD') }}
+            </strong>
+            <span v-if="storeFilter.serverAmbiente && storeFilter.serverDescripcion !== storeFilter.serverAmbiente"> ({{ storeFilter.serverAmbiente }})</span>
+            <span v-if="storeFilter.serverCela" class="text-medium-emphasis"> &bull; CELA: {{ storeFilter.serverCela }}</span>
+          </span>
         </v-col>
       </v-row>
     </v-footer>

@@ -3,8 +3,10 @@ import { ref, computed } from 'vue'
 import { useLogStore } from '@/stores/logStore'
 import { useEndPoints } from '@/composables/useEndPoints'
 import { useTenantStore } from '@/stores/tenantStore'
+import { useFilterStore } from '@/stores/filterStore'
 
 const logStore = useLogStore()
+const filterStore = useFilterStore()
 const {
   env,
   isDesa,
@@ -195,6 +197,10 @@ function copyLogsToClipboard() {
           <v-icon start icon="mdi-format-list-bulleted"></v-icon>
           Logs Recientes ({{ logStore.logs.length }})
         </v-tab>
+        <v-tab value="database">
+          <v-icon start icon="mdi-database-eye-outline"></v-icon>
+          Base de Datos (configServer)
+        </v-tab>
         <v-tab value="config">
           <v-icon start icon="mdi-cog-outline"></v-icon>
           Configuración de Endpoints
@@ -376,6 +382,101 @@ function copyLogsToClipboard() {
               Guardar Configuración
             </v-btn>
           </div>
+        </div>
+
+        <!-- TAB 3: BASE DE DATOS / configServer -->
+        <div v-if="activeTab === 'database'">
+          <div class="d-flex align-center justify-space-between mb-3">
+            <div class="text-caption">
+              Consulta en tiempo real a <code>/api/view/configServer</code>:
+            </div>
+            <v-btn
+              size="small"
+              color="primary"
+              variant="tonal"
+              prepend-icon="mdi-refresh"
+              :loading="filterStore.serverConfigLoading"
+              @click="filterStore.setConfig()"
+            >
+              Consultar Ahora
+            </v-btn>
+          </div>
+
+          <v-alert
+            v-if="filterStore.hasServerConfig"
+            type="success"
+            variant="tonal"
+            density="compact"
+            class="mb-3 text-caption"
+            icon="mdi-check-circle-outline"
+          >
+            <strong>Conexión con Base de Datos Exitosa:</strong> La API devolvió la configuración del servidor Oracle correctamente.
+          </v-alert>
+
+          <v-alert
+            v-else-if="filterStore.serverConfigError"
+            type="error"
+            variant="tonal"
+            density="compact"
+            class="mb-3 text-caption"
+            icon="mdi-alert-circle-outline"
+          >
+            <strong>Error al consultar la Base de Datos:</strong>
+            <div class="mt-1 font-mono text-truncate">{{ filterStore.serverConfigError }}</div>
+          </v-alert>
+
+          <v-card variant="outlined" class="mb-3">
+            <v-card-text class="pa-3">
+              <v-table density="compact">
+                <tbody>
+                  <tr>
+                    <td class="font-weight-bold" style="width: 200px;">Servidor / Descripción:</td>
+                    <td>
+                      <v-chip size="small" color="primary" variant="flat" class="font-weight-bold">
+                        {{ filterStore.serverDescripcion || 'Sin datos' }}
+                      </v-chip>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">Ambiente (BD):</td>
+                    <td>
+                      <v-chip
+                        size="small"
+                        :color="filterStore.serverAmbiente.toUpperCase().includes('DESA') ? 'warning' : 'success'"
+                        variant="tonal"
+                        class="font-weight-bold"
+                      >
+                        {{ filterStore.serverAmbiente || 'Sin datos' }}
+                      </v-chip>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">CELA:</td>
+                    <td>{{ filterStore.serverCela || 'No especificado' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">ID Configuración (IdConf):</td>
+                    <td>{{ filterStore.serverIdConf || 'N/A' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">Repartición (IdRep):</td>
+                    <td>{{ filterStore.serverIdRep || 'N/A' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">Endpoint API Consultado:</td>
+                    <td class="text-caption font-mono">{{ apiBase }}/api/view/configServer</td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">Headers Enviados:</td>
+                    <td class="text-caption font-mono">x-project-key: {{ tenantStore.tenantKey }} &bull; x-project-port: {{ tenantStore.tenantPort }}</td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </v-card-text>
+          </v-card>
+
+          <div class="text-caption font-weight-bold mb-1">Respuesta JSON Cruda de configServer:</div>
+          <pre class="bg-grey-darken-4 text-green-accent-2 pa-3 rounded text-caption overflow-x-auto">{{ JSON.stringify(filterStore.serverConfig, null, 2) }}</pre>
         </div>
       </v-card-text>
 

@@ -31,7 +31,9 @@ export const useFilterStore = defineStore('filter', {
     year: 0,
     month: 0,
     ley: 0,
-    serverConfig: {}
+    serverConfig: {},
+    serverConfigLoading: false,
+    serverConfigError: null
   }),
   getters: {
     filterString: (state) =>
@@ -48,7 +50,20 @@ export const useFilterStore = defineStore('filter', {
     },
     liqCompactString: (state) =>
       `${state.year}${meses[state.month - 1]?.substring(0, 3) || ''}${liqMap.get(state.tipoliq.toString())?.substring(0, 1) || ''}${state.nroadi}`,
-    server: (state) => `${state.serverConfig?.AMBIENTE || ''}`
+    server: (state) => `${state.serverConfig?.AMBIENTE || state.serverConfig?.Ambiente || ''}`,
+    serverAmbiente: (state) => state.serverConfig?.AMBIENTE || state.serverConfig?.Ambiente || '',
+    serverDescripcion: (state) => state.serverConfig?.DESCRIPCION || state.serverConfig?.Descripcion || '',
+    serverCela: (state) => state.serverConfig?.CELA || state.serverConfig?.Cela || '',
+    serverIdConf: (state) => state.serverConfig?.IDCONF || state.serverConfig?.IdConf || '',
+    serverIdRep: (state) => state.serverConfig?.IDREP || state.serverConfig?.IdRep || '',
+    hasServerConfig: (state) =>
+      Boolean(
+        state.serverConfig &&
+          (state.serverConfig.AMBIENTE ||
+            state.serverConfig.DESCRIPCION ||
+            state.serverConfig.Ambiente ||
+            state.serverConfig.Descripcion)
+      )
   },
   actions: {
     async init() {
@@ -75,19 +90,27 @@ export const useFilterStore = defineStore('filter', {
     },
     async setConfig() {
       const { apiBase, getBoletasHeaders } = useEndPoints()
+      this.serverConfigLoading = true
+      this.serverConfigError = null
       try {
         const res = await fetch(`${apiBase.value}/api/view/configServer`, {
           headers: getBoletasHeaders()
         })
         if (!res.ok) {
-          throw new Error(`Error ${res.status} al obtener configuración`)
+          const errText = await res.text().catch(() => '')
+          throw new Error(`Error ${res.status} al obtener configuración: ${errText || res.statusText}`)
         }
         const data = await res.json()
         if (data?.[0]) {
           this.serverConfig = data[0]
+        } else {
+          this.serverConfig = {}
         }
       } catch (err) {
+        this.serverConfigError = err.message
         console.error('[filterStore setConfig]', err)
+      } finally {
+        this.serverConfigLoading = false
       }
     }
   }

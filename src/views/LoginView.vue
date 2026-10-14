@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { useFilterStore } from '@/stores/filterStore'
@@ -17,6 +17,10 @@ const logStore = useLogStore()
 const user = useUserStore()
 const router = useRouter()
 const filterStore = useFilterStore()
+
+onMounted(() => {
+  filterStore.setConfig()
+})
 
 const showPassword = ref(false)
 const userInput = ref({
@@ -122,6 +126,40 @@ function openDiagnosticsFromError() {
       >
         Conectado al <strong>servidor de Desarrollo</strong> (pruebas).
       </v-alert>
+
+      <!-- Indicador de conexión a Base de Datos (view/configServer) -->
+      <div class="px-4 pt-3">
+        <v-sheet
+          rounded="md"
+          class="pa-2 d-flex align-center justify-space-between text-caption border"
+          :class="filterStore.hasServerConfig ? 'bg-green-lighten-5 text-green-darken-4' : (filterStore.serverConfigError ? 'bg-red-lighten-5 text-red-darken-4' : 'bg-grey-lighten-5 text-grey-darken-3')"
+        >
+          <div class="d-flex align-center text-truncate me-2">
+            <v-icon
+              :icon="filterStore.serverConfigLoading ? 'mdi-loading mdi-spin' : (filterStore.hasServerConfig ? 'mdi-database-check' : (filterStore.serverConfigError ? 'mdi-database-alert' : 'mdi-database-clock-outline'))"
+              size="small"
+              class="me-2 flex-shrink-0"
+              :color="filterStore.hasServerConfig ? 'success' : (filterStore.serverConfigError ? 'error' : undefined)"
+            ></v-icon>
+            <span class="text-truncate">
+              <strong>BD:</strong>
+              {{ filterStore.serverDescripcion || filterStore.serverAmbiente || (filterStore.serverConfigLoading ? 'Consultando configServer...' : (filterStore.serverConfigError ? 'Sin respuesta BD' : 'Verificando BD...')) }}
+              <span v-if="filterStore.serverAmbiente && filterStore.serverDescripcion !== filterStore.serverAmbiente" class="opacity-80">
+                ({{ filterStore.serverAmbiente }})
+              </span>
+            </span>
+          </div>
+
+          <v-btn
+            icon="mdi-refresh"
+            size="x-small"
+            variant="text"
+            :loading="filterStore.serverConfigLoading"
+            @click="filterStore.setConfig()"
+            title="Recargar configServer"
+          ></v-btn>
+        </v-sheet>
+      </div>
 
       <v-card-text class="pa-5">
         <h3 class="text-subtitle-1 font-weight-bold mb-3">Acceso al sistema</h3>
