@@ -21,7 +21,10 @@ const theme = useTheme()
 const router = useRouter()
 const drawer = ref(false)
 
-storeFilter.setConfig()
+// configServer solo se consulta una vez que el usuario está logueado
+if (store.auth) {
+  storeFilter.setConfig()
+}
 
 function toggleTheme() {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
@@ -29,6 +32,8 @@ function toggleTheme() {
 
 function handleLogout() {
   store.$reset()
+  storeFilter.serverConfig = {}
+  storeFilter.serverConfigError = null
   router.push('/login')
 }
 </script>
@@ -58,8 +63,9 @@ function handleLogout() {
         <TenantSelector />
       </div>
 
-      <!-- Indicador de Base de Datos Conectada (view/configServer) -->
+      <!-- Indicador de Base de Datos Conectada (view/configServer) - solo visible una vez logueado -->
       <v-chip
+        v-if="store.auth"
         size="small"
         class="me-1 font-weight-medium"
         :color="storeFilter.hasServerConfig ? 'white' : (storeFilter.serverConfigError ? 'error' : 'grey-lighten-2')"
@@ -225,21 +231,23 @@ function handleLogout() {
           {{ new Date().getFullYear() }} —
           <strong>{{ tenantStore.tenantName }}</strong> &bull;
           <span>{{ tenantStore.tenantLocation }}</span>
-          <span class="mx-2 text-grey-lighten-1">|</span>
-          <v-icon
-            :icon="storeFilter.hasServerConfig ? 'mdi-database-check' : (storeFilter.serverConfigError ? 'mdi-database-alert' : 'mdi-database-clock-outline')"
-            size="14"
-            :color="storeFilter.hasServerConfig ? 'success' : (storeFilter.serverConfigError ? 'error' : 'warning')"
-            class="me-1"
-          ></v-icon>
-          <span>
-            BD Conectada:
-            <strong :class="storeFilter.hasServerConfig ? 'text-success' : (storeFilter.serverConfigError ? 'text-error' : '')">
-              {{ storeFilter.serverDescripcion || storeFilter.serverAmbiente || (storeFilter.serverConfigLoading ? 'Consultando BD...' : 'Sin conexión a BD') }}
-            </strong>
-            <span v-if="storeFilter.serverAmbiente && storeFilter.serverDescripcion !== storeFilter.serverAmbiente"> ({{ storeFilter.serverAmbiente }})</span>
-            <span v-if="storeFilter.serverCela" class="text-medium-emphasis"> &bull; CELA: {{ storeFilter.serverCela }}</span>
-          </span>
+          <template v-if="store.auth">
+            <span class="mx-2 text-grey-lighten-1">|</span>
+            <v-icon
+              :icon="storeFilter.hasServerConfig ? 'mdi-database-check' : (storeFilter.serverConfigError ? 'mdi-database-alert' : 'mdi-database-clock-outline')"
+              size="14"
+              :color="storeFilter.hasServerConfig ? 'success' : (storeFilter.serverConfigError ? 'error' : 'warning')"
+              class="me-1"
+            ></v-icon>
+            <span>
+              BD Conectada:
+              <strong :class="storeFilter.hasServerConfig ? 'text-success' : (storeFilter.serverConfigError ? 'text-error' : '')">
+                {{ storeFilter.serverDescripcion || storeFilter.serverAmbiente || (storeFilter.serverConfigLoading ? 'Consultando BD...' : 'Sin conexión a BD') }}
+              </strong>
+              <span v-if="storeFilter.serverAmbiente && storeFilter.serverDescripcion !== storeFilter.serverAmbiente"> ({{ storeFilter.serverAmbiente }})</span>
+              <span v-if="storeFilter.serverCela" class="text-medium-emphasis"> &bull; CELA: {{ storeFilter.serverCela }}</span>
+            </span>
+          </template>
         </v-col>
       </v-row>
     </v-footer>

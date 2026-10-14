@@ -41,12 +41,10 @@ async function selectTenant(tenantId) {
     }
   }
 
-  // Redirigir a pantalla de login
+  // Redirigir a pantalla de login y limpiar configuracion previa
+  filterStore.serverConfig = {}
+  filterStore.serverConfigError = null
   router.push('/login')
-
-  // Refrescar configuración y período del nuevo municipio
-  await filterStore.setConfig()
-  await filterStore.setPer()
 }
 </script>
 
@@ -91,15 +89,6 @@ async function selectTenant(tenantId) {
 
           <v-list-item-title class="font-weight-medium text-body-2 d-flex align-center">
             {{ tenant.name }}
-            <v-chip
-              v-if="tenant.id === 'desarrollo'"
-              size="x-small"
-              color="warning"
-              variant="flat"
-              class="ms-2 font-weight-bold"
-            >
-              DEV
-            </v-chip>
           </v-list-item-title>
           <v-list-item-subtitle class="text-caption">
             Puerto: {{ tenant.projectPort }} &bull; Key: {{ tenant.projectKey }}
