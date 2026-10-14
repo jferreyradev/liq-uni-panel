@@ -40,7 +40,7 @@ Haz clic en la ficha correspondiente a la tarea que vas a realizar:
 # Servidor de desarrollo local
 npm run dev
 
-# Ejecutar todas las pruebas unitarias (69 tests)
+# Ejecutar todas las pruebas unitarias (77 tests)
 npm run test:unit
 
 # Compilar para producción (validación de build y assets)

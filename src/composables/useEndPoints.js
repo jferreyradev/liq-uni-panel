@@ -3,7 +3,68 @@ import { getActivePinia } from 'pinia'
 import { useTenantStore } from '@/stores/tenantStore'
 import { DEFAULT_ENDPOINTS, TENANTS } from '@/config/tenants'
 
-const env = ref('Prod')
+const STORAGE_ENV_KEY = 'liq_env'
+const STORAGE_DESA_BASE_KEY = 'liq_desa_base'
+const STORAGE_DESA_BOLETAS_KEY = 'liq_desa_boletas'
+const STORAGE_DESA_SP_KEY = 'liq_desa_sp'
+const STORAGE_DESA_KEY_HEADER = 'liq_desa_key'
+const STORAGE_DESA_PORT_HEADER = 'liq_desa_port'
+
+function getStoredEnv() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const val = window.localStorage.getItem(STORAGE_ENV_KEY)
+      if (val === 'Desa' || val === 'Prod') {
+        return val
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return 'Prod'
+}
+
+function setStoredEnv(val) {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(STORAGE_ENV_KEY, val)
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function getStoredValue(key, fallback = '') {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem(key) || fallback
+    }
+  } catch {
+    // ignore
+  }
+  return fallback
+}
+
+function setStoredValue(key, val) {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (val) {
+        window.localStorage.setItem(key, val)
+      } else {
+        window.localStorage.removeItem(key)
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
+const env = ref(getStoredEnv())
+const desaBaseOverride = ref(getStoredValue(STORAGE_DESA_BASE_KEY, ''))
+const desaBoletasOverride = ref(getStoredValue(STORAGE_DESA_BOLETAS_KEY, ''))
+const desaSpOverride = ref(getStoredValue(STORAGE_DESA_SP_KEY, ''))
+const desaKeyOverride = ref(getStoredValue(STORAGE_DESA_KEY_HEADER, ''))
+const desaPortOverride = ref(getStoredValue(STORAGE_DESA_PORT_HEADER, ''))
 
 export function useEndPoints() {
   function getTenantStoreSafe() {
@@ -20,7 +81,15 @@ export function useEndPoints() {
   const currentEndpoints = computed(() => {
     const tStore = getTenantStoreSafe()
     const tEndpoints = tStore?.activeTenant?.endpoints || DEFAULT_ENDPOINTS
-    return env.value === 'Desa' ? tEndpoints.desa : tEndpoints.prod
+    const isDesaMode = env.value === 'Desa' || tStore?.activeTenantId === 'desarrollo'
+    if (isDesaMode) {
+      return {
+        base: desaBaseOverride.value || tEndpoints.desa.base,
+        boletas: desaBoletasOverride.value || tEndpoints.desa.boletas,
+        sp: desaSpOverride.value || tEndpoints.desa.sp
+      }
+    }
+    return tEndpoints.prod
   })
 
   const apiBase = computed(() => currentEndpoints.value.base)
@@ -29,8 +98,20 @@ export function useEndPoints() {
 
   function buildApiHeaders(extraHeaders = {}) {
     const tStore = getTenantStoreSafe()
-    const projectKey = tStore?.tenantKey || TENANTS[0].projectKey
-    const projectPort = tStore?.tenantPort || TENANTS[0].projectPort
+    const isDesaMode = env.value === 'Desa' || tStore?.activeTenantId === 'desarrollo'
+
+    // En ambiente de desarrollo se utiliza la clave 'desarrollo' y puerto '3005'
+    // En producción se utiliza la clave y puerto del municipio activo seleccionado
+    const defaultKey = isDesaMode ? 'desarrollo' : (tStore?.tenantKey || TENANTS[0].projectKey)
+    const defaultPort = isDesaMode ? '3005' : (tStore?.tenantPort || TENANTS[0].projectPort)
+
+    const projectKey = isDesaMode
+      ? (desaKeyOverride.value || defaultKey)
+      : defaultKey
+
+    const projectPort = isDesaMode
+      ? (desaPortOverride.value || defaultPort)
+      : defaultPort
 
     const headers = {
       'Content-Type': 'application/json',
@@ -66,21 +147,137 @@ export function useEndPoints() {
 
   function setProd() {
     env.value = 'Prod'
+    setStoredEnv('Prod')
   }
 
   function setDesa() {
     env.value = 'Desa'
+    setStoredEnv('Desa')
   }
+
+  function setEnv(val) {
+    if (val === 'Desa') {
+      setDesa()
+    } else {
+      setProd()
+    }
+  }
+
+  function toggleEnv() {
+    if (env.value === 'Desa') {
+      setProd()
+    } else {
+      setDesa()
+    }
+  }
+
+  function getDesaOverrides() {
+    return {
+      base: desaBaseOverride.value,
+      boletas: desaBoletasOverride.value,
+      sp: desaSpOverride.value,
+      key: desaKeyOverride.value,
+      port: desaPortOverride.value
+    }
+  }
+
+  function setDesaOverrides({ base, boletas, sp, key, port }) {
+    if (base !== undefined) {
+      desaBaseOverride.value = base || ''
+      setStoredValue(STORAGE_DESA_BASE_KEY, base || '')
+    }
+    if (boletas !== undefined) {
+      desaBoletasOverride.value = boletas || ''
+      setStoredValue(STORAGE_DESA_BOLETAS_KEY, boletas || '')
+    }
+    if (sp !== undefined) {
+      desaSpOverride.value = sp || ''
+      setStoredValue(STORAGE_DESA_SP_KEY, sp || '')
+    }
+    if (key !== undefined) {
+      desaKeyOverride.value = key || ''
+      setStoredValue(STORAGE_DESA_KEY_HEADER, key || '')
+    }
+    if (port !== undefined) {
+      desaPortOverride.value = port || ''
+      setStoredValue(STORAGE_DESA_PORT_HEADER, port || '')
+    }
+  }
+
+  function resetDesaOverrides() {
+    desaBaseOverride.value = ''
+    desaBoletasOverride.value = ''
+    desaSpOverride.value = ''
+    desaKeyOverride.value = ''
+    desaPortOverride.value = ''
+    setStoredValue(STORAGE_DESA_BASE_KEY, '')
+    setStoredValue(STORAGE_DESA_BOLETAS_KEY, '')
+    setStoredValue(STORAGE_DESA_SP_KEY, '')
+    setStoredValue(STORAGE_DESA_KEY_HEADER, '')
+    setStoredValue(STORAGE_DESA_PORT_HEADER, '')
+  }
+
+  async function testConnection(url, extraHeaders = {}) {
+    const start = Date.now()
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 6000)
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: buildApiHeaders(extraHeaders),
+        signal: controller.signal
+      })
+      clearTimeout(timeout)
+      const durationMs = Date.now() - start
+      let text = ''
+      try {
+        text = await response.text()
+      } catch {
+        text = ''
+      }
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        durationMs,
+        body: text,
+        error: response.ok ? null : `HTTP ${response.status}: ${response.statusText}`
+      }
+    } catch (err) {
+      clearTimeout(timeout)
+      const durationMs = Date.now() - start
+      return {
+        ok: false,
+        status: 0,
+        statusText: err.name === 'AbortError' ? 'Timeout (6s)' : 'Error de Conexión',
+        durationMs,
+        body: null,
+        error: err.name === 'AbortError' ? 'La solicitud excedió el tiempo límite (6s)' : err.message
+      }
+    }
+  }
+
+  const isDesa = computed(() => env.value === 'Desa' || getTenantStoreSafe()?.activeTenantId === 'desarrollo')
+  const isProd = computed(() => env.value === 'Prod' && getTenantStoreSafe()?.activeTenantId !== 'desarrollo')
 
   return {
     apiBase,
     apiBoletas,
     apiSp,
     env,
+    isDesa,
+    isProd,
     setProd,
     setDesa,
+    setEnv,
+    toggleEnv,
     buildApiHeaders,
     getBoletasHeaders,
-    getBoletasRequestOptions
+    getBoletasRequestOptions,
+    getDesaOverrides,
+    setDesaOverrides,
+    resetDesaOverrides,
+    testConnection
   }
 }

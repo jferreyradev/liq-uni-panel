@@ -1,4 +1,6 @@
 import { useEndPoints } from './useEndPoints'
+import { useLogStore } from '@/stores/logStore'
+import { getActivePinia } from 'pinia'
 
 function buildUrl(baseUrl, path, query) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
@@ -13,8 +15,19 @@ function buildUrl(baseUrl, path, query) {
   return url.toString()
 }
 
+function getLogStoreSafe() {
+  if (getActivePinia()) {
+    try {
+      return useLogStore()
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
 export function useApiClient() {
-  const { apiBase, apiBoletas, apiSp, getBoletasHeaders } = useEndPoints()
+  const { apiBase, apiBoletas, apiSp, getBoletasHeaders, env } = useEndPoints()
 
   function getBaseUrl(service) {
     if (service === 'boletas') return apiBoletas.value
@@ -49,17 +62,62 @@ export function useApiClient() {
       requestOptions.body = body instanceof FormData ? body : JSON.stringify(body)
     }
 
-    const response = await fetch(url, requestOptions)
+    const logStore = getLogStoreSafe()
+    const start = Date.now()
 
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => '')
-      throw new Error(`HTTP ${response.status} - ${url} ${errorBody}`)
+    try {
+      const response = await fetch(url, requestOptions)
+      const durationMs = Date.now() - start
+
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => '')
+        logStore?.addLog({
+          type: 'error',
+          category: 'API_CLIENT',
+          method,
+          url,
+          headers: finalHeaders,
+          status: response.status,
+          statusText: response.statusText,
+          durationMs,
+          error: errorBody,
+          env: env.value
+        })
+        throw new Error(`HTTP ${response.status} - ${url} ${errorBody}`)
+      }
+
+      logStore?.addLog({
+        type: 'success',
+        category: 'API_CLIENT',
+        method,
+        url,
+        headers: finalHeaders,
+        status: response.status,
+        statusText: response.statusText,
+        durationMs,
+        env: env.value
+      })
+
+      if (responseType === 'blob') return response.blob()
+      if (responseType === 'text') return response.text()
+      if (responseType === 'raw') return response
+      return response.json()
+    } catch (err) {
+      const durationMs = Date.now() - start
+      logStore?.addLog({
+        type: 'error',
+        category: 'API_CLIENT',
+        method,
+        url,
+        headers: finalHeaders,
+        status: 0,
+        statusText: 'Error de Red / Conexión',
+        durationMs,
+        error: err.message,
+        env: env.value
+      })
+      throw err
     }
-
-    if (responseType === 'blob') return response.blob()
-    if (responseType === 'text') return response.text()
-    if (responseType === 'raw') return response
-    return response.json()
   }
 
   function get(params) {

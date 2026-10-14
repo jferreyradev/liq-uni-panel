@@ -6,9 +6,9 @@ import logoDefault from '@/assets/logo.png'
 
 export const DEFAULT_ENDPOINTS = {
   desa: {
-    boletas: 'https://api-boletas-9jn3t0ca7a3j.deno.dev',
-    base: 'https://midliq-api-hdprsd64qb7n.deno.dev',
-    sp: 'https://josrferreyr-deno-api-su-79--desarrollo.deno.dev'
+    boletas: 'https://dno-mid-boletas.jferreyradev.deno.net',
+    base: 'https://dno-mid-api-22.jferreyradev.deno.net',
+    sp: 'https://dno-mid-boletas.jferreyradev.deno.net'
   },
   prod: {
     boletas: 'https://dno-mid-boletas.jferreyradev.deno.net',
@@ -68,6 +68,20 @@ export const TENANTS = [
     boletaLogo: logoTrancas,
     themeColor: '#6A1B9A',
     allowedReports: [1, 2, 4, 5],
+    endpoints: { ...DEFAULT_ENDPOINTS }
+  },
+  {
+    id: 'desarrollo',
+    name: 'Desarrollo',
+    shortName: 'Desarrollo',
+    location: 'Servidor de Desarrollo / Testing',
+    projectKey: 'desarrollo',
+    projectPort: '3005',
+    logo: logoDefault,
+    boletaLogo: logoDefault,
+    themeColor: '#7C4DFF',
+    isDevelopment: true,
+    allowedReports: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     endpoints: { ...DEFAULT_ENDPOINTS }
   }
 ]

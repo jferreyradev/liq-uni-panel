@@ -7,19 +7,22 @@ import { useEndPoints } from '@/composables/useEndPoints'
 import { useItemsMenu } from '@/composables/useItemsMenu'
 import { useFilterStore } from '@/stores/filterStore'
 import { useTenantStore } from '@/stores/tenantStore'
+import { useLogStore } from '@/stores/logStore'
 import TenantSelector from '@/components/TenantSelector.vue'
+import DiagnosticDialog from '@/components/common/DiagnosticDialog.vue'
 
 const { setDesa, setProd, env } = useEndPoints()
 const storeFilter = useFilterStore()
 const tenantStore = useTenantStore()
 const store = useUserStore()
+const logStore = useLogStore()
 const { itemsMenu, setItemsMenu } = useItemsMenu()
 
 const theme = useTheme()
 const router = useRouter()
 const drawer = ref(false)
 
-setProd()
+// setProd() se eliminó para respetar el ambiente guardado en localStorage
 storeFilter.setConfig()
 
 function toggleTheme() {
@@ -37,9 +40,10 @@ async function changeEnv() {
   } else {
     setDesa()
   }
-  if (store.auth && store.fetchRol) {
-    await store.fetchRol()
-    setItemsMenu(store.rol)
+  // Si estaba autenticado, cerramos la sesión para evitar cruce de credenciales
+  if (store.auth) {
+    store.$reset()
+    router.push('/login')
   }
   await storeFilter.setConfig()
 }
@@ -70,21 +74,37 @@ async function changeEnv() {
         <TenantSelector />
       </div>
 
-      <!-- Conmutador de Ambiente -->
+      <!-- Conmutador de Ambiente (Producción / Desarrollo) -->
       <v-btn
-        v-if="store.auth && store.isAdmin"
         class="text-caption me-1 font-weight-bold"
+        :color="env === 'Desa' ? 'warning' : 'white'"
+        :variant="env === 'Desa' ? 'flat' : 'tonal'"
         @click="changeEnv"
-        variant="tonal"
+        size="small"
       >
-        <v-icon icon="mdi-server" start size="small"></v-icon>
-        {{ env }}
+        <v-icon :icon="env === 'Desa' ? 'mdi-flask' : 'mdi-server'" start size="small"></v-icon>
+        {{ env === 'Desa' ? 'Desarrollo' : 'Producción' }}
+        <v-tooltip activator="parent" location="bottom">
+          {{ env === 'Desa' ? 'Ambiente de pruebas activo. Clic para cambiar a Producción.' : 'Ambiente de producción activo. Clic para cambiar a Desarrollo.' }}
+        </v-tooltip>
       </v-btn>
 
       <!-- Conmutador Tema Claro/Oscuro -->
       <v-btn @click="toggleTheme" icon="mdi-theme-light-dark" size="small" class="me-1">
         <v-tooltip activator="parent" location="bottom">Cambiar tema</v-tooltip>
         <v-icon icon="mdi-theme-light-dark"></v-icon>
+      </v-btn>
+
+      <!-- Botón Diagnóstico y Logs -->
+      <v-btn
+        icon="mdi-bug-outline"
+        size="small"
+        class="me-1"
+        :color="logStore.hasErrors ? 'error' : undefined"
+        @click="logStore.openDialog"
+      >
+        <v-tooltip activator="parent" location="bottom">Diagnóstico y Logs del Sistema</v-tooltip>
+        <v-icon icon="mdi-bug-outline"></v-icon>
       </v-btn>
 
       <!-- Botón Salir Rápido -->
@@ -206,6 +226,9 @@ async function changeEnv() {
         </v-col>
       </v-row>
     </v-footer>
+
+    <!-- Componente Global de Diagnóstico -->
+    <DiagnosticDialog />
   </v-layout>
 </template>
 

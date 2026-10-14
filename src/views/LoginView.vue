@@ -2,109 +2,251 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
-import { useFilterStore } from '@/stores/filterStore';
+import { useFilterStore } from '@/stores/filterStore'
 import { useItemsMenu } from '@/composables/useItemsMenu'
+import { useTenantStore } from '@/stores/tenantStore'
+import { useEndPoints } from '@/composables/useEndPoints'
+import { useLogStore } from '@/stores/logStore'
+import DiagnosticDialog from '@/components/common/DiagnosticDialog.vue'
 
-const { setItemsMenu, itemsMenu } = useItemsMenu();
+const { setItemsMenu } = useItemsMenu()
+const tenantStore = useTenantStore()
+const { env, toggleEnv } = useEndPoints()
+const logStore = useLogStore()
 
-// access the `store` variable anywhere in the component ✨
 const user = useUserStore()
 const router = useRouter()
-
 const filterStore = useFilterStore()
 
 const showPassword = ref(false)
 const userInput = ref({
   username: '',
   password: '',
-  email:''
+  email: ''
 })
 
 const dialog = ref(false)
+const isTechnicalError = ref(false)
 const text = ref('')
-
 const overlay = ref(false)
-
 const attempts = ref(0)
-
 const forgot = ref(false)
 
 const login = async () => {
   overlay.value = true
-  console.log(userInput.value.username , userInput.value.password )
-  await user.loginUserName(userInput.value.username , userInput.value.password )
+  await user.loginUserName(userInput.value.username, userInput.value.password)
   overlay.value = false
-  console.log(user.user)
-  if (user.auth){
-    router.push('/')
-  }
-  attempts.value++
-  if (!user.auth) {
-    text.value = 'El usuario o la contraseña ingresada es incorrecta.'
-    dialog.value = true
-  } else {
+
+  if (user.auth) {
     overlay.value = true
     await filterStore.setPer()
     await user.fetchRol()
     setItemsMenu(user.rol)
-    console.log(itemsMenu.value)
     overlay.value = false
     router.push('/')
+    return
+  }
+
+  attempts.value++
+  if (user.lastError) {
+    isTechnicalError.value = true
+    dialog.value = true
+  } else {
+    isTechnicalError.value = false
+    text.value = 'El usuario o la contraseña ingresada es incorrecta.'
+    dialog.value = true
   }
 }
 
 async function sendEmail() {
-  console.log(userInput.value.email)
   overlay.value = true
   await user.fetchUserEmail(userInput.value.email)
-  console.log(user.user)
-  forgot.value=false
+  forgot.value = false
   overlay.value = false
+}
+
+function openDiagnosticsFromError() {
+  dialog.value = false
+  logStore.openDialog()
 }
 </script>
 
 <template>
-  <v-card width="400" class="mx-auto mt-5">
-    <v-card-title>
-      <h2 class="display-1 ma-5">Acceso al sistema</h2>
-    </v-card-title>
-    <v-card-text class="ma-5">
-      <v-form @submit.prevent="login" v-if="!forgot">
-        <v-text-field label="Username" prepend-icon="mdi-account-circle" v-model="userInput.username" />
-        <v-text-field :type="showPassword ? 'text' : 'password'" label="Password" prepend-icon="mdi-lock"
-          :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'" @click:append="showPassword = !showPassword"
-          v-model="userInput.password" />
-        <div class="d-flex justify-end">
-          <v-btn type="submit" class="mt-4 align-right" color="primary" value="log in">Ingresar</v-btn>
+  <v-container class="fill-height d-flex flex-column align-center justify-center">
+    <v-card width="460" class="mx-auto elevation-4 rounded-lg">
+      <!-- Encabezado con Municipio Activo -->
+      <div class="pa-5 bg-grey-lighten-4 rounded-t-lg border-b text-center">
+        <v-avatar size="64" class="mb-2 elevation-1" rounded="sm" :color="tenantStore.activeTenantId === 'desarrollo' ? 'deep-purple-darken-1' : undefined">
+          <v-icon v-if="tenantStore.activeTenantId === 'desarrollo'" icon="mdi-flask" size="x-large" color="white"></v-icon>
+          <v-img v-else-if="tenantStore.tenantLogo" :src="tenantStore.tenantLogo" alt="Logo" />
+          <v-icon v-else icon="mdi-city" size="x-large" color="primary"></v-icon>
+        </v-avatar>
+        <h2 class="text-h6 font-weight-bold mb-0 text-primary">
+          {{ tenantStore.tenantName }}
+        </h2>
+        <div class="text-caption text-medium-emphasis">
+          {{ tenantStore.tenantLocation }}
         </div>
-      </v-form>
-      <v-form @submit.prevent="sendEmail" v-if="forgot">
-        <v-text-field label="email" prepend-icon="mdi-account-circle" v-model="userInput.email" type="email" />
-        <div class="d-flex justify-end">
-          <v-btn type="submit" class="mt-4 align-right" color="primary" value="send" >Enviar</v-btn>
-        </div>
-      </v-form>
-    </v-card-text>
-    <!-- <v-divider></v-divider>
-    <v-card-actions class="d-flex justify-end">
-      <div >
-        <v-btn color="primary" @click="forgot=true" v-if="!forgot">Recuperar contraseña</v-btn>
-        <v-btn color="primary" @click="forgot=false" v-if="forgot">Cancelar</v-btn>
-      </div>      
-    </v-card-actions> -->
-  </v-card>
 
-  <v-dialog v-model="dialog" width="auto">
-    <v-card max-width="400" prepend-icon="mdi-update" :text="text" title="Información">
-      <template v-slot:actions>
-        <v-btn class="ms-auto" text="Ok" @click="dialog = false"></v-btn>
-      </template>
+        <!-- Indicador y conmutador de ambiente -->
+        <div class="mt-3 d-flex align-center justify-center">
+          <v-chip
+            size="small"
+            :color="env === 'Desa' ? 'warning' : 'info'"
+            variant="flat"
+            class="font-weight-bold"
+          >
+            <v-icon :icon="env === 'Desa' ? 'mdi-flask' : 'mdi-server'" start size="x-small"></v-icon>
+            Ambiente: {{ env === 'Desa' ? 'Desarrollo' : 'Producción' }}
+          </v-chip>
+          <v-btn
+            size="x-small"
+            variant="text"
+            color="primary"
+            class="ms-2 text-none"
+            @click="toggleEnv"
+          >
+            {{ env === 'Desa' ? 'Cambiar a Prod' : 'Cambiar a Desa' }}
+          </v-btn>
+        </div>
+      </div>
+
+      <!-- Alerta de servidor de desarrollo -->
+      <v-alert
+        v-if="env === 'Desa'"
+        type="warning"
+        variant="tonal"
+        density="compact"
+        class="ma-4 mb-0 text-caption"
+        icon="mdi-alert-circle-outline"
+      >
+        Conectado al <strong>servidor de Desarrollo</strong> (pruebas).
+      </v-alert>
+
+      <v-card-text class="pa-5">
+        <h3 class="text-subtitle-1 font-weight-bold mb-3">Acceso al sistema</h3>
+        <v-form @submit.prevent="login" v-if="!forgot">
+          <v-text-field
+            label="Usuario"
+            prepend-inner-icon="mdi-account-circle"
+            variant="outlined"
+            density="comfortable"
+            v-model="userInput.username"
+          />
+          <v-text-field
+            :type="showPassword ? 'text' : 'password'"
+            label="Contraseña"
+            prepend-inner-icon="mdi-lock"
+            variant="outlined"
+            density="comfortable"
+            :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+            @click:append-inner="showPassword = !showPassword"
+            v-model="userInput.password"
+          />
+          <div class="d-flex justify-end mt-2">
+            <v-btn type="submit" color="primary" size="large" block class="elevation-1">
+              Ingresar
+            </v-btn>
+          </div>
+        </v-form>
+
+        <v-form @submit.prevent="sendEmail" v-if="forgot">
+          <v-text-field
+            label="Correo electrónico"
+            prepend-inner-icon="mdi-email"
+            variant="outlined"
+            density="comfortable"
+            v-model="userInput.email"
+            type="email"
+          />
+          <div class="d-flex justify-end gap-2 mt-2">
+            <v-btn variant="text" @click="forgot = false">Cancelar</v-btn>
+            <v-btn type="submit" color="primary">Enviar</v-btn>
+          </div>
+        </v-form>
+      </v-card-text>
+
+      <!-- Pie de tarjeta con acceso a diagnóstico -->
+      <div class="pa-3 bg-grey-lighten-4 border-t d-flex align-center justify-space-between">
+        <v-btn
+          variant="text"
+          size="x-small"
+          color="primary"
+          prepend-icon="mdi-bug-outline"
+          class="text-none"
+          @click="logStore.openDialog"
+        >
+          Diagnóstico y Logs del Sistema
+        </v-btn>
+        <span class="text-caption text-medium-emphasis">v1.0.0</span>
+      </div>
     </v-card>
-  </v-dialog>
 
-  <v-overlay :model-value="overlay" persistent class="align-center justify-center">
-    <v-progress-circular color="primary" size="64" indeterminate ></v-progress-circular>
-  </v-overlay>
+    <!-- Diálogo de Error / Notificación -->
+    <v-dialog v-model="dialog" max-width="500">
+      <v-card class="rounded-lg">
+        <v-card-title class="pa-4 bg-red-lighten-5 d-flex align-center text-error" v-if="isTechnicalError">
+          <v-icon icon="mdi-alert-circle-outline" class="me-2" color="error"></v-icon>
+          <span class="text-subtitle-1 font-weight-bold">Error de Conexión ({{ env }})</span>
+        </v-card-title>
+        <v-card-title class="pa-4 d-flex align-center" v-else>
+          <v-icon icon="mdi-information-outline" class="me-2" color="primary"></v-icon>
+          <span class="text-subtitle-1 font-weight-bold">Información de Acceso</span>
+        </v-card-title>
+
+        <v-card-text class="pa-4">
+          <div v-if="isTechnicalError">
+            <p class="mb-2">
+              No se pudo establecer comunicación con el servidor de <strong>{{ env === 'Desa' ? 'Desarrollo' : 'Producción' }}</strong>.
+            </p>
+            <v-alert type="error" variant="tonal" density="compact" class="text-caption font-mono mb-3">
+              <div><strong>Estado:</strong> {{ user.lastError?.status ? user.lastError.status + ' (' + user.lastError.statusText + ')' : user.lastError?.statusText }}</div>
+              <div class="text-truncate"><strong>URL:</strong> {{ user.lastError?.url }}</div>
+              <div v-if="user.lastError?.message" class="mt-1"><strong>Mensaje:</strong> {{ user.lastError.message }}</div>
+            </v-alert>
+            <p class="text-caption text-medium-emphasis mb-0">
+              Puedes abrir el panel de diagnóstico para verificar el endpoint, cambiar la URL o probar la conectividad (ping).
+            </p>
+          </div>
+          <div v-else>
+            {{ text }}
+          </div>
+        </v-card-text>
+
+        <v-card-actions class="pa-3 bg-grey-lighten-4 border-t">
+          <v-btn
+            v-if="isTechnicalError"
+            color="primary"
+            variant="tonal"
+            size="small"
+            prepend-icon="mdi-bug"
+            @click="openDiagnosticsFromError"
+          >
+            Ver Diagnóstico y Logs
+          </v-btn>
+          <v-spacer></v-spacer>
+          <v-btn color="grey-darken-2" variant="text" size="small" @click="dialog = false">
+            Cerrar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Overlay de Carga -->
+    <v-overlay :model-value="overlay" persistent class="align-center justify-center">
+      <v-progress-circular color="primary" size="64" indeterminate></v-progress-circular>
+    </v-overlay>
+
+    <!-- Componente Global de Diagnóstico -->
+    <DiagnosticDialog />
+  </v-container>
 </template>
 
-<style></style>
+<style scoped>
+.font-mono {
+  font-family: monospace;
+}
+.gap-2 {
+  gap: 8px;
+}
+</style>
