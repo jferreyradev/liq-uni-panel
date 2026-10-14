@@ -148,14 +148,14 @@ function copyLogsToClipboard() {
         <div class="d-flex align-center">
           <v-chip
             size="small"
-            :color="env === 'Desa' ? 'warning' : 'primary'"
+            :color="tenantStore.activeTenantId === 'desarrollo' ? 'warning' : 'primary'"
             variant="flat"
             class="me-2 font-weight-bold"
           >
-            {{ env === 'Desa' ? 'Ambiente: DESARROLLO' : 'Ambiente: PRODUCCIÓN' }}
+            {{ tenantStore.activeTenantId === 'desarrollo' ? 'Entorno: DESARROLLO' : 'Entorno: PRODUCCIÓN' }}
           </v-chip>
           <span class="text-caption text-medium-emphasis">
-            Municipio: <strong>{{ tenantStore.tenantName }}</strong> (Key: {{ tenantStore.tenantKey }}, Puerto: {{ tenantStore.tenantPort }})
+            Entorno Activo: <strong>{{ tenantStore.tenantName }}</strong> (Key: {{ tenantStore.tenantKey }}, Puerto: {{ tenantStore.tenantPort }})
           </span>
         </div>
 

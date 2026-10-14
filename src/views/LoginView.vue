@@ -5,13 +5,11 @@ import { useUserStore } from '@/stores/userStore'
 import { useFilterStore } from '@/stores/filterStore'
 import { useItemsMenu } from '@/composables/useItemsMenu'
 import { useTenantStore } from '@/stores/tenantStore'
-import { useEndPoints } from '@/composables/useEndPoints'
 import { useLogStore } from '@/stores/logStore'
 import DiagnosticDialog from '@/components/common/DiagnosticDialog.vue'
 
 const { setItemsMenu } = useItemsMenu()
 const tenantStore = useTenantStore()
-const { env, toggleEnv } = useEndPoints()
 const logStore = useLogStore()
 
 const user = useUserStore()
@@ -91,41 +89,7 @@ function openDiagnosticsFromError() {
         <div class="text-caption text-medium-emphasis">
           {{ tenantStore.tenantLocation }}
         </div>
-
-        <!-- Indicador y conmutador de ambiente -->
-        <div class="mt-3 d-flex align-center justify-center">
-          <v-chip
-            size="small"
-            :color="env === 'Desa' ? 'warning' : 'info'"
-            variant="flat"
-            class="font-weight-bold"
-          >
-            <v-icon :icon="env === 'Desa' ? 'mdi-flask' : 'mdi-server'" start size="x-small"></v-icon>
-            Ambiente: {{ env === 'Desa' ? 'Desarrollo' : 'Producción' }}
-          </v-chip>
-          <v-btn
-            size="x-small"
-            variant="text"
-            color="primary"
-            class="ms-2 text-none"
-            @click="toggleEnv"
-          >
-            {{ env === 'Desa' ? 'Cambiar a Prod' : 'Cambiar a Desa' }}
-          </v-btn>
-        </div>
       </div>
-
-      <!-- Alerta de servidor de desarrollo -->
-      <v-alert
-        v-if="env === 'Desa'"
-        type="warning"
-        variant="tonal"
-        density="compact"
-        class="ma-4 mb-0 text-caption"
-        icon="mdi-alert-circle-outline"
-      >
-        Conectado al <strong>servidor de Desarrollo</strong> (pruebas).
-      </v-alert>
 
       <!-- Indicador de conexión a Base de Datos (view/configServer) -->
       <div class="px-4 pt-3">
@@ -225,7 +189,7 @@ function openDiagnosticsFromError() {
       <v-card class="rounded-lg">
         <v-card-title class="pa-4 bg-red-lighten-5 d-flex align-center text-error" v-if="isTechnicalError">
           <v-icon icon="mdi-alert-circle-outline" class="me-2" color="error"></v-icon>
-          <span class="text-subtitle-1 font-weight-bold">Error de Conexión ({{ env }})</span>
+          <span class="text-subtitle-1 font-weight-bold">Error de Conexión — {{ tenantStore.tenantName }}</span>
         </v-card-title>
         <v-card-title class="pa-4 d-flex align-center" v-else>
           <v-icon icon="mdi-information-outline" class="me-2" color="primary"></v-icon>
@@ -235,7 +199,7 @@ function openDiagnosticsFromError() {
         <v-card-text class="pa-4">
           <div v-if="isTechnicalError">
             <p class="mb-2">
-              No se pudo establecer comunicación con el servidor de <strong>{{ env === 'Desa' ? 'Desarrollo' : 'Producción' }}</strong>.
+              No se pudo establecer comunicación con el servidor de <strong>{{ tenantStore.tenantName }}</strong>.
             </p>
             <v-alert type="error" variant="tonal" density="compact" class="text-caption font-mono mb-3">
               <div><strong>Estado:</strong> {{ user.lastError?.status ? user.lastError.status + ' (' + user.lastError.statusText + ')' : user.lastError?.statusText }}</div>

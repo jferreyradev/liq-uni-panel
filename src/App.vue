@@ -11,7 +11,6 @@ import { useLogStore } from '@/stores/logStore'
 import TenantSelector from '@/components/TenantSelector.vue'
 import DiagnosticDialog from '@/components/common/DiagnosticDialog.vue'
 
-const { setDesa, setProd, env } = useEndPoints()
 const storeFilter = useFilterStore()
 const tenantStore = useTenantStore()
 const store = useUserStore()
@@ -22,7 +21,6 @@ const theme = useTheme()
 const router = useRouter()
 const drawer = ref(false)
 
-// setProd() se eliminó para respetar el ambiente guardado en localStorage
 storeFilter.setConfig()
 
 function toggleTheme() {
@@ -32,20 +30,6 @@ function toggleTheme() {
 function handleLogout() {
   store.$reset()
   router.push('/login')
-}
-
-async function changeEnv() {
-  if (env.value === 'Desa') {
-    setProd()
-  } else {
-    setDesa()
-  }
-  // Si estaba autenticado, cerramos la sesión para evitar cruce de credenciales
-  if (store.auth) {
-    store.$reset()
-    router.push('/login')
-  }
-  await storeFilter.setConfig()
 }
 </script>
 
@@ -73,21 +57,6 @@ async function changeEnv() {
       <div class="me-2">
         <TenantSelector />
       </div>
-
-      <!-- Conmutador de Ambiente (Producción / Desarrollo) -->
-      <v-btn
-        class="text-caption me-1 font-weight-bold"
-        :color="env === 'Desa' ? 'warning' : 'white'"
-        :variant="env === 'Desa' ? 'flat' : 'tonal'"
-        @click="changeEnv"
-        size="small"
-      >
-        <v-icon :icon="env === 'Desa' ? 'mdi-flask' : 'mdi-server'" start size="small"></v-icon>
-        {{ env === 'Desa' ? 'Desarrollo' : 'Producción' }}
-        <v-tooltip activator="parent" location="bottom">
-          {{ env === 'Desa' ? 'Ambiente de pruebas activo. Clic para cambiar a Producción.' : 'Ambiente de producción activo. Clic para cambiar a Desarrollo.' }}
-        </v-tooltip>
-      </v-btn>
 
       <!-- Indicador de Base de Datos Conectada (view/configServer) -->
       <v-chip

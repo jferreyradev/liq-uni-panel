@@ -12,7 +12,7 @@ const tenantStore = useTenantStore()
 const userStore = useUserStore()
 const filterStore = useFilterStore()
 const liqStore = useLiqStore()
-const { env, toggleEnv, setDesa } = useEndPoints()
+const { setDesa, setProd } = useEndPoints()
 
 const tenants = computed(() => tenantStore.tenantsList)
 const activeTenant = computed(() => tenantStore.activeTenant)
@@ -22,9 +22,11 @@ async function selectTenant(tenantId) {
 
   tenantStore.setTenant(tenantId)
 
-  // Si se selecciona desarrollo, sincronizar el ambiente con Desa
+  // Sincronizar automáticamente: Desarrollo activa Desa, los municipios activan Prod
   if (tenantId === 'desarrollo') {
     setDesa()
+  } else {
+    setProd()
   }
 
   // Cada cambio de municipio cierra la sesión por seguridad
@@ -45,15 +47,6 @@ async function selectTenant(tenantId) {
   // Refrescar configuración y período del nuevo municipio
   await filterStore.setConfig()
   await filterStore.setPer()
-}
-
-async function handleToggleEnv() {
-  toggleEnv()
-  if (userStore.auth) {
-    userStore.$reset()
-    router.push('/login')
-  }
-  await filterStore.setConfig()
 }
 </script>
 
@@ -121,31 +114,6 @@ async function handleToggleEnv() {
             ></v-icon>
           </template>
         </v-list-item>
-
-        <v-divider class="my-1"></v-divider>
-
-        <!-- Conmutador de Ambiente en el menú -->
-        <div class="px-3 py-2 d-flex align-center justify-space-between bg-grey-lighten-4 rounded-b">
-          <div class="d-flex align-center">
-            <v-icon
-              :icon="env === 'Desa' ? 'mdi-flask' : 'mdi-server'"
-              size="small"
-              :color="env === 'Desa' ? 'warning' : 'primary'"
-              class="me-1"
-            ></v-icon>
-            <span class="text-caption font-weight-medium">
-              Ambiente: <strong>{{ env === 'Desa' ? 'Desarrollo' : 'Producción' }}</strong>
-            </span>
-          </div>
-          <v-btn
-            size="x-small"
-            :color="env === 'Desa' ? 'warning' : 'primary'"
-            variant="flat"
-            @click.stop="handleToggleEnv"
-          >
-            {{ env === 'Desa' ? 'Ir a Prod' : 'Ir a Desa' }}
-          </v-btn>
-        </div>
       </v-list>
     </v-menu>
   </div>
