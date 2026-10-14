@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watchEffect } from 'vue'
 import { useTheme } from 'vuetify'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
@@ -20,6 +20,11 @@ const { itemsMenu, setItemsMenu } = useItemsMenu()
 const theme = useTheme()
 const router = useRouter()
 const drawer = ref(false)
+
+watchEffect(() => {
+  const shortName = tenantStore?.tenantShortName
+  document.title = shortName ? `Liq Panel — ${shortName}` : 'Liq Panel'
+})
 
 // configServer solo se consulta una vez que el usuario está logueado
 if (store.auth) {
