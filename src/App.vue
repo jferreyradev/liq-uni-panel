@@ -215,8 +215,8 @@ function handleLogout() {
           <v-list-item prepend-icon="mdi-cogs" title="Procesos" @click="router.push('/procesos')" />
           <v-list-item prepend-icon="mdi-bank-transfer" title="Acreditaciones" @click="router.push('/acredit')" />
           <v-list-item prepend-icon="mdi-shield-check" title="Previsional" @click="router.push('/prevision')" />
+          <v-list-item prepend-icon="mdi-hospital-box" title="Obra Social IPSST" @click="router.push('/ipsst')" />
           <v-list-item prepend-icon="mdi-chart-box-outline" title="Reportes" @click="router.push('/repo')" />
-          <v-list-item prepend-icon="mdi-folder-file-outline" title="Exportación de Archivos" @click="router.push('/archivos')" />
         </template>
 
         <v-divider class="my-2"></v-divider>

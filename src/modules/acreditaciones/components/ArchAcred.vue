@@ -1,24 +1,21 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import RepoHeader from "@/shared/components/RepoHeader.vue";
 import { useFilterStore } from "@/stores/filterStore";
-import { useEndPoints } from "@/composables/useEndPoints";
-import { useFetch } from "@/composables/useFetch";
 
-const preview = ref(false);
-const downloading = ref(false);
-const { apiBase, getBoletasHeaders, buildApiHeaders } = useEndPoints();
+const props = defineProps({
+  cab: {
+    type: Object,
+    default: null,
+  },
+  detalle: {
+    type: Array,
+    default: () => [],
+  },
+});
+
 const store = useFilterStore();
-
-function useResumenAcred(getId) {
-  const headersFn = buildApiHeaders || getBoletasHeaders || (() => ({}));
-  return useFetch(
-    () => `${apiBase.value}/api/view/archivoAcred?${getId()}`,
-    () => ({ headers: headersFn() })
-  );
-}
-
-const { data, error, isPending } = useResumenAcred(() => store.filterStringLey);
+const preview = ref(false);
 
 const headers = [
   {
@@ -28,76 +25,57 @@ const headers = [
   },
 ];
 
-async function downloadAcred() {
-  downloading.value = true;
-  const headersFn = buildApiHeaders || getBoletasHeaders || (() => ({}));
-  const url = `${apiBase.value}/api/txt/archivoAcred?${store.filterStringLey}`;
-  const filename = `Archivo_Acreditaciones_${store.periodoString || "banco"}.txt`;
+const lineasTXT = computed(() => {
+  if (!props.detalle || props.detalle.length === 0) return [];
+  return props.detalle.map((item) => {
+    const orden = String(item.ORDEN || "").padStart(5, "0");
+    const dni = String(item.DNI || "").padStart(11, "0");
+    const cuenta = String(item.CUENTA || "").trim().padEnd(22, " ");
+    const importeCentavos = Math.round(
+      (Number(item.CUOTA) || Number(item.NETO) || 0) * 100
+    );
+    const importeStr = String(importeCentavos).padStart(12, "0");
+    const nombre = `${item.APELLIDO || ""} ${item.NOMBRE || ""}`
+      .trim()
+      .substring(0, 30)
+      .padEnd(30, " ");
+    return {
+      CADENA: `${orden} ${dni} ${cuenta} ${importeStr} ${nombre}`,
+    };
+  });
+});
 
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "text/plain",
-        ...headersFn(),
-      },
-    });
+function downloadAcred() {
+  if (!lineasTXT.value || lineasTXT.value.length === 0) return;
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const blob = await response.blob();
-    if (blob.size === 0 && data.value && data.value.length > 0) {
-      throw new Error("Respuesta vacía del servidor, generando fallback...");
-    }
-
-    const urlSalida = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = urlSalida;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(urlSalida);
-  } catch (err) {
-    if (data.value && data.value.length > 0) {
-      let largeString = "";
-      for (let i = 0; i < data.value.length; i++) {
-        const item = data.value[i];
-        const linea = item.CADENA || item.cadena || "";
-        largeString += linea + "\r\n";
-      }
-      const archivo = new Blob([largeString], { type: "text/plain;charset=utf-8" });
-      const urlSalida = URL.createObjectURL(archivo);
-      const a = document.createElement("a");
-      a.href = urlSalida;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(urlSalida);
-    } else {
-      console.error("Error al descargar archivo de acreditación:", err);
-    }
-  } finally {
-    downloading.value = false;
-  }
+  const content = lineasTXT.value.map((l) => l.CADENA).join("\r\n");
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const urlSalida = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = urlSalida;
+  a.download = `Acreditacion_Banco_${store.liqCompactString || "archivo"}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(urlSalida);
 }
 </script>
 
 <template>
   <v-container class="px-0">
-    <RepoHeader title="Archivo de Acreditaciones para Banco" :subtitle="store.liqString">
+    <RepoHeader title="Archivo TXT para Banco" :subtitle="store.liqString">
       <div class="d-flex align-center ga-2">
-        <span v-if="data && data.length > 0" class="text-caption text-grey-darken-1 font-weight-medium me-2">
-          ({{ data.length }} reg.)
+        <span
+          v-if="cab && lineasTXT.length > 0"
+          class="text-caption text-grey-darken-1 font-weight-medium me-2"
+        >
+          ({{ lineasTXT.length }} reg.)
         </span>
         <v-btn
           variant="tonal"
           color="primary"
           :prepend-icon="preview ? 'mdi-eye-off' : 'mdi-eye'"
-          :disabled="!data || data.length === 0"
+          :disabled="!cab || lineasTXT.length === 0"
           @click="preview = !preview"
         >
           {{ preview ? 'Ocultar Previsualización' : 'Previsualizar' }}
@@ -105,8 +83,7 @@ async function downloadAcred() {
         <v-btn
           color="primary"
           prepend-icon="mdi-download"
-          :loading="downloading"
-          :disabled="!data || data.length === 0"
+          :disabled="!cab || lineasTXT.length === 0"
           @click="downloadAcred"
         >
           Descargar TXT
@@ -114,25 +91,16 @@ async function downloadAcred() {
       </div>
     </RepoHeader>
 
-    <div v-if="isPending" class="py-2 text-center text-medium-emphasis">
-      <v-progress-circular indeterminate color="primary" size="20" class="me-2" />
-      Cargando archivo de acreditación...
+    <div v-if="!cab" class="py-2 text-medium-emphasis">
+      No existen registros de archivo para {{ store.liqString }}.
     </div>
 
-    <div v-else-if="error" class="text-error py-2">
-      No se pudo obtener el archivo de acreditación.
-    </div>
-
-    <div v-else-if="!data || data.length === 0" class="py-2 text-medium-emphasis">
-      No existen registros de archivo para el filtro seleccionado.
-    </div>
-
-    <div v-if="preview && data && data.length > 0" style="overflow-x: auto;">
+    <div v-else-if="preview && lineasTXT.length > 0" style="overflow-x: auto;">
       <v-data-table
         class="text-caption font-mono"
         hover
         density="compact"
-        :items="data"
+        :items="lineasTXT"
         :headers="headers"
         :items-per-page="10"
       >

@@ -468,8 +468,8 @@ export const useUserStore = defineStore('userStore', {
           data.push({
             IDROL: this.user?.ROL || 5,
             IDMENU: 7,
-            DESCRIPCION: 'Exportación de Archivos',
-            PATH: '/archivos'
+            DESCRIPCION: 'Obra Social IPSST',
+            PATH: '/ipsst'
           })
         }
 

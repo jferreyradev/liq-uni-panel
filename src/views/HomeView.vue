@@ -59,10 +59,17 @@ const modules = [
   },
   {
     title: 'Previsional',
-    description: 'Declaraciones juradas y archivos para IPSST',
+    description: 'Declaraciones juradas previsionales y aportes jubilatorios',
     icon: 'mdi-shield-check',
     color: 'purple',
     route: '/prevision'
+  },
+  {
+    title: 'Obra Social IPSST',
+    description: 'Planilla de retenciones y archivos de exportación para IPSST',
+    icon: 'mdi-hospital-box',
+    color: 'teal-darken-2',
+    route: '/ipsst'
   },
   {
     title: 'Reportes y Planillas',
