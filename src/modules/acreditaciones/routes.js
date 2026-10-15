@@ -6,6 +6,7 @@ export const acreditacionesRoutes = [
   },
   {
     path: "/acred",
-    redirect: "/acredit",
+    name: "acreditaciones",
+    component: () => import("./views/AcreditacionView.vue"),
   },
 ];

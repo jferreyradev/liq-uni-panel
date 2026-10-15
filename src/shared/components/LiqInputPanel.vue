@@ -15,6 +15,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  esley: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const liq = [
@@ -64,6 +68,15 @@ const months = [
 
 const month = ref("");
 const year = ref("");
+const esLey = ref(false);
+
+watch(
+  () => store.ley,
+  (newVal) => {
+    esLey.value = Boolean(newVal);
+  },
+  { immediate: true }
+);
 
 watch(
   () => [store.month, store.year],
@@ -99,6 +112,9 @@ const handleClick = () => {
   }
   if (props.nroadi) {
     store.nroadi = Number(nroAdi.value) || 0;
+  }
+  if (props.esley) {
+    store.ley = esLey.value ? 1 : 0;
   }
   const idx = months.indexOf(month.value);
   if (idx >= 0) {
@@ -143,6 +159,14 @@ const handleClick = () => {
           required
           type="number"
         ></v-text-field>
+      </v-col>
+      <v-col v-if="props.esley" align-self="center">
+        <v-checkbox
+          v-model="esLey"
+          label="Es Ley"
+          density="compact"
+          hide-details
+        ></v-checkbox>
       </v-col>
       <v-col v-if="$slots.default" align-self="center">
         <slot></slot>
