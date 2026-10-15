@@ -144,7 +144,7 @@ const handleClick = () => {
           type="number"
         ></v-text-field>
       </v-col>
-      <v-col>
+      <v-col v-if="$slots.default" align-self="center">
         <slot></slot>
       </v-col>
       <v-col align-self="center">
