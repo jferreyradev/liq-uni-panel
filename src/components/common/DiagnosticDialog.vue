@@ -263,6 +263,11 @@ function copyLogsToClipboard() {
                 <div class="mb-2"><strong>Ambiente:</strong> {{ log.env || 'N/A' }} | <strong>Municipio:</strong> {{ log.tenant || 'N/A' }}</div>
                 <div class="mb-2"><strong>URL Completa:</strong> {{ log.url }}</div>
                 
+                <div v-if="log.params && Object.keys(log.params).length > 0" class="mb-2">
+                  <strong>Parámetros (Query):</strong>
+                  <pre class="bg-white pa-2 rounded border mt-1 text-caption">{{ JSON.stringify(log.params, null, 2) }}</pre>
+                </div>
+
                 <div class="mb-2">
                   <strong>Headers Enviados:</strong>
                   <pre class="bg-white pa-2 rounded border mt-1 text-caption">{{ JSON.stringify(log.headers, null, 2) }}</pre>

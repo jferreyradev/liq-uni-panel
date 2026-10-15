@@ -42,6 +42,7 @@ export const useLogStore = defineStore('logStore', () => {
       category: entry.category || 'HTTP',
       method: entry.method || 'GET',
       url: entry.url || '',
+      params: entry.params || null,
       status: entry.status !== undefined ? entry.status : null,
       statusText: entry.statusText || '',
       headers: entry.headers || {},

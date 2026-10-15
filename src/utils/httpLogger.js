@@ -326,6 +326,7 @@ export function setupHttpLogger() {
           category: 'HTTP',
           method,
           url: fullUrl,
+          params,
           headers: parsedHeaders,
           status,
           statusText,
