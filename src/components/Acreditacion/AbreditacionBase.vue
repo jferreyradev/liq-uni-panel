@@ -4,7 +4,7 @@ import { leerDatos } from './llamadaAPI'
 import AcreditacionGeneraciones from './AcreditacionGeneraciones.vue'
 import AcreditacionTXT from './AcreditacionTXT.vue'
 import AcreditacionesDetalle from './AcreditacionesDetalle.vue'
-import { getVto } from '@/utils/formatos'
+import { getVto, getPeriodoFromMMYYYY } from '@/utils/formatos'
 import { tipoLiq } from '@/utils/tipos'
 import { rules } from '@/utils/reglasValidacion'
 
@@ -39,7 +39,7 @@ async function EstableceLiq() {
     return
   }
   }
-  const periodoCompleto = '01/' + periodoLiq.value
+  const periodoCompleto = getPeriodoFromMMYYYY(periodoLiq.value)
   const url = `view/acredBancoCab?Periodo=${periodoCompleto}&TipoLiquidacionId=${tipoLiqSel.value.value}&GrupoAdicionalId=${grupoAdicionalId.value}`
   const { datos, operacionOk } = await leerDatos(url)
   if (operacionOk && datos && datos.length > 0) {

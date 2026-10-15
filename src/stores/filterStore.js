@@ -25,23 +25,45 @@ const meses = [
 ]
 
 export const useFilterStore = defineStore('filter', {
-  state: () => ({
-    tipoliq: 1,
-    nroadi: 0,
-    year: 0,
-    month: 0,
-    ley: 0,
-    serverConfig: {},
-    serverConfigLoading: false,
-    serverConfigError: null
-  }),
+  state: () => {
+    const today = new Date()
+    return {
+      tipoliq: 1,
+      nroadi: 0,
+      year: today.getFullYear(),
+      month: String(today.getMonth() + 1).padStart(2, '0'),
+      ley: 0,
+      serverConfig: {},
+      serverConfigLoading: false,
+      serverConfigError: null
+    }
+  },
   getters: {
-    filterString: (state) =>
-      `TipoLiquidacionId=${state.tipoliq}&GrupoAdicionalId=${state.nroadi}&Periodo=01/${state.month}/${state.year}`,
-    filterStringLey: (state) =>
-      `TipoLiquidacionId=${state.tipoliq}&GrupoAdicionalId=${state.nroadi}&Ley=${state.ley}&Periodo=01/${state.month}/${state.year}`,
-    filterPeriodoString: (state) => `Periodo=01/${state.month}/${state.year}`,
-    periodoString: (state) => `${meses[state.month - 1]} - ${state.year}`,
+    periodoDMY: (state) => {
+      const m = String(Number(state.month) || (new Date().getMonth() + 1)).padStart(2, '0')
+      const y = state.year || new Date().getFullYear()
+      return `01/${m}/${y}`
+    },
+    filterString: (state) => {
+      const m = String(Number(state.month) || (new Date().getMonth() + 1)).padStart(2, '0')
+      const y = state.year || new Date().getFullYear()
+      return `TipoLiquidacionId=${state.tipoliq}&GrupoAdicionalId=${state.nroadi}&Periodo=01/${m}/${y}`
+    },
+    filterStringLey: (state) => {
+      const m = String(Number(state.month) || (new Date().getMonth() + 1)).padStart(2, '0')
+      const y = state.year || new Date().getFullYear()
+      return `TipoLiquidacionId=${state.tipoliq}&GrupoAdicionalId=${state.nroadi}&Ley=${state.ley}&Periodo=01/${m}/${y}`
+    },
+    filterPeriodoString: (state) => {
+      const m = String(Number(state.month) || (new Date().getMonth() + 1)).padStart(2, '0')
+      const y = state.year || new Date().getFullYear()
+      return `Periodo=01/${m}/${y}`
+    },
+    periodoString: (state) => {
+      const mIdx = (Number(state.month) || 1) - 1
+      const mName = meses[mIdx] || ''
+      return `${mName} - ${state.year}`
+    },
     liqString: (state) =>
       `${liqMap.get(state.tipoliq.toString())}-${state.nroadi}  ${meses[state.month - 1]}-${state.year}`,
     getURLAPI: () => {
@@ -81,8 +103,9 @@ export const useFilterStore = defineStore('filter', {
         }
         const data = await res.json()
         if (data?.[0]?.PERIODO) {
-          this.year = data[0].PERIODO.split('-')[0]
-          this.month = data[0].PERIODO.split('-')[1]
+          const parts = data[0].PERIODO.split('-')
+          this.year = Number(parts[0]) || parts[0]
+          this.month = String(parts[1] || '').padStart(2, '0')
         }
       } catch (err) {
         console.error('[filterStore setPer]', err)

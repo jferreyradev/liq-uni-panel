@@ -10,9 +10,10 @@ import {
 import { utils, writeFileXLSX } from 'xlsx'
 
 const props = defineProps(['periodo'])
-console.log('periodo', props.periodo)
-const d = props.periodo.split('/')
-const periodoId = parseInt(d[1]) * 100 + parseInt(d[0])
+const d = props.periodo ? props.periodo.split('/') : []
+const monthVal = d.length === 3 ? parseInt(d[1], 10) : parseInt(d[0], 10)
+const yearVal = d.length === 3 ? parseInt(d[2], 10) : parseInt(d[1], 10)
+const periodoId = (yearVal || 0) * 100 + (monthVal || 0)
 console.log('PeriodoId', periodoId)
 
 // lectura de registros

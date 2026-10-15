@@ -5,7 +5,12 @@ export function financial(x) {
 export const getVto = (vto) => {
   if (vto) {
     const d = vto.split('-')
-    return `${d[1]}/${d[0]}`
+    if (d.length >= 2) {
+      const month = String(d[1]).padStart(2, '0')
+      const year = d[0]
+      return `${month}/${year}`
+    }
+    return vto
   }
   return null
 }
@@ -13,45 +18,104 @@ export const getVto = (vto) => {
 export const getFechaDMY = (vto) => {
   if (vto) {
     const d = vto.substring(0, 10).split('-')
-    return `${d[2]}/${d[1]}/${d[0]}`
+    if (d.length === 3) {
+      const day = String(d[2]).padStart(2, '0')
+      const month = String(d[1]).padStart(2, '0')
+      const year = d[0]
+      return `${day}/${month}/${year}`
+    }
+    return vto
   }
   return null
 }
 
 export const getVtoActual = () => {
   const fecha = new Date()
-  const mes = fecha.getMonth() + 1
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0')
   const anio = fecha.getFullYear()
-  let resultado = mes + '/' + anio
-  if (mes < 10) resultado = '0' + resultado
-  return resultado
+  return `${mes}/${anio}`
 }
 
 export const validaMMYYYY = (vto) => {
-  if (vto.length < 6 || vto.length > 7) return 'Formato inválido'
+  if (!vto) return 'Formato inválido'
   const d = vto.split('/')
-  if (d.length < 2) return 'Formato inválido'
-  if (d[0] < 1 || d[0] > 12) return 'Formato de Mes inválido'
-  if (d[1] < 2020 || d[1] > 2060) return 'Formato de Año inválido'
+  if (d.length !== 2) return 'Formato inválido'
+  const m = Number(d[0])
+  const y = Number(d[1])
+  if (isNaN(m) || m < 1 || m > 12) return 'Formato de Mes inválido'
+  if (isNaN(y) || y < 2020 || y > 2060) return 'Formato de Año inválido'
   return null
 }
 
+export const normalizePeriodoDMY = (periodo) => {
+  if (!periodo) return ''
+  const str = String(periodo).trim()
+  if (!str) return ''
+
+  // Formato con guiones (YYYY-MM o YYYY-MM-DD o ISO)
+  if (str.includes('-')) {
+    const cleanStr = str.split('T')[0]
+    const parts = cleanStr.split('-')
+    if (parts.length >= 2) {
+      const year = parts[0]
+      const month = String(parts[1]).padStart(2, '0')
+      return `01/${month}/${year}`
+    }
+  }
+
+  // Formato con barras (MM/YYYY, M/YYYY, DD/MM/YYYY, D/M/YYYY)
+  if (str.includes('/')) {
+    const parts = str.split('/')
+    if (parts.length === 2) {
+      const month = String(parts[0]).padStart(2, '0')
+      const year = parts[1]
+      return `01/${month}/${year}`
+    }
+    if (parts.length === 3) {
+      const day = String(parts[0]).padStart(2, '0')
+      const month = String(parts[1]).padStart(2, '0')
+      const year = parts[2]
+      return `${day}/${month}/${year}`
+    }
+  }
+
+  return str
+}
+
 export const getPeriodoFromMMYYYY = (periodo) => {
-  const d = periodo.split('/')
-  let fecha = '01/' + d[0] + '/' + d[1]
-  return fecha
+  if (!periodo) return ''
+  const normalized = normalizePeriodoDMY(periodo)
+  const parts = normalized.split('/')
+  if (parts.length === 3) {
+    const month = String(parts[1]).padStart(2, '0')
+    const year = parts[2]
+    return `01/${month}/${year}`
+  }
+  return normalized
 }
 
 export const getFechaToAPIFromMMYYYY = (periodo) => {
-  const d = periodo.split('/')
-  let fecha = d[1] + '-' + d[0] + '-01' + 'T03:00:00.000Z'
-  return fecha
+  if (!periodo) return ''
+  const dmy = getPeriodoFromMMYYYY(periodo)
+  const parts = dmy.split('/')
+  if (parts.length === 3) {
+    const month = String(parts[1]).padStart(2, '0')
+    const year = parts[2]
+    return `${year}-${month}-01T03:00:00.000Z`
+  }
+  return ''
 }
 
 export const getFechaToAPIFromDDMMYYYY = (fechaOrigen) => {
-  const d = fechaOrigen.split('/')
-  let fecha = d[2] + '-' + d[1] + '-' + d[0] + 'T03:00:00.000Z'
-  return fecha
+  if (!fechaOrigen) return ''
+  const parts = fechaOrigen.split('/')
+  if (parts.length === 3) {
+    const day = String(parts[0]).padStart(2, '0')
+    const month = String(parts[1]).padStart(2, '0')
+    const year = parts[2]
+    return `${year}-${month}-${day}T03:00:00.000Z`
+  }
+  return ''
 }
 
 export const getTipoDescripcion = (id, descripcion, forma = 1) => {

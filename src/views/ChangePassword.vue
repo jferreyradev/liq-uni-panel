@@ -1,9 +1,7 @@
 <script setup>
-import PasswordChange from '@/components/PasswordChange.vue';
+import ChangePassword from "@/modules/auth/views/ChangePassword.vue";
 </script>
 
 <template>
-  <main>
-    <PasswordChange />
-  </main>
+  <ChangePassword />
 </template>

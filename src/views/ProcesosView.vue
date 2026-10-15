@@ -1,7 +1,7 @@
 <script setup>
-    import PanelCtrlLiq from '@/components/EjecProcesos/PanelCtrlLiq.vue'
-
+import ProcesosView from "@/modules/liquidaciones/views/ProcesosView.vue";
 </script>
+
 <template>
-    <PanelCtrlLiq></PanelCtrlLiq>
+  <ProcesosView />
 </template>

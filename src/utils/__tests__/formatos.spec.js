@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { getBoletaPdfFileName } from '../formatos.js'
+import {
+  getBoletaPdfFileName,
+  getPeriodoFromMMYYYY,
+  getFechaToAPIFromMMYYYY,
+  getFechaToAPIFromDDMMYYYY
+} from '../formatos.js'
 
 describe('getBoletaPdfFileName', () => {
   it('genera nombre para liquidación mensual con tildes y espacios', () => {
@@ -81,5 +86,54 @@ describe('getBoletaPdfFileName', () => {
       nombre: null
     })
     expect(result).toBe('012020_MEN_SIN_APELLIDO_SIN_NOMBRE.pdf')
+  })
+})
+
+describe('getPeriodoFromMMYYYY y normalización de períodos', () => {
+  it('garantiza formato DD/MM/YYYY con mes de dos dígitos a partir de M/YYYY', () => {
+    expect(getPeriodoFromMMYYYY('9/2026')).toBe('01/09/2026')
+    expect(getPeriodoFromMMYYYY('1/2025')).toBe('01/01/2025')
+  })
+
+  it('preserva formato DD/MM/YYYY a partir de MM/YYYY', () => {
+    expect(getPeriodoFromMMYYYY('09/2026')).toBe('01/09/2026')
+    expect(getPeriodoFromMMYYYY('12/2024')).toBe('01/12/2024')
+  })
+
+  it('normaliza si ya viene con DD/MM/YYYY o D/M/YYYY', () => {
+    expect(getPeriodoFromMMYYYY('01/09/2026')).toBe('01/09/2026')
+    expect(getPeriodoFromMMYYYY('01/9/2026')).toBe('01/09/2026')
+    expect(getPeriodoFromMMYYYY('15/9/2026')).toBe('01/09/2026')
+  })
+
+  it('normaliza a partir de formatos con guiones YYYY-MM o YYYY-MM-DD', () => {
+    expect(getPeriodoFromMMYYYY('2026-09')).toBe('01/09/2026')
+    expect(getPeriodoFromMMYYYY('2026-9')).toBe('01/09/2026')
+    expect(getPeriodoFromMMYYYY('2026-09-01')).toBe('01/09/2026')
+  })
+
+  it('maneja valores vacíos o nulos de forma segura', () => {
+    expect(getPeriodoFromMMYYYY('')).toBe('')
+    expect(getPeriodoFromMMYYYY(null)).toBe('')
+    expect(getPeriodoFromMMYYYY(undefined)).toBe('')
+  })
+})
+
+describe('getFechaToAPIFromMMYYYY', () => {
+  it('convierte M/YYYY o MM/YYYY a ISO con mes de 2 dígitos', () => {
+    expect(getFechaToAPIFromMMYYYY('9/2026')).toBe('2026-09-01T03:00:00.000Z')
+    expect(getFechaToAPIFromMMYYYY('09/2026')).toBe('2026-09-01T03:00:00.000Z')
+  })
+
+  it('convierte DD/MM/YYYY o YYYY-MM a ISO de forma segura', () => {
+    expect(getFechaToAPIFromMMYYYY('01/09/2026')).toBe('2026-09-01T03:00:00.000Z')
+    expect(getFechaToAPIFromMMYYYY('2026-09')).toBe('2026-09-01T03:00:00.000Z')
+  })
+})
+
+describe('getFechaToAPIFromDDMMYYYY', () => {
+  it('convierte DD/MM/YYYY a ISO con día y mes con 2 dígitos', () => {
+    expect(getFechaToAPIFromDDMMYYYY('1/9/2026')).toBe('2026-09-01T03:00:00.000Z')
+    expect(getFechaToAPIFromDDMMYYYY('15/09/2026')).toBe('2026-09-15T03:00:00.000Z')
   })
 })

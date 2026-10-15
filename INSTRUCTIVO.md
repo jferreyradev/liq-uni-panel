@@ -14,6 +14,7 @@ Haz clic en la ficha correspondiente a la tarea que vas a realizar:
 
 | Módulo | Ficha Técnica | Cuándo consultarla |
 | :--- | :--- | :--- |
+| **Arquitectura Modular** | [`docs/00-arquitectura-modular.md`](file:///Users/jferreyradev/projects/ag/liq-panel/docs/00-arquitectura-modular.md) | Guía de referencia: estructura por dominios, servicios compartidos y cómo agregar un nuevo módulo. |
 | **Multi-Tenant y Endpoints** | [`docs/01-multi-tenant-y-endpoints.md`](file:///Users/jferreyradev/projects/ag/liq-panel/docs/01-multi-tenant-y-endpoints.md) | Cambiar puertos, claves, logos, URLs o agregar un nuevo municipio. |
 | **Reportes y Planillas** | [`docs/02-reportes.md`](file:///Users/jferreyradev/projects/ag/liq-panel/docs/02-reportes.md) | Modificar columnas, filtros, endpoints o disponibilidad por municipio. |
 | **Boletas y Recibos PDF** | [`docs/03-boletas-y-recibos.md`](file:///Users/jferreyradev/projects/ag/liq-panel/docs/03-boletas-y-recibos.md) | Modificar diseño de boleta, formato de nombre de archivo o descarga. |
@@ -40,7 +41,7 @@ Haz clic en la ficha correspondiente a la tarea que vas a realizar:
 # Servidor de desarrollo local
 npm run dev
 
-# Ejecutar todas las pruebas unitarias (77 tests)
+# Ejecutar todas las pruebas unitarias (93 tests)
 npm run test:unit
 
 # Compilar para producción (validación de build y assets)
