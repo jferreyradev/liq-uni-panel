@@ -106,8 +106,8 @@ function cargarPeriodoAnterior() {
 </script>
 
 <template>
-  <v-card flat class="border rounded-lg mb-4">
-    <RepoHeader title="Resumen de Retenciones - Obra Social IPSST" :subtitle="store.periodoString">
+  <v-container class="px-0">
+    <RepoHeader title="Planilla de Retenciones IPSST" :subtitle="store.periodoString">
       <v-btn
         color="primary"
         prepend-icon="mdi-file-excel"
@@ -118,63 +118,44 @@ function cargarPeriodoAnterior() {
       </v-btn>
     </RepoHeader>
 
-    <v-card-text>
-      <div v-if="isPending" class="d-flex align-center pa-4 text-medium-emphasis">
-        <v-progress-circular indeterminate color="primary" class="me-3" size="24"></v-progress-circular>
-        Cargando resumen IPSST...
-      </div>
+    <div v-if="isPending" class="py-2 text-center text-medium-emphasis">
+      <v-progress-circular indeterminate color="primary" size="20" class="me-2" />
+      Cargando planilla IPSST...
+    </div>
 
-      <div v-else-if="error" class="text-error pa-4">
-        <v-icon icon="mdi-alert-circle" class="me-1"></v-icon>
-        No se pudo obtener el resumen de retenciones IPSST.
-      </div>
+    <div v-else-if="error" class="text-error py-2">
+      No se pudo obtener la planilla de retenciones.
+    </div>
 
-      <div v-else-if="data && data.length === 0" class="text-medium-emphasis text-center pa-6">
-        <v-icon icon="mdi-information-outline" size="large" class="mb-2 text-warning"></v-icon>
-        <div class="text-subtitle-1 font-weight-medium">
-          No existen retenciones IPSST registradas para {{ store.periodoString }}.
-        </div>
-        <div class="mt-1 text-caption text-grey">
-          El período activo aún no cuenta con liquidaciones cerradas para IPSST.
-        </div>
-        <v-btn
-          color="primary"
-          variant="tonal"
-          size="small"
-          class="mt-4"
-          prepend-icon="mdi-history"
-          @click="cargarPeriodoAnterior"
-        >
-          Cargar último período con datos (Agosto 2026)
-        </v-btn>
-      </div>
+    <div v-else-if="!data || data.length === 0" class="py-2 text-medium-emphasis">
+      No existen retenciones para {{ store.periodoString }}.
+    </div>
 
-      <v-data-table
-        v-else-if="data"
-        class="text-caption"
-        hover
-        density="compact"
-        :items="data"
-        :headers="headers"
-        :items-per-page="15"
-      >
-        <template v-slot:item="{ item }">
-          <tr class="pa-0 ma-0">
-            <td class="text-left py-1">{{ getVto(item.FECHADEV) }}</td>
-            <td class="text-right py-1 font-weight-medium">{{ item.CODIGO }}</td>
-            <td class="text-right py-1">{{ item.SUBCOD }}</td>
-            <td class="text-left py-1">{{ item.DESCBOLETA }}</td>
-            <td class="text-right py-1 font-weight-medium">{{ financial(item.IMPORTE) }}</td>
-          </tr>
-        </template>
+    <v-data-table
+      v-else
+      class="text-caption"
+      hover
+      density="compact"
+      :items="data"
+      :headers="headers"
+      :items-per-page="15"
+    >
+      <template v-slot:item="{ item }">
+        <tr class="pa-0 ma-0">
+          <td class="text-left py-1">{{ getVto(item.FECHADEV) }}</td>
+          <td class="text-right py-1 font-weight-medium">{{ item.CODIGO }}</td>
+          <td class="text-right py-1">{{ item.SUBCOD }}</td>
+          <td class="text-left py-1">{{ item.DESCBOLETA }}</td>
+          <td class="text-right py-1 font-weight-medium">{{ financial(item.IMPORTE) }}</td>
+        </tr>
+      </template>
 
-        <template v-slot:body.append>
-          <tr class="bg-blue-lighten-5 font-weight-bold">
-            <td colspan="4" class="text-right py-2">Total Retenciones IPSST:</td>
-            <td class="text-right py-2 text-primary font-weight-bold">{{ financial(totalImporte) }}</td>
-          </tr>
-        </template>
-      </v-data-table>
-    </v-card-text>
-  </v-card>
+      <template v-slot:body.append>
+        <tr class="bg-blue-lighten-5 font-weight-bold">
+          <td colspan="4" class="text-right py-2">Total Retenciones IPSST:</td>
+          <td class="text-right py-2 text-primary font-weight-bold">{{ financial(totalImporte) }}</td>
+        </tr>
+      </template>
+    </v-data-table>
+  </v-container>
 </template>
