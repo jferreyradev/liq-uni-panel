@@ -28,11 +28,12 @@ const liqHeaders = [
 ]
 
 function handleClick(item) {
-  emit('select', item.LIQUIDACIONID,  {
-    apellido: item.APELLIDO,
-    nombre: item.NOMBRE,
-    orden: item.ORDEN,
-    dni: item.DOCUMENTO
+  const row = item?.raw || item
+  emit('select', row.LIQUIDACIONID || item.LIQUIDACIONID, {
+    apellido: row.APELLIDO || item.APELLIDO,
+    nombre: row.NOMBRE || item.NOMBRE,
+    orden: row.ORDEN || item.ORDEN,
+    dni: row.DOCUMENTO || item.DOCUMENTO
   })
 }
 

@@ -8,7 +8,7 @@ const { apiBase} = useEndPoints()
 const props = defineProps(['id', 'subtitle'])
 
 function useLiqItem(getId) {
-  return useFetch(() => `${apiBase.value}/api/view/liqItem?LiquidacionId=${getId()}&sort={"Codigo":"asc","SubCodigo":"asc"}`)
+  return useFetch(() => `${apiBase.value}/api/view/liqItem?LiquidacionId=${getId()}`)
 }
 
 const { data, error, isPending } = useLiqItem(() => props.id )
@@ -29,21 +29,14 @@ const getVto = (vto) => {
   return null
 }
 
-//const items = ref([])
-
-const getItems = () => {
-  //let items = data.filter((x) => x.LIQUIDACIONID === 3360)
-
-  data.value.sort((a, b) => {
-    if (a.CODIGO * 1000 + a.SUBCODIGO > b.CODIGO * 1000 + b.SUBCODIGO) {
-      return 1
-    }
-    if (a.CODIGO * 1000 + a.SUBCODIGO < b.CODIGO * 1000 + b.SUBCODIGO) {
-      return -1
-    }
-    return 0
+const sortedItems = computed(() => {
+  if (!data.value || !Array.isArray(data.value)) return []
+  return [...data.value].sort((a, b) => {
+    const codA = (Number(a.CODIGO) || 0) * 1000 + (Number(a.SUBCODIGO) || 0)
+    const codB = (Number(b.CODIGO) || 0) * 1000 + (Number(b.SUBCODIGO) || 0)
+    return codA - codB
   })
-}
+})
 
 function getNumberFormat(n) {
   return Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n)
@@ -52,28 +45,32 @@ function getNumberFormat(n) {
 const res = computed(() => {
     let hcap = 0, hsap = 0, ticket = 0,
         desc = 0, descley = 0, asigfam = 0, patronales = 0
+    if (!data.value || !Array.isArray(data.value)) {
+        return { hcap, hsap, ticket, descley, desc, asigfam }
+    }
     data.value.forEach(el => {
+        const imp = Number(el.IMPORTETICKET) || 0
         switch (el.TIPOCONCEPTOID) {
             case 1:
-                hcap = hcap + el.IMPORTETICKET
+                hcap = hcap + imp
                 break;
             case 2:
-                hsap = hsap + el.IMPORTETICKET
+                hsap = hsap + imp
                 break;
             case 3:
-                descley = descley + el.IMPORTETICKET
+                descley = descley + imp
                 break;
             case 4:
-                asigfam = asigfam + el.IMPORTETICKET
+                asigfam = asigfam + imp
                 break;
             case 5:
-                patronales = patronales + el.IMPORTETICKET
+                patronales = patronales + imp
                 break;
             case 7:
-                ticket = ticket + el.IMPORTETICKET
+                ticket = ticket + imp
                 break;
             case 6:
-                desc = desc + el.IMPORTETICKET
+                desc = desc + imp
                 break;
             default:
                 break;
@@ -106,7 +103,7 @@ const res = computed(() => {
         </thead>
         <tbody>
           <tr
-            v-for="item in data"
+            v-for="item in sortedItems"
             :key="item.id"
             v-show="item.TIPOCONCEPTOID !== 5"
             :class="{
@@ -121,7 +118,7 @@ const res = computed(() => {
             <td class="text-left m-0 p-0">{{ item.DESCRIPCION }}</td>
             <td class="text-right m-0 p-0">{{ item.CANTIDAD }}</td>
             <td class="text-center m-0 p-0">{{ item.VENCIMIENTO }}</td>
-            <td class="text-right m-0 p-0">{{ item.IMPORTETICKET.toFixed(2) }}</td>
+            <td class="text-right m-0 p-0">{{ Number(item.IMPORTETICKET || 0).toFixed(2) }}</td>
           </tr>
         </tbody>
         <tfoot class="font-weight-bold">

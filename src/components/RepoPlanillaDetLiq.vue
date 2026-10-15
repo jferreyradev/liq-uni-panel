@@ -14,8 +14,7 @@ const store = useFilterStore()
 
 function useResLiqCod(getId) {
   return useFetch(
-    () =>
-      `${apiBase.value}/api/view/planillaDetLiq?${getId()}&sort={"IdRep":"asc","Orden":"asc","FechaDev":"asc","Codigo":"asc","SubCodigo":"asc"}`
+    () => `${apiBase.value}/api/view/planillaDetLiq?${getId()}`
   )
 }
 
