@@ -25,7 +25,21 @@ export function useFetch(getUrl, getOptions = () => ({})) {
       }
 
       fetch(getUrl(), options)
-        .then((res) => res.json())
+        .then(async (res) => {
+          if (res.status === 404) return []
+          const text = await res.text()
+          if (!text || text.trim() === '') return []
+          try {
+            const parsed = JSON.parse(text)
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && parsed.error) {
+              throw new Error(parsed.error)
+            }
+            return parsed
+          } catch (err) {
+            if (err.message && !err.message.includes('JSON')) throw err
+            return []
+          }
+        })
         .then((_data) => {
           data.value = _data
           isPending.value = false

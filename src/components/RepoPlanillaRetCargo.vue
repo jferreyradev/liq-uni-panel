@@ -11,13 +11,14 @@ const { apiBase } = useEndPoints()
 const store = useFilterStore()
 
 function useResLiqCod(getId) {
-  console.log(`${apiBase.value}/api/view/retencionesCargo?${getId()}`)
-  return useFetch(
-    () => `${apiBase.value}/api/view/retencionesCargo?${getId()}&sort={"IdRep":"asc","Orden":"asc"}`
-  )
+  return useFetch(() => {
+    const q = getId ? getId() : ''
+    const filter = q ? `${q}&` : ''
+    return `${apiBase.value}/api/view/retencionesCargo?${filter}sort={"IdRep":"asc","Orden":"asc"}`
+  })
 }
 
-const { data, error, isPending } = useResLiqCod(() => store.filterString)
+const { data, error, isPending } = useResLiqCod(() => '')
 
 const props = defineProps(['title', 'subtitle', 'fileName'])
 
@@ -118,6 +119,7 @@ function exportFile() {
             <td class="text-center">{{ item.CATEGORIA }}</td>
             <td class="text-center">{{ item.SITREV }}</td>
             <td class="text-right">{{ item.DOCUMENTO }}</td>
+            <td class="text-left">{{ item.APENOM }}</td>
           </tr>
         </template>
       </v-data-table>
