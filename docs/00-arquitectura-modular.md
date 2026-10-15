@@ -27,9 +27,9 @@ src/
 │       └── apiService.js       # Cliente HTTP centralizado (leerDatos, ejecutarSP, etc.)
 │
 ├── modules/                    # Módulos de Dominio (Vertical Slices)
-│   ├── acreditaciones/         # Generación de archivos bancarios TXT y control de cuentas
-│   │   ├── components/         # AcreditacionBase, AcreditacionesDetalle, AcreditacionTXT, etc.
-│   │   ├── views/              # AcreditacionView.vue
+│   ├── acreditaciones/         # Generación de archivos bancarios TXT y control de cuentas (Patrón directo continuo)
+│   │   ├── components/         # ArchAcred.vue, ResumenAcred.vue, ResumenAcredDetalle.vue
+│   │   ├── views/              # AcreditacionView.vue (con LiqInputPanel :esley="true")
 │   │   └── routes.js           # Rutas: /acredit, /acred
 │   │
 │   ├── agentes/                # Gestión de personal, cargos y legajos
@@ -42,9 +42,9 @@ src/
 │   │   ├── views/              # LoginView.vue, ChangePassword.vue
 │   │   └── routes.js           # Rutas: /login, /passchange
 │   │
-│   ├── ipsst/                  # Obra Social Subsidio de Salud de Tucumán (IPSST)
+│   ├── ipsst/                  # Obra Social Subsidio de Salud de Tucumán (IPSST - Módulo Independiente)
 │   │   ├── components/         # ArchIPSST.vue, ResumenIPSST.vue
-│   │   ├── views/              # IPSSTView.vue
+│   │   ├── views/              # IPSSTView.vue (Layout continuo estándar)
 │   │   └── routes.js           # Rutas: /ipsst, /archivos
 │   │
 │   ├── liquidaciones/          # Procesamiento mensual y recibos
@@ -87,7 +87,7 @@ src/
 > **Ejemplo:** Ajustar columnas o filtros en el detalle de acreditaciones bancarias.
 
 1. **Abrir únicamente la carpeta del módulo:** `src/modules/acreditaciones/`.
-2. Modificar el componente específico (por ejemplo, `components/AcreditacionesDetalle.vue`).
+2. Modificar el componente específico (por ejemplo, `components/ResumenAcredDetalle.vue` o `components/ArchAcred.vue`).
 3. Para llamadas al backend, utilizar siempre `@/shared/services/apiService`:
    ```javascript
    import { leerDatos, ejecutarSP } from '@/shared/services/apiService'
