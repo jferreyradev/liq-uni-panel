@@ -20,6 +20,18 @@ function useResLiqCod(getId) {
 
 const { data, error, isPending } = useResLiqCod(() => store.filterString)
 
+const sortedData = computed(() => {
+  if (!data.value || !Array.isArray(data.value)) return []
+  return [...data.value].sort((a, b) => {
+    return (
+      (Number(a.IDREP) || 0) - (Number(b.IDREP) || 0) ||
+      (Number(a.ORDEN) || 0) - (Number(b.ORDEN) || 0) ||
+      (Number(a.CODIGO) || 0) - (Number(b.CODIGO) || 0) ||
+      (Number(a.SUBCODIGO) || 0) - (Number(b.SUBCODIGO) || 0)
+    )
+  })
+})
+
 const totImporte = computed(() => {
   var totImp = 0
   if (data.value) {
@@ -69,7 +81,7 @@ function handleDownload() {
 }
 
 function exportFile() {
-  const map1 = data.value.map((x) => {
+  const map1 = sortedData.value.map((x) => {
     return [
       x.IDREP,
       x.ORDEN,
@@ -157,7 +169,7 @@ function exportFile() {
         class="text-caption"
         hover
         density="compact"
-        :items="data"
+        :items="sortedData"
         :headers="headers"
       >
         <template v-slot:item="{ item }">
