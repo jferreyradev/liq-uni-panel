@@ -11,7 +11,6 @@ const { apiBase } = useEndPoints()
 const store = useFilterStore()
 
 function useResLiqCod(getId) {
-  console.log(`${apiBase.value}/api/view/resumenCodLiq?${getId()}`)
   return useFetch(() => `${apiBase.value}/api/view/resumenCodLiq?${getId()}`)
 }
 

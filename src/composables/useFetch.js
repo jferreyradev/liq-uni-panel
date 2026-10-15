@@ -13,8 +13,6 @@ export function useFetch(getUrl, getOptions = () => ({})) {
       data.value = null
       error.value = null
 
-      console.log('fetch ', getUrl())
-
       const userOptions = getOptions()
       const options = {
         ...userOptions,

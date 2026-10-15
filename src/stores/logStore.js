@@ -60,7 +60,9 @@ export const useLogStore = defineStore('logStore', () => {
     logs.value.unshift(logItem)
 
     // Salida por consola de desarrollador formateada
-    printToConsole(logItem)
+    if (!entry.skipConsole && !(typeof window !== 'undefined' && window.__HTTP_LOGGER_ACTIVE__)) {
+      printToConsole(logItem)
+    }
 
     return logItem
   }
@@ -88,6 +90,20 @@ export const useLogStore = defineStore('logStore', () => {
       console.log('Ambiente:', item.env || 'N/A')
       console.log('Municipio:', item.tenant || 'N/A')
       console.log('URL completa:', item.url)
+
+      let queryParams = item.params
+      if (!queryParams && item.url) {
+        try {
+          const u = new URL(item.url, typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
+          if (u.searchParams && Array.from(u.searchParams.keys()).length > 0) {
+            queryParams = Object.fromEntries(u.searchParams.entries())
+          }
+        } catch {}
+      }
+      if (queryParams) {
+        console.log('Parámetros (Query):', queryParams)
+      }
+
       console.log('Encabezados:', item.headers)
 
       if (item.requestBody) {

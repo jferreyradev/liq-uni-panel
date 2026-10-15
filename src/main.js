@@ -2,6 +2,10 @@ import '@mdi/font/css/materialdesignicons.css'
 
 import { createApp } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
+import { setupHttpLogger } from '@/utils/httpLogger'
+
+// Inicializar logger de red para consola de inspección
+setupHttpLogger()
 
 // Vuetify
 import 'vuetify/styles'
