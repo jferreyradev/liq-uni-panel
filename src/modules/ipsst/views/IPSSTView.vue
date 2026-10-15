@@ -1,44 +1,38 @@
 <script setup>
-import { ref } from 'vue'
 import LiqInputPanel from '@/shared/components/LiqInputPanel.vue'
 import ArchIPSST from '../components/ArchIPSST.vue'
 import ResumenIPSST from '../components/ResumenIPSST.vue'
-
-const currentTab = ref('archivo')
 </script>
 
 <template>
-  <v-container>
-    <v-row justify="space-around" class="bg-primary pa-2 rounded-t mb-2">
+  <v-container fluid class="pa-0">
+    <!-- Encabezado de la Vista -->
+    <v-row justify="space-around" class="bg-primary pa-3 rounded mb-3 mx-0">
       <div class="d-flex align-center">
         <v-icon icon="mdi-file-document-multiple" class="me-2 text-white" size="large"></v-icon>
-        <h3 class="text-white">Exportación de Archivos — Obra Social IPSST</h3>
+        <h3 class="text-white mb-0">Exportación de Archivos — Obra Social IPSST</h3>
       </div>
     </v-row>
 
     <!-- Panel de Selección de Período -->
-    <v-row class="mb-2">
-      <LiqInputPanel :tipoliq="false" :nroadi="false" />
+    <v-row class="mb-3 mx-0">
+      <v-col cols="12" class="pa-0">
+        <LiqInputPanel :tipoliq="false" :nroadi="false" />
+      </v-col>
     </v-row>
 
-    <!-- Pestañas del Módulo IPSST (Primero Archivo TXT) -->
-    <v-tabs v-model="currentTab" color="primary" grow class="mb-4">
-      <v-tab value="archivo" prepend-icon="mdi-file-download-outline">
-        Generación de Archivo TXT IPSST
-      </v-tab>
-      <v-tab value="resumen" prepend-icon="mdi-table-check">
-        Resumen de Retenciones IPSST
-      </v-tab>
-    </v-tabs>
-
-    <v-window v-model="currentTab">
-      <v-window-item value="archivo">
+    <!-- Generación de Archivo TXT Oficial IPSST -->
+    <v-row class="mb-3 mx-0">
+      <v-col cols="12" class="pa-0">
         <ArchIPSST />
-      </v-window-item>
+      </v-col>
+    </v-row>
 
-      <v-window-item value="resumen">
+    <!-- Resumen de Retenciones IPSST -->
+    <v-row class="mx-0">
+      <v-col cols="12" class="pa-0">
         <ResumenIPSST />
-      </v-window-item>
-    </v-window>
+      </v-col>
+    </v-row>
   </v-container>
 </template>

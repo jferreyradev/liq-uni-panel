@@ -453,8 +453,36 @@ export const useUserStore = defineStore('userStore', {
           throw new Error(`HTTP ${response.status}: ${errorBody || response.statusText}`)
         }
 
-        const data = await response.json()
-        data.push({ IDROL: 5, IDMENU: 7, DESCRIPCION: 'Archivos', PATH: '/archivos' })
+        const rawData = await response.json()
+        const data = Array.isArray(rawData) ? [...rawData] : []
+
+        const hasArchivos = data.some(
+          (m) =>
+            m.PATH === '/archivos' ||
+            m.IDMENU === 7 ||
+            (m.DESCRIPCION &&
+              (m.DESCRIPCION.toLowerCase().includes('archivo') ||
+                m.DESCRIPCION.toLowerCase().includes('exportaci')))
+        )
+        if (!hasArchivos) {
+          data.push({
+            IDROL: this.user?.ROL || 5,
+            IDMENU: 7,
+            DESCRIPCION: 'Exportación de Archivos',
+            PATH: '/archivos'
+          })
+        }
+
+        const seenPaths = new Set()
+        const uniqueData = []
+        for (const item of data) {
+          const pathKey = (item.PATH || '').toLowerCase().trim()
+          if (!pathKey || !seenPaths.has(pathKey)) {
+            if (pathKey) seenPaths.add(pathKey)
+            uniqueData.push(item)
+          }
+        }
+
         logStore.addLog({
           type: 'success',
           category: 'AUTH',
@@ -466,7 +494,7 @@ export const useUserStore = defineStore('userStore', {
           durationMs,
           env: env.value
         })
-        this.rol = data
+        this.rol = uniqueData
         this.success = true
       } catch (error) {
         this.error = error.message

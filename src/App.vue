@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watchEffect } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { useTheme } from 'vuetify'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
@@ -16,6 +16,17 @@ const tenantStore = useTenantStore()
 const store = useUserStore()
 const logStore = useLogStore()
 const { itemsMenu, setItemsMenu } = useItemsMenu()
+
+const navItems = computed(() => {
+  if (!itemsMenu.value || !Array.isArray(itemsMenu.value)) return []
+  const seenPaths = new Set()
+  return itemsMenu.value.filter((item) => {
+    const key = (item.PATH || '').toLowerCase().trim()
+    if (!key || seenPaths.has(key)) return false
+    seenPaths.add(key)
+    return true
+  })
+})
 
 const theme = useTheme()
 const router = useRouter()
@@ -183,10 +194,10 @@ function handleLogout() {
           :active="$route.path === '/'"
         />
 
-        <template v-if="itemsMenu && itemsMenu.length > 0">
+        <template v-if="navItems && navItems.length > 0">
           <v-list-item
-            v-for="item in itemsMenu"
-            :key="item.IDMENU"
+            v-for="item in navItems"
+            :key="item.IDMENU || item.PATH"
             :title="item.DESCRIPCION"
             @click="router.push(item.PATH)"
             :active="$route.path === item.PATH"
@@ -205,7 +216,7 @@ function handleLogout() {
           <v-list-item prepend-icon="mdi-bank-transfer" title="Acreditaciones" @click="router.push('/acredit')" />
           <v-list-item prepend-icon="mdi-shield-check" title="Previsional" @click="router.push('/prevision')" />
           <v-list-item prepend-icon="mdi-chart-box-outline" title="Reportes" @click="router.push('/repo')" />
-          <v-list-item prepend-icon="mdi-folder" title="Archivos" @click="router.push('/archivos')" />
+          <v-list-item prepend-icon="mdi-folder-file-outline" title="Exportación de Archivos" @click="router.push('/archivos')" />
         </template>
 
         <v-divider class="my-2"></v-divider>

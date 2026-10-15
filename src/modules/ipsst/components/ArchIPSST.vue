@@ -156,21 +156,22 @@ function cargarPeriodoAnterior() {
         </v-btn>
       </div>
 
-      <v-data-table
-        v-else-if="data"
-        class="text-caption font-mono"
-        hover
-        density="compact"
-        :items="data"
-        :headers="headers"
-        :items-per-page="10"
-      >
-        <template v-slot:item="{ item }">
-          <tr class="pa-0 ma-0">
-            <td class="text-left font-mono py-1">{{ item.CADENA || item.cadena }}</td>
-          </tr>
-        </template>
-      </v-data-table>
+      <div v-else-if="data" style="overflow-x: auto;">
+        <v-data-table
+          class="text-caption font-mono"
+          hover
+          density="compact"
+          :items="data"
+          :headers="headers"
+          :items-per-page="10"
+        >
+          <template v-slot:item="{ item }">
+            <tr class="pa-0 ma-0">
+              <td class="text-left font-mono py-1 text-no-wrap">{{ item.CADENA || item.cadena }}</td>
+            </tr>
+          </template>
+        </v-data-table>
+      </div>
     </v-card-text>
   </v-card>
 </template>
