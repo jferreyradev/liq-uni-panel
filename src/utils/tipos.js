@@ -323,11 +323,12 @@ export const tiposDoc = [
 ]
 
 export function getName(lista, id) {
-  const found = lista.find((element) => element.value === id)
+  const found = lista.find((element) => element.value == id || String(element.value) === String(id))
   return found ? found.name : 'sin definir'
 }
 
 export function getObjetList(lista, id, defecto = null) {
-  const found = lista.find((element) => element.value === id)
-  return found ? found : defecto
+  if (id === null || id === undefined) return defecto !== null ? defecto : lista[0]
+  const found = lista.find((element) => element.value == id || String(element.value) === String(id))
+  return found ? found : (defecto !== null ? defecto : lista[0])
 }

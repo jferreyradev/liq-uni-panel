@@ -21,8 +21,10 @@ const fechaNacimiento = ref(null);
 const escolaridadSelected = ref(tipoEscolaridad[0]);
 const relacionFamiliarSelected = ref(tipoRelacionFamiliar[0]);
 
+const isSaving = ref(false);
+
 const registroVacio = ref({
-  DOCUMENTO: 0,
+  DOCUMENTO: "",
   APELLIDOYNOMBRE: "",
   FECHANACIMIENTO: "",
   GRADO: 0,
@@ -44,7 +46,7 @@ if (registroOrigen) {
     registroOrigen.TIPORELACIONID,
   );
 } else {
-  registroActual.value = registroVacio.value;
+  registroActual.value = { ...registroVacio.value };
 }
 
 const mostrarAlert = ref(false);
@@ -64,43 +66,53 @@ async function grabaRegistro() {
     return;
   }
 
-  // si es esposa/o coloca valores predeterminados en campos de hijo
-  if (relacionFamiliarSelected.value.value == 1) {
-    escolaridadSelected.value = tipoEscolaridad[0];
-    fechaNacimiento.value = null;
-    registroActual.value.GRADO = 0;
-    registroActual.value.DISCAPACITADO = false;
-  }
+  isSaving.value = true;
 
-  //
-
-  let fecNacimiento = "";
-  if (fechaNacimiento.value !== null)
-    if (fechaNacimiento.value.length > 0)
-      fecNacimiento = getFechaToAPIFromDDMMYYYY(fechaNacimiento.value);
-
-  console.log("fecNac: " + fecNacimiento);
-  let registroGrabar = {
-    vIDPERS: registroActual.value.PERSONAID || personaId,
-    vDNI: registroActual.value.DOCUMENTO,
-    vAPEYNOM: registroActual.value.APELLIDOYNOMBRE,
-    vIDTABTIPOREL: relacionFamiliarSelected.value.value,
-    vFECHANAC: fecNacimiento,
-    vIDTABTIPOESC: escolaridadSelected.value.value,
-    vGRADO: registroActual.value.GRADO,
-    vDISCAPACITADO: registroActual.value.DISCAPACITADO ? 1 : 0,
-  };
-  if (registroActual.value.ID !== 0) {
-    registroGrabar = {
-      vIDCARFAM: registroActual.value.ID,
-      ...registroGrabar,
-    };
-  }
-
-  console.log("se va a grabar el siguiente registro");
-  console.log(JSON.stringify(registroGrabar));
   try {
-    let resultado = await props.funcion(registroGrabar, registroActual.value.ID);
+    const idRel =
+      typeof relacionFamiliarSelected.value === "object" && relacionFamiliarSelected.value !== null
+        ? relacionFamiliarSelected.value.value
+        : relacionFamiliarSelected.value;
+
+    const idEsc =
+      typeof escolaridadSelected.value === "object" && escolaridadSelected.value !== null
+        ? escolaridadSelected.value.value
+        : escolaridadSelected.value;
+
+    // si es esposa/o coloca valores predeterminados en campos de hijo
+    if (idRel == 1) {
+      escolaridadSelected.value = tipoEscolaridad[0];
+      fechaNacimiento.value = null;
+      registroActual.value.GRADO = 0;
+      registroActual.value.DISCAPACITADO = false;
+    }
+
+    let fecNacimiento = "";
+    if (fechaNacimiento.value !== null && fechaNacimiento.value !== undefined) {
+      if (String(fechaNacimiento.value).trim().length > 0) {
+        fecNacimiento = getFechaToAPIFromDDMMYYYY(fechaNacimiento.value);
+      }
+    }
+
+    let registroGrabar = {
+      vIDPERS: registroActual.value.PERSONAID || personaId,
+      vDNI: registroActual.value.DOCUMENTO,
+      vAPEYNOM: registroActual.value.APELLIDOYNOMBRE,
+      vIDTABTIPOREL: idRel,
+      vFECHANAC: fecNacimiento,
+      vIDTABTIPOESC: idRel == 2 ? idEsc : 0,
+      vGRADO: idRel == 2 ? (registroActual.value.GRADO || 0) : 0,
+      vDISCAPACITADO: idRel == 2 ? (registroActual.value.DISCAPACITADO ? 1 : 0) : 0,
+    };
+    if (registroActual.value.ID && registroActual.value.ID !== 0) {
+      registroGrabar = {
+        vIDCARFAM: registroActual.value.ID,
+        ...registroGrabar,
+      };
+    }
+
+    console.log("se va a grabar el siguiente registro:", JSON.stringify(registroGrabar));
+    let resultado = await props.funcion(registroGrabar, registroActual.value.ID || 0);
 
     if (resultado === null) {
       props.cerrar();
@@ -112,6 +124,8 @@ async function grabaRegistro() {
     console.error("Error al grabar carga familiar:", err);
     mensajeError.value = err.message || "Error al grabar";
     mostrarAlert.value = true;
+  } finally {
+    isSaving.value = false;
   }
 }
 
@@ -122,7 +136,8 @@ function validarRegistro() {
 
 <template>
   <v-container>
-    <v-card>
+    <v-card :loading="isSaving">
+      <v-progress-linear v-if="isSaving" indeterminate color="primary"></v-progress-linear>
       <v-form ref="form" v-model="formOK">
         <v-card-title>Carga Familiar</v-card-title>
         <v-card-subtitle>
@@ -148,7 +163,7 @@ function validarRegistro() {
                   label="DNI"
                   :rules="[
                     ...rules.number,
-                    (val) => rules.longitudEntre(val, 8, 9),
+                    (val) => rules.longitudEntre(val, 7, 9),
                   ]"
                 ></v-text-field>
               </v-col>
@@ -175,7 +190,7 @@ function validarRegistro() {
                 </v-select>
               </v-col>
             </v-row>
-            <v-row v-if="relacionFamiliarSelected.value == 2">
+            <v-row v-if="relacionFamiliarSelected && (relacionFamiliarSelected.value == 2 || relacionFamiliarSelected == 2)">
               <v-col cols="6">
                 <v-select
                   label="Escolaridad"
@@ -196,16 +211,14 @@ function validarRegistro() {
                   :rules="[
                     ...rules.ddmmyyyy,
                     (val) =>
-                      rules.longitudEntre(
-                        val,
-                        relacionFamiliarSelected.value == 2 ? 8 : 0,
-                        10,
-                      ),
+                      relacionFamiliarSelected && (relacionFamiliarSelected.value == 2 || relacionFamiliarSelected == 2)
+                        ? rules.longitudEntre(val, 8, 10)
+                        : true,
                   ]"
                 ></v-text-field>
               </v-col>
             </v-row>
-            <v-row v-if="relacionFamiliarSelected.value == 2">
+            <v-row v-if="relacionFamiliarSelected && (relacionFamiliarSelected.value == 2 || relacionFamiliarSelected == 2)">
               <v-col cols="6">
                 <v-text-field
                   v-model="registroActual.GRADO"
@@ -214,7 +227,7 @@ function validarRegistro() {
                   lazy-validation
                   :rules="[
                     ...rules.number,
-                    (val) => rules.longitudEntre(val, 1, 1),
+                    (val) => rules.longitudEntreONull(val, 1, 2),
                   ]"
                 ></v-text-field>
               </v-col>
@@ -236,10 +249,17 @@ function validarRegistro() {
             elevation="3"
             outlined
             value="grabar"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="grabaRegistro()"
             >Grabar</v-btn
           >
-          <v-btn color="error" elevation="3" outlined @click="cerrar()"
+          <v-btn
+            color="error"
+            elevation="3"
+            outlined
+            :disabled="isSaving"
+            @click="cerrar()"
             >Cancelar</v-btn
           >
         </v-card-actions>

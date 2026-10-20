@@ -36,14 +36,21 @@ const error = null;
 
 const lecturaListaRegs = ref(true);
 
+const personaId = personaEditar?.PERSONAID || personaEditar?.ID || personaEditar?.Id;
+
 async function leerListaRegs() {
+  if (!personaId) return;
   isPending.value = true;
-  //const { datos, operacionOk } = await leerDatos('view/novAltas?HojaId=' + hojaEditar.ID)
-  const { datos, operacionOk } = await leerDatos(
-    "en/cargaFamiliar?PersonaId=" + personaEditar.PERSONAID,
-  );
-  data.value = datos;
-  lecturaListaRegs.value = operacionOk;
+  try {
+    const { datos, operacionOk } = await leerDatos(
+      "en/cargaFamiliar?PersonaId=" + personaId,
+    );
+    data.value = datos;
+    lecturaListaRegs.value = operacionOk;
+  } catch (err) {
+    console.error("Error en leerListaRegs:", err);
+    lecturaListaRegs.value = false;
+  }
   isPending.value = false;
 }
 
@@ -54,13 +61,14 @@ const cargoAsociado = ref({
 });
 
 async function leerCargoAsoc() {
+  if (!personaId) return;
   let resultado = {
     cargoId: 0,
     descripcion: "No se pudieron establecer obtener datos del cargo",
   };
   try {
     const { datos, operacionOk } = await leerDatos(
-      "en/cargo?PersonaId=" + (personaEditar.PERSONAID || personaEditar.ID) + "&Salario=1",
+      "en/cargo?PersonaId=" + personaId + "&Salario=1",
     );
     if (operacionOk === true) {
       if (!datos || !Array.isArray(datos) || datos.length === 0) {
@@ -172,8 +180,9 @@ async function grabarSP(item, id) {
       : (out?.vError ?? out?.ValorError ?? datos?.out?.vError ?? datos?.out?.ValorError ?? (operacionOk ? 0 : -1));
 
     if (operacionOk && errCode == 0) {
-      await leerCargoAsoc();
-      await leerListaRegs();
+      Promise.allSettled([leerCargoAsoc(), leerListaRegs()]).catch((e) => {
+        console.warn("Error al refrescar listas posteriores a la grabacion:", e);
+      });
       alertMensaje.value = "Se grabó el registro";
       alertTipo.value = "success";
       mostrarAlert.value = true;

@@ -138,12 +138,20 @@ export async function ejecutarSP(url = "", data = {}, metodo = "POST") {
     operacionOk = response.ok;
     datos = await response.json();
     if (response.ok) {
-      const payload = (datos && datos.out) ? datos.out : datos;
-      if (payload) {
-        valorError = payload.vError !== undefined ? payload.vError : (payload.ValorError !== undefined ? payload.ValorError : (payload.VALORERROR !== undefined ? payload.VALORERROR : 0));
-        valorSalida = payload.vSALIDA !== undefined ? payload.vSALIDA : (payload.vSalida !== undefined ? payload.vSalida : (payload.VSALIDA !== undefined ? payload.VSALIDA : 0));
-        errorMsg = payload.vErrorMsg || payload.vErrorMsj || payload.errorMsg || payload.ErrorMsg || "";
+      let payload = (datos && datos.out) ? datos.out : datos;
+      if (Array.isArray(payload)) {
+        payload = payload[0] || {};
+      }
+      if (payload && typeof payload === "object") {
+        const rawErr = payload.vError ?? payload.valorError ?? payload.ValorError ?? payload.VALORERROR ?? payload.error;
+        valorError = rawErr !== undefined ? Number(rawErr) : 0;
+        const rawSalida = payload.vSALIDA ?? payload.vSalida ?? payload.VSALIDA ?? payload.salida ?? payload.id;
+        valorSalida = rawSalida !== undefined ? rawSalida : 0;
+        errorMsg = payload.vErrorMsg || payload.vErrorMsj || payload.errorMsg || payload.ErrorMsg || payload.mensaje || payload.message || "";
         out = datos && datos.out ? datos.out : payload;
+      } else {
+        valorError = 0;
+        out = datos;
       }
     } else {
       errmsg = "Error al intentar ejecutar el proceso";
