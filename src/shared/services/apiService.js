@@ -138,11 +138,12 @@ export async function ejecutarSP(url = "", data = {}, metodo = "POST") {
     operacionOk = response.ok;
     datos = await response.json();
     if (response.ok) {
-      if (datos && datos.out) {
-        valorError = datos.out.vError !== undefined ? datos.out.vError : (datos.out.ValorError !== undefined ? datos.out.ValorError : (datos.out.VALORERROR !== undefined ? datos.out.VALORERROR : 0));
-        valorSalida = datos.out.vSALIDA !== undefined ? datos.out.vSALIDA : (datos.out.vSalida !== undefined ? datos.out.vSalida : 0);
-        errorMsg = datos.out.vErrorMsg || datos.out.vErrorMsj || datos.out.errorMsg || datos.out.ErrorMsg || "";
-        out = datos.out;
+      const payload = (datos && datos.out) ? datos.out : datos;
+      if (payload) {
+        valorError = payload.vError !== undefined ? payload.vError : (payload.ValorError !== undefined ? payload.ValorError : (payload.VALORERROR !== undefined ? payload.VALORERROR : 0));
+        valorSalida = payload.vSALIDA !== undefined ? payload.vSALIDA : (payload.vSalida !== undefined ? payload.vSalida : (payload.VSALIDA !== undefined ? payload.VSALIDA : 0));
+        errorMsg = payload.vErrorMsg || payload.vErrorMsj || payload.errorMsg || payload.ErrorMsg || "";
+        out = datos && datos.out ? datos.out : payload;
       }
     } else {
       errmsg = "Error al intentar ejecutar el proceso";

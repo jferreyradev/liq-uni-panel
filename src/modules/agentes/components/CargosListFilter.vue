@@ -80,14 +80,13 @@ function ObtieneFiltro() {
 }
 
 function setCamposFiltros() {
-  console.log(liqSelected);
   let campos = {
     DNI: DNI.value,
     Apellido: Apellido.value,
     IdRep: IdRep.value,
     Orden: Orden.value,
-    liqSelected: liqSelected.value.value,
-    estCargoSelected: estCargoSelected.value.value,
+    liqSelected: liqSelected.value,
+    estCargoSelected: estCargoSelected.value,
   };
   return campos;
 }
@@ -114,8 +113,21 @@ if (camposFiltros != null) {
   Apellido.value = camposFiltros.Apellido;
   IdRep.value = camposFiltros.IdRep;
   Orden.value = camposFiltros.Orden;
-  liqSelected.value = camposFiltros.liqSelected;
-  estCargoSelected.value = camposFiltros.estCargoSelected;
+  if (camposFiltros.liqSelected !== undefined) {
+    liqSelected.value =
+      typeof camposFiltros.liqSelected === "object" && camposFiltros.liqSelected !== null
+        ? camposFiltros.liqSelected
+        : tipoLiqFilter.find((item) => item.value === camposFiltros.liqSelected) ||
+          tipoLiqFilter[1];
+  }
+  if (camposFiltros.estCargoSelected !== undefined) {
+    estCargoSelected.value =
+      typeof camposFiltros.estCargoSelected === "object" && camposFiltros.estCargoSelected !== null
+        ? camposFiltros.estCargoSelected
+        : estadosCargoFilter.find(
+            (item) => item.value === camposFiltros.estCargoSelected,
+          ) || estadosCargoFilter[1];
+  }
 }
 
 const formOK = ref(null);

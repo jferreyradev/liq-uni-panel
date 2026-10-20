@@ -58,27 +58,30 @@ async function leerCargoAsoc() {
     cargoId: 0,
     descripcion: "No se pudieron establecer obtener datos del cargo",
   };
-  //const { datos, operacionOk } = await leerDatos('view/novAltas?HojaId=' + hojaEditar.ID)
-  const { datos, operacionOk } = await leerDatos(
-    "en/cargo?PersonaId=" + personaEditar.PERSONAID + "&Salario=1",
-  );
-  if (operacionOk === true) {
-    if (datos == null)
-      resultado.descripcion = "No hay cargo asociado aún para el salario";
-    else {
-      let cargoAsoc = datos[0];
-      resultado.cargoId = cargoAsoc.ID;
-      resultado.descripcion =
-        "Rep.: " +
-        cargoAsoc.REPARTICIONID +
-        " - Orden: " +
-        cargoAsoc.ORDEN +
-        " - Tipo: " +
-        getTipoDescripcion(
-          cargoAsoc.TIPOEMPLEOID,
-          cargoAsoc.TIPOEMPLEODESCRIPCION,
-        );
+  try {
+    const { datos, operacionOk } = await leerDatos(
+      "en/cargo?PersonaId=" + (personaEditar.PERSONAID || personaEditar.ID) + "&Salario=1",
+    );
+    if (operacionOk === true) {
+      if (!datos || !Array.isArray(datos) || datos.length === 0) {
+        resultado.descripcion = "No hay cargo asociado aún para el salario";
+      } else {
+        let cargoAsoc = datos[0];
+        resultado.cargoId = cargoAsoc.ID;
+        resultado.descripcion =
+          "Rep.: " +
+          cargoAsoc.REPARTICIONID +
+          " - Orden: " +
+          cargoAsoc.ORDEN +
+          " - Tipo: " +
+          getTipoDescripcion(
+            cargoAsoc.TIPOEMPLEOID,
+            cargoAsoc.TIPOEMPLEODESCRIPCION,
+          );
+      }
     }
+  } catch (err) {
+    console.error("Error en leerCargoAsoc:", err);
   }
   cargoAsociado.value = resultado;
 }
@@ -162,17 +165,24 @@ async function grabarSP(item, id) {
     url = "sp/CargaFamUpd";
   }
 
-  const { operacionOk, datos } = await ejecutarSP(url, item);
-  if (operacionOk) {
-    if (datos.out.vError == 0) {
+  try {
+    const { operacionOk, valorError, errorMsg, datos, out } = await ejecutarSP(url, item);
+    const errCode = valorError !== undefined && valorError !== -1
+      ? valorError
+      : (out?.vError ?? out?.ValorError ?? datos?.out?.vError ?? datos?.out?.ValorError ?? (operacionOk ? 0 : -1));
+
+    if (operacionOk && errCode == 0) {
       await leerCargoAsoc();
       await leerListaRegs();
-      alertMensaje.value = "Se grabó el registro ";
+      alertMensaje.value = "Se grabó el registro";
       alertTipo.value = "success";
       mostrarAlert.value = true;
       return null;
     }
-    mensajeError = datos.out.vErrorMsg;
+    mensajeError = errorMsg || out?.vErrorMsg || out?.vErrorMsj || datos?.out?.vErrorMsg || "No se pudieron grabar los datos";
+  } catch (err) {
+    console.error("Error en grabarSP:", err);
+    mensajeError = err.message || "Error al intentar grabar los datos";
   }
 
   return mensajeError;
@@ -185,41 +195,52 @@ async function eliminar(id) {
   };
   let url = "sp/CargaFamDel";
   console.log(item);
-  const { datos, operacionOk } = await ejecutarSP(url, item);
+  try {
+    const { operacionOk, valorError, errorMsg, datos, out } = await ejecutarSP(url, item);
+    const errCode = valorError !== undefined && valorError !== -1
+      ? valorError
+      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
 
-  if (operacionOk) {
-    if (datos.out.vError == 0) {
+    if (operacionOk && errCode == 0) {
       await leerListaRegs();
       alertMensaje.value = "Se eliminó el registro";
       alertTipo.value = "success";
       mostrarAlert.value = true;
       return true;
     }
+    alertMensaje.value = errorMsg || "No se pudo eliminar el registro";
+  } catch (err) {
+    console.error("Error en eliminar:", err);
+    alertMensaje.value = err.message || "No se pudo eliminar el registro";
   }
 
-  alertMensaje.value = "No se pudo eliminar el registro";
   alertTipo.value = "error";
   mostrarAlert.value = true;
-  return true;
+  return false;
 }
 
 // funciones de agregado, modificación y eliminación
 async function grabarSPCargos(item) {
   let mensajeError = "No se pudieron grabar los datos";
-  let url = "";
-  url = "sp/AsignaSalario";
+  let url = "sp/AsignaSalario";
 
-  const { operacionOk, datos } = await ejecutarSP(url, item);
-  if (operacionOk) {
-    if (datos.out.vError == 0) {
+  try {
+    const { operacionOk, valorError, errorMsg, datos, out } = await ejecutarSP(url, item);
+    const errCode = valorError !== undefined && valorError !== -1
+      ? valorError
+      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
+
+    if (operacionOk && errCode == 0) {
       await leerCargoAsoc();
-      alertMensaje.value = "Se actualizó la asignación de cargo ";
+      alertMensaje.value = "Se actualizó la asignación de cargo";
       alertTipo.value = "success";
       mostrarAlert.value = true;
-
       return null;
     }
-    mensajeError = datos.out.vErrorMsg;
+    mensajeError = errorMsg || out?.vErrorMsg || datos?.out?.vErrorMsg || "No se pudieron grabar los datos";
+  } catch (err) {
+    console.error("Error en grabarSPCargos:", err);
+    mensajeError = err.message || "No se pudieron grabar los datos";
   }
 
   return mensajeError;
@@ -272,11 +293,16 @@ function exportFile() {
     "Disc.",
   ];
   const filtros = "";
+  const doc = personaEditar.DOCUMENTO || personaEditar.DNI || "";
+  const apeNom = (personaEditar.APELLIDO && personaEditar.NOMBRE)
+    ? `${personaEditar.APELLIDO}, ${personaEditar.NOMBRE}`
+    : (personaEditar.APELLIDOYNOMBRE || "");
+  const persId = personaEditar.PERSONAID || personaEditar.ID || "";
+
   const tituloReporte =
     "Cargas de Familia: " +
-    personaEditar.DNI +
-    " - " +
-    personaEditar.APELLIDOYNOMBRE;
+    doc +
+    (apeNom ? " - " + apeNom : "");
   agregaTitulosExcel(map1, tituloReporte, filtros, titulosTabla);
   const ws = utils.aoa_to_sheet(map1);
 
@@ -294,7 +320,7 @@ function exportFile() {
   utils.book_append_sheet(wb, ws, "Data");
 
   /* export to XLSX */
-  writeFileXLSX(wb, "CargaFamilia_" + `${personaEditar.ID}.xlsx`, {
+  writeFileXLSX(wb, "CargaFamilia_" + `${persId}.xlsx`, {
     compression: true,
   });
 }
@@ -430,7 +456,7 @@ function exportFile() {
       :Registro="itemMostrar"
       :cerrar="cierraForm"
       :funcion="grabarSP"
-      :personaId="personaEditar.PERSONAID"
+      :personaId="personaEditar.PERSONAID || personaEditar.ID"
     ></CargaFamiliarVista>
   </v-dialog>
 
@@ -458,7 +484,7 @@ function exportFile() {
     <CargaFamiliarCargos
       :cerrar="cierraFormCargos"
       :funcion="grabarSPCargos"
-      :personaId="personaEditar.PERSONAID"
+      :personaId="personaEditar.PERSONAID || personaEditar.ID"
     ></CargaFamiliarCargos>
   </v-dialog>
 </template>

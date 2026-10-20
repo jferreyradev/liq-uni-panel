@@ -40,6 +40,7 @@ async function grabaRegistro(idCargo) {
 // lectura de registros
 let isPending = ref(false);
 const data = ref(null);
+const error = ref(null);
 const lecturaListaRegs = ref(true);
 
 async function leerListaRegs() {
@@ -73,7 +74,7 @@ leerListaRegs();
             icon="$error"
             closable
           >
-            {{ alertMensaje }}
+            {{ mensajeError }}
           </v-alert>
 
           <v-data-table

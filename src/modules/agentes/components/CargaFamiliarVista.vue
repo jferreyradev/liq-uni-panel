@@ -53,11 +53,9 @@ let mensajeError = ref("");
 
 async function grabaRegistro() {
   const isValid = await form.value.validate();
+  const valid = typeof isValid === "object" && isValid !== null ? isValid.valid : isValid;
 
-  if (!isValid) {
-    return;
-  }
-  if (formOK.value === false) {
+  if (!valid || formOK.value === false) {
     return;
   }
   mostrarAlert.value = false;
@@ -83,7 +81,7 @@ async function grabaRegistro() {
 
   console.log("fecNac: " + fecNacimiento);
   let registroGrabar = {
-    vIDPERS: registroActual.value.PERSONAID,
+    vIDPERS: registroActual.value.PERSONAID || personaId,
     vDNI: registroActual.value.DOCUMENTO,
     vAPEYNOM: registroActual.value.APELLIDOYNOMBRE,
     vIDTABTIPOREL: relacionFamiliarSelected.value.value,
@@ -101,12 +99,18 @@ async function grabaRegistro() {
 
   console.log("se va a grabar el siguiente registro");
   console.log(JSON.stringify(registroGrabar));
-  let resultado = await props.funcion(registroGrabar, registroActual.value.ID);
+  try {
+    let resultado = await props.funcion(registroGrabar, registroActual.value.ID);
 
-  if (resultado === null) {
-    props.cerrar();
-  } else {
-    mensajeError.value = resultado;
+    if (resultado === null) {
+      props.cerrar();
+    } else {
+      mensajeError.value = resultado;
+      mostrarAlert.value = true;
+    }
+  } catch (err) {
+    console.error("Error al grabar carga familiar:", err);
+    mensajeError.value = err.message || "Error al grabar";
     mostrarAlert.value = true;
   }
 }
@@ -152,7 +156,7 @@ function validarRegistro() {
                 <v-text-field
                   v-model="registroActual.APELLIDOYNOMBRE"
                   hide-details="auto"
-                  label="Apellido"
+                  label="Apellido y Nombre"
                   lazy-validation
                   :rules="[(val) => rules.longitudEntre(val, 3, 100)]"
                 ></v-text-field>

@@ -42,11 +42,13 @@ export const rules = {
     return 'el valor debe estar entre ' + min + ' y ' + max
   },
   longitudMax: (value, max) => {
+    if (value === null || value === undefined) return true
     let valorString = value.toString()
     if (valorString.length <= max) return true
     return 'se aceptan hasta ' + max + ' caracteres'
   },
   longitudEntre: (value, min, max) => {
+    if (value === null || value === undefined) return 'El campo es requerido'
     let valorString = value.toString()
 
     if (valorString.length >= min && valorString.length <= max) return true
@@ -54,19 +56,19 @@ export const rules = {
     return mensaje
   },
   longitudMin: (value, min) => {
-    if (value === null) return 'ingresar al menos ' + min + ' caracteres'
+    if (value === null || value === undefined) return 'ingresar al menos ' + min + ' caracteres'
     let valorString = value.toString()
     if (valorString.length >= min) return true
     return 'ingresar al menos ' + min + ' caracteres'
   },
   longitudMaxONull: (value, max) => {
-    if (value === null) return true
+    if (value === null || value === undefined) return true
     let valorString = value.toString()
     if (valorString.length <= max) return true
     return 'se aceptan hasta ' + max + ' caracteres'
   },
   longitudEntreONull: (value, min, max) => {
-    if (value === null) return true
+    if (value === null || value === undefined) return true
     let valorString = value.toString()
     if (valorString.length == 0) return true
     if (valorString.length >= min && valorString.length <= max) return true
@@ -74,7 +76,7 @@ export const rules = {
     return mensaje
   },
   longitudMinONull: (value, min) => {
-    if (value === null) return true
+    if (value === null || value === undefined) return true
     let valorString = value.toString()
     if (valorString.length >= min) return true
     return 'ingresar al menos ' + min + ' caracteres'
