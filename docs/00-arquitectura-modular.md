@@ -24,7 +24,8 @@ src/
 │   │   ├── RepoHeader.vue          # Cabecera estándar de reportes y visores
 │   │   └── index.js                # Barrel export para importación limpia
 │   └── services/
-│       └── apiService.js       # Cliente HTTP centralizado (leerDatos, ejecutarSP, etc.)
+│       ├── httpClient.js        # Cliente HTTP ÚNICO: único lugar del proyecto con fetch()
+│       └── apiService.js        # Fachada de dominio sobre el cliente (leerDatos, ejecutarSP, etc.)
 │
 ├── modules/                    # Módulos de Dominio (Vertical Slices)
 │   ├── acreditaciones/         # Generación de archivos bancarios TXT y control de cuentas (Patrón directo continuo)
@@ -96,6 +97,11 @@ src/
 3. Para llamadas al backend, utilizar siempre `@/shared/services/apiService`:
    ```javascript
    import { leerDatos, ejecutarSP } from '@/shared/services/apiService'
+
+   const res = await leerDatos('en/cargo', { query: { Documento: '123' } })
+   if (res.operacionOk) {
+     // res.datos
+   }
    ```
 4. **Verificar:** Ejecutar las pruebas unitarias y el build:
    ```bash
@@ -176,8 +182,15 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
 1. **¿Qué va en `src/shared/` vs en un módulo?**
    * **En `src/shared/`:** Componentes o utilidades agnósticas utilizadas por dos o más módulos que no dependen de la lógica de negocio de uno solo (ej. `TooltipButton`, formateadores de moneda, selectores genéricos).
    * **En `src/modules/<modulo>/`:** Componentes, diálogos, vistas y helpers que resuelven una necesidad particular de ese dominio.
-2. **Cliente HTTP:**
-   * No importar `useEndPoints` ni concatenar strings de URL manualmente en cada archivo. Usar siempre las funciones exportadas de `@/shared/services/apiService.js` (`leerDatos`, `grabarRegistro`, `eliminarRegistro`, `ejecutarSP`, `ejecutarSPStream`, `descargaTXT`).
+2. **Cliente HTTP (capa única):**
+   * Todo el tráfico HTTP sale por **un único punto**: `@/shared/services/httpClient.js`. Es el único archivo del proyecto que llama a `fetch()`. El test-guard `src/shared/services/__tests__/capaHttpUnica.spec.js` falla si alguien vuelve a llamar a `fetch()` desde otro lado.
+   * `@/shared/services/apiService.js` es la **fachada de dominio** sobre ese cliente (`leerDatos`, `grabarRegistro`, `eliminarRegistro`, `ejecutarSP`, `ejecutarSP_SinEspera`, `ejecutarSPStream`, `descargaTXT`). La política de negocio vive ahí; el transporte, en el cliente.
+   * No importar `useEndPoints` ni concatenar strings de URL manualmente en cada archivo. Resolver URLs con `service` + `path`:
+     * `base` → `{apiBase}/api/{path}` · `sp` → `{apiSp}/{path}` · `boletas` → `{apiBoletas}/{path}` (sin `/api/`).
+   * Todo request tiene **timeout por defecto de 30 s** y devuelve una respuesta normalizada: `{ estado, operacionOk, errmsg, datos, notFound, rawText, response }`.
+   * El `AbortError` del llamador se propaga (es una cancelación); el timeout se traduce a error 408. Un 404 en un listado no es un error fatal: `leerDatos` lo marca con `operacionOk = true` y `notFound = true`.
+   * Para descargar binarios usar `responseType`: `'blob'`, `'arraybuffer'` o `'text'`.
+   * Para consumir un listado dentro de un componente usar `useFetch` (`@/composables/useFetch.js`), que ya está construido sobre `apiService` y cancela la petición anterior al cambiar el filtro.
 3. **Componentes UI Comunes:**
    * Diálogo modal de confirmación: `<ConfirmacionDialog :titulo="..." :mensaje="..." :aceptar="..." :cerrar="..." />`
    * Botón con tooltip: `<TooltipButton :icono="'mdi-pencil'" :toolMsg="'Editar'" :funcion="..." :itemid="..." />`

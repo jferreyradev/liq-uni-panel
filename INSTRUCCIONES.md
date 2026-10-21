@@ -50,13 +50,14 @@ Antes de pedir un cambio, ubica la ficha correspondiente:
 | Panel de liquidación, totales, renglones o SPs batch | [`docs/04-liquidaciones-y-procesos.md`](docs/04-liquidaciones-y-procesos.md) |
 | Novedades mensuales, grilla editable, legajos o cargos | [`docs/05-novedades-y-agentes.md`](docs/05-novedades-y-agentes.md) |
 | Exportación TXT bancario, control de cuentas o DDJJ IPSST | [`docs/06-acreditaciones-y-prevision.md`](docs/06-acreditaciones-y-prevision.md) |
+| Llamadas al backend, timeouts, errores de red o logging HTTP | [`docs/07-capa-http-unica.md`](docs/07-capa-http-unica.md) |
 
 ---
 
 ## ⚙️ Reglas de Oro del Código
 
 1. **Pinia seguro**: No instanciar `useTenantStore()` o `useEndPoints()` en el ámbito raíz de archivos `.js`. Siempre dentro de funciones o en `setup()`.
-2. **Encabezados automáticos**: Todas las peticiones deben usar `useEndPoints()` o `useApiClient()` para propagar reactivamente `x-project-key` y `x-project-port`.
+2. **Capa HTTP única**: Todo el tráfico al backend sale por `@/shared/services/httpClient.js` (el único archivo con `fetch()`), a través de la fachada `@/shared/services/apiService.js`. Nunca llamar a `fetch()` directamente; hay un test-guard que lo detecta. Detalle en [`docs/07-capa-http-unica.md`](docs/07-capa-http-unica.md).
 3. **Reseteo seguro**: Si un componente depende de un reporte o dato municipal específico, agregar un watcher para resetearlo a `null` si el usuario conmuta a un municipio donde ese dato no existe.
 
 ---
