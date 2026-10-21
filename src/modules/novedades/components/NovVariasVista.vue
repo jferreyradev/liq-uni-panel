@@ -108,6 +108,17 @@ async function grabaRegistro() {
     isSaving.value = false;
   }
 }
+
+/**
+ * Guarda de validación previa al grabado.
+ *
+ * La llamada ya existía pero la función se había perdido (ReferenceError al
+ * guardar). Se restablece con el mismo criterio que las otras vistas de
+ * novedades y agentes, que hoy delegan la validación en el v-form.
+ */
+function validarRegistro() {
+  return true;
+}
 </script>
 
 <template>

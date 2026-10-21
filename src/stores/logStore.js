@@ -99,7 +99,9 @@ export const useLogStore = defineStore('logStore', () => {
           if (u.searchParams && Array.from(u.searchParams.keys()).length > 0) {
             queryParams = Object.fromEntries(u.searchParams.entries())
           }
-        } catch {}
+        } catch {
+          // URL no parseable: se sigue sin los query params
+        }
       }
       if (queryParams) {
         console.log('Parámetros (Query):', queryParams)

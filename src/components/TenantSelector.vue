@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTenantStore } from '@/stores/tenantStore'
 import { useUserStore } from '@/stores/userStore'
@@ -16,6 +16,10 @@ const { setDesa, setProd } = useEndPoints()
 
 const tenants = computed(() => tenantStore.tenantsList)
 const activeTenant = computed(() => tenantStore.activeTenant)
+
+// Los logos son recursos remotos: si alguno no carga, se marca para
+// mostrar el ícono por defecto en lugar de una imagen rota.
+const logosFallidos = reactive({})
 
 async function selectTenant(tenantId) {
   if (tenantStore.activeTenantId === tenantId) return
@@ -82,7 +86,12 @@ async function selectTenant(tenantId) {
           <template v-slot:prepend>
             <v-avatar size="32" class="me-2" rounded="sm" :color="tenant.id === 'desarrollo' ? 'deep-purple-darken-1' : undefined">
               <v-icon v-if="tenant.id === 'desarrollo'" icon="mdi-flask" color="white" size="small"></v-icon>
-              <v-img v-else-if="tenant.logo" :src="tenant.logo" alt="Logo" />
+              <v-img
+                v-else-if="tenant.logo && !logosFallidos[tenant.id]"
+                :src="tenant.logo"
+                alt="Logo"
+                @error="logosFallidos[tenant.id] = true"
+              />
               <v-icon v-else icon="mdi-city"></v-icon>
             </v-avatar>
           </template>

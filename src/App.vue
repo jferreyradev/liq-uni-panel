@@ -3,7 +3,6 @@ import { ref, computed, watchEffect } from 'vue'
 import { useTheme } from 'vuetify'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
-import { useEndPoints } from '@/composables/useEndPoints'
 import { useItemsMenu } from '@/composables/useItemsMenu'
 import { useFilterStore } from '@/stores/filterStore'
 import { useTenantStore } from '@/stores/tenantStore'
@@ -15,7 +14,10 @@ const storeFilter = useFilterStore()
 const tenantStore = useTenantStore()
 const store = useUserStore()
 const logStore = useLogStore()
-const { itemsMenu, setItemsMenu } = useItemsMenu()
+const { itemsMenu } = useItemsMenu()
+
+// El logo del municipio es un recurso remoto: si no carga, se cae al ícono.
+const logoFallo = ref(false)
 
 const navItems = computed(() => {
   if (!itemsMenu.value || !Array.isArray(itemsMenu.value)) return []
@@ -64,7 +66,12 @@ function handleLogout() {
       ></v-app-bar-nav-icon>
 
       <v-avatar size="36" class="me-2 d-none d-md-flex" rounded="sm">
-        <v-img v-if="tenantStore.tenantLogo" :src="tenantStore.tenantLogo" alt="Logo" />
+        <v-img
+          v-if="tenantStore.tenantLogo && !logoFallo"
+          :src="tenantStore.tenantLogo"
+          alt="Logo"
+          @error="logoFallo = true"
+        />
         <v-icon v-else icon="mdi-shield-account"></v-icon>
       </v-avatar>
 
