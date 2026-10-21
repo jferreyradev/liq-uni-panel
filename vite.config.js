@@ -12,6 +12,14 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    globals: true
+    globals: true,
+    server: {
+      deps: {
+        // Vuetify importa CSS desde los .js de cada componente: sin inlinear
+        // el paquete, Node rechaza los .css ("Unknown file extension").
+        // Inlinear permite montar componentes reales de Vuetify en los tests.
+        inline: ['vuetify']
+      }
+    }
   }
 })
