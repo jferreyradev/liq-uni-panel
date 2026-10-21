@@ -4,6 +4,7 @@ import RepoHeader from '@/shared/components/RepoHeader.vue'
 import { useFilterStore } from '@/stores/filterStore'
 import { useEndPoints } from '@/composables/useEndPoints'
 import { useFetch } from '@/composables/useFetch'
+import { request } from '@/shared/services/httpClient'
 
 const { apiBase, getBoletasHeaders, buildApiHeaders } = useEndPoints()
 const store = useFilterStore()
@@ -37,23 +38,25 @@ const nombreArchivo = computed(() => {
 
 async function downloadIpsst() {
   downloading.value = true
-  const url = `${apiBase.value}/api/txt/archivoIPSST?${store.filterPeriodoString}`
 
   try {
     const headersFn = buildApiHeaders || getBoletasHeaders || (() => ({}))
-    const response = await fetch(url, {
-      method: 'GET',
+    const res = await request({
+      service: 'base',
+      path: 'txt/archivoIPSST',
+      query: store.filterPeriodoString,
       headers: {
         'Content-Type': 'text/plain',
         ...headersFn()
-      }
+      },
+      responseType: 'blob'
     })
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
+    if (!res.operacionOk) {
+      throw new Error(`HTTP ${res.estado}`)
     }
 
-    const blob = await response.blob()
+    const blob = res.datos
     // Si la respuesta vino vacía pero tenemos registros en memoria, activar fallback
     if (blob.size === 0 && data.value && data.value.length > 0) {
       throw new Error('Respuesta vacía del servidor, generando archivo desde los registros en pantalla')

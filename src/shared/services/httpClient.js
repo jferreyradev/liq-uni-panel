@@ -59,12 +59,21 @@ export function isAbsoluteUrl(value) {
 /**
  * Agrega query params a una URL sin duplicar la "?".
  *
+ * Acepta un objeto, un URLSearchParams o un query string ya armado
+ * ("Periodo=01/01/2024"), que es el formato que usan varios filtros.
+ *
  * @param {string} url
- * @param {Object|URLSearchParams} query
+ * @param {Object|URLSearchParams|string} query
  * @returns {string}
  */
 export function appendQuery(url, query) {
   if (!query) return url;
+
+  if (typeof query === "string") {
+    const search = query.replace(/^[?&]+/, "");
+    if (!search) return url;
+    return url.includes("?") ? `${url}&${search}` : `${url}?${search}`;
+  }
 
   const params =
     query instanceof URLSearchParams
@@ -99,10 +108,13 @@ export async function parseJsonSafe(response) {
     return { ok: true, data: null, raw: null };
   }
 
+  // Se conserva el texto crudo (truncado) para poder detallar el error.
+  const raw = text.slice(0, 500);
+
   try {
-    return { ok: true, data: JSON.parse(text), raw: null };
+    return { ok: true, data: JSON.parse(text), raw };
   } catch {
-    return { ok: false, data: null, raw: text.slice(0, 200) };
+    return { ok: false, data: null, raw };
   }
 }
 
@@ -192,6 +204,7 @@ export async function request({
   let datos = null;
   let notFound = false;
   let response = null;
+  let rawText = null;
 
   try {
     response = await fetch(finalUrl, requestInit);
@@ -210,6 +223,7 @@ export async function request({
     } else {
       const parsed = await parseJsonSafe(response);
       datos = parsed.data;
+      rawText = parsed.raw;
       if (!parsed.ok && response.ok) {
         operacionOk = false;
         errmsg = "La respuesta del servidor no tiene un formato válido";
@@ -250,7 +264,7 @@ export async function request({
     if (timeoutId) clearTimeout(timeoutId);
   }
 
-  return { estado, operacionOk, errmsg, datos, notFound, response };
+  return { estado, operacionOk, errmsg, datos, notFound, rawText, response };
 }
 
 /**
@@ -271,4 +285,59 @@ export async function requestOrThrow(options = {}) {
   }
 
   return res.datos;
+}
+
+/**
+ * Prueba de conexión contra una URL arbitraria (pantalla de diagnóstico).
+ *
+ * No sigue la semántica de los listados: devuelve el detalle de la respuesta
+ * (cuerpo crudo, status y duración) para poder mostrarlo en el diagnóstico.
+ *
+ * @param {string} url
+ * @param {Object} [extraHeaders]
+ * @returns {Promise<{ok, status, statusText, durationMs, body, error}>}
+ */
+export async function testConnection(url, extraHeaders = {}) {
+  const start = Date.now();
+
+  const res = await request({
+    url,
+    headers: extraHeaders,
+    responseType: RESPONSE_TEXT,
+    timeout: 6000,
+  });
+
+  const durationMs = Date.now() - start;
+  const statusText = res.response?.statusText || "";
+
+  if (res.estado === 408) {
+    return {
+      ok: false,
+      status: 0,
+      statusText: "Timeout (6s)",
+      durationMs,
+      body: null,
+      error: "La solicitud excedió el tiempo límite (6s)",
+    };
+  }
+
+  if (res.estado === 999) {
+    return {
+      ok: false,
+      status: 0,
+      statusText: "Error de Conexión",
+      durationMs,
+      body: null,
+      error: res.errmsg,
+    };
+  }
+
+  return {
+    ok: res.operacionOk,
+    status: res.estado,
+    statusText,
+    durationMs,
+    body: res.datos,
+    error: res.operacionOk ? null : `HTTP ${res.estado}: ${statusText || res.errmsg}`,
+  };
 }

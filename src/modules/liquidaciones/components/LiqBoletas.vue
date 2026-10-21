@@ -5,10 +5,11 @@ import { useFetch } from "@/composables/useFetch";
 import RepoHeader from "@/shared/components/RepoHeader.vue";
 import { useLiqStore } from "@/stores/liqStore.js";
 import { useEndPoints } from "@/composables/useEndPoints";
+import { request } from "@/shared/services/httpClient";
 import { generarNombreBoleta } from "@/utils/boletas.js";
 import { useBoletatxt } from "@/stores/boletaStore";
 
-const { apiBase, getBoletasHeaders } = useEndPoints();
+const { apiBase } = useEndPoints();
 const store = useFilterStore();
 const liqStore = useLiqStore();
 const liqStoreBoleta = useBoletatxt();
@@ -59,16 +60,18 @@ async function handleDownload(item) {
   );
 
   try {
-    const response = await fetch(`${apiBase.value}/api/boleta?IdLiq=${idliq}`, {
-      method: "GET",
-      headers: getBoletasHeaders(),
+    const res = await request({
+      service: "base",
+      path: "boleta",
+      query: { IdLiq: idliq },
+      responseType: "blob",
     });
 
-    if (!response.ok) {
-      throw new Error(`Servidor devolvió código ${response.status}`);
+    if (!res.operacionOk) {
+      throw new Error(`Servidor devolvió código ${res.estado}`);
     }
 
-    const blob = await response.blob();
+    const blob = res.datos;
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
 

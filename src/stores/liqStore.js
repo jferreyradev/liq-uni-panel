@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { useEndPoints } from '@/composables/useEndPoints'
+import { leerDatos } from '@/shared/services/apiService'
 
 export const useLiqStore = defineStore('liq', {
   state: () => ({
@@ -10,16 +10,12 @@ export const useLiqStore = defineStore('liq', {
   },
   actions: {
     async setLiqItems(idliq) {
-      const { apiBase, getBoletasHeaders } = useEndPoints()
       try {
-        const res = await fetch(`${apiBase.value}/api/view/liqItem?LiquidacionId=${idliq}`, {
-          headers: getBoletasHeaders()
-        })
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`)
+        const res = await leerDatos('view/liqItem', { query: { LiquidacionId: idliq } })
+        if (!res.operacionOk) {
+          throw new Error(res.errmsg || `HTTP ${res.estado}`)
         }
-        const data = await res.json()
-        this.liqitems = data
+        this.liqitems = res.datos
       } catch (err) {
         console.error('[liqStore setLiqItems]', err)
       }

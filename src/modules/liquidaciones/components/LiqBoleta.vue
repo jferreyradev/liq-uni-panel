@@ -4,6 +4,7 @@ const items = [];
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import download from "downloadjs";
 import logo from "../assets/logo.png";
+import { request } from "@/shared/services/httpClient";
 
 const data = ref(items);
 
@@ -181,7 +182,11 @@ async function createPdf() {
 
   const pngUrl = logo;
 
-  const pngImageBytes = await fetch(pngUrl).then((res) => res.arrayBuffer());
+  const resLogo = await request({ url: pngUrl, responseType: "arraybuffer" });
+  if (!resLogo.operacionOk || !resLogo.datos) {
+    throw new Error(resLogo.errmsg || "No se pudo descargar el logo");
+  }
+  const pngImageBytes = resLogo.datos;
 
   const pngImage = await pdfDoc.embedPng(pngImageBytes);
 

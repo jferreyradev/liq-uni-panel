@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useEndPoints } from '@/composables/useEndPoints'
+import { leerDatos } from '@/shared/services/apiService'
 
 const liqMap = new Map([
   ['1', 'Mensual'],
@@ -93,15 +94,12 @@ export const useFilterStore = defineStore('filter', {
       await this.setPer()
     },
     async setPer() {
-      const { apiBase, getBoletasHeaders } = useEndPoints()
       try {
-        const res = await fetch(`${apiBase.value}/api/view/periodo?Activo=1`, {
-          headers: getBoletasHeaders()
-        })
-        if (!res.ok) {
-          throw new Error(`Error ${res.status} al obtener período`)
+        const res = await leerDatos('view/periodo', { query: { Activo: 1 } })
+        if (!res.operacionOk) {
+          throw new Error(res.errmsg || `Error ${res.estado} al obtener período`)
         }
-        const data = await res.json()
+        const data = res.datos
         if (data?.[0]?.PERIODO) {
           const parts = data[0].PERIODO.split('-')
           this.year = Number(parts[0]) || parts[0]
@@ -112,18 +110,14 @@ export const useFilterStore = defineStore('filter', {
       }
     },
     async setConfig() {
-      const { apiBase, getBoletasHeaders } = useEndPoints()
       this.serverConfigLoading = true
       this.serverConfigError = null
       try {
-        const res = await fetch(`${apiBase.value}/api/view/configServer`, {
-          headers: getBoletasHeaders()
-        })
-        if (!res.ok) {
-          const errText = await res.text().catch(() => '')
-          throw new Error(`Error ${res.status} al obtener configuración: ${errText || res.statusText}`)
+        const res = await leerDatos('view/configServer')
+        if (!res.operacionOk) {
+          throw new Error(res.errmsg || `Error ${res.estado} al obtener configuración`)
         }
-        const data = await res.json()
+        const data = res.datos
         if (data?.[0]) {
           this.serverConfig = data[0]
         } else {

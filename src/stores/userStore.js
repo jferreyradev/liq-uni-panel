@@ -1,6 +1,62 @@
 import { defineStore } from 'pinia'
 import { useEndPoints } from '@/composables/useEndPoints'
 import { useLogStore } from '@/stores/logStore'
+import { request, resolveServiceUrl, appendQuery } from '@/shared/services/httpClient'
+
+/**
+ * Ejecuta una petición contra el cliente HTTP único y deja el detalle en el
+ * logStore con la categoría semántica del módulo (AUTH, CONFIG, ...).
+ *
+ * No tira ante errores HTTP: devuelve la respuesta normalizada para que cada
+ * acción conserve su propia semántica de estado (this.error, this.result,
+ * this.lastError). Solo se propaga un AbortError, que es una cancelación.
+ *
+ * @param {Object} opciones
+ * @returns {Promise<Object>} respuesta normalizada + { url, statusText, error }
+ */
+async function pedir({
+  service = 'base',
+  path = '',
+  url = '',
+  method = 'GET',
+  body,
+  headers,
+  query,
+  category = 'HTTP'
+}) {
+  const { env, getBoletasHeaders } = useEndPoints()
+  const logStore = useLogStore()
+  const target = url || resolveServiceUrl(service, path)
+  const urlCompleta = query ? appendQuery(target, query) : target
+  const start = Date.now()
+
+  const res = await request({ service, path, url, method, body, headers, query })
+  const durationMs = Date.now() - start
+  const statusText = res.response?.statusText || ''
+
+  logStore.addLog({
+    type: res.operacionOk ? 'success' : 'error',
+    category,
+    method,
+    url: urlCompleta,
+    headers: getBoletasHeaders(headers),
+    status: res.estado,
+    statusText,
+    durationMs,
+    requestBody: body || null,
+    error: res.operacionOk ? null : res.rawText || res.errmsg,
+    env: env.value
+  })
+
+  return {
+    ...res,
+    url: urlCompleta,
+    statusText,
+    error: res.operacionOk
+      ? null
+      : new Error(`HTTP ${res.estado}: ${res.rawText || statusText || res.errmsg}`)
+  }
+}
 
 export const useUserStore = defineStore('userStore', {
   state: () => ({
@@ -30,45 +86,11 @@ export const useUserStore = defineStore('userStore', {
   },
   actions: {
     async getConfig() {
-      const { apiBoletas, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBoletas.value}/config`
-      const headers = getBoletasHeaders()
-      const start = Date.now()
-
       this.loading = true
       try {
-        const res = await fetch(url, { headers })
-        const durationMs = Date.now() - start
-        if (!res.ok) {
-          const errorText = await res.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'CONFIG',
-            method: 'GET',
-            url,
-            headers,
-            status: res.status,
-            statusText: res.statusText,
-            durationMs,
-            error: errorText,
-            env: env.value
-          })
-          throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`)
-        }
-        const data = await res.json()
-        logStore.addLog({
-          type: 'success',
-          category: 'CONFIG',
-          method: 'GET',
-          url,
-          headers,
-          status: res.status,
-          statusText: res.statusText,
-          durationMs,
-          env: env.value
-        })
-        this.config = data[0]
+        const res = await pedir({ service: 'boletas', path: 'config', category: 'CONFIG' })
+        if (!res.operacionOk) throw res.error
+        this.config = res.datos?.[0]
       } catch (err) {
         this.error = err.message
       } finally {
@@ -77,45 +99,11 @@ export const useUserStore = defineStore('userStore', {
     },
 
     async getUsers() {
-      const { apiBoletas, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBoletas.value}/users`
-      const headers = getBoletasHeaders()
-      const start = Date.now()
-
       this.loading = true
       try {
-        const res = await fetch(url, { headers })
-        const durationMs = Date.now() - start
-        if (!res.ok) {
-          const errorText = await res.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'USERS',
-            method: 'GET',
-            url,
-            headers,
-            status: res.status,
-            statusText: res.statusText,
-            durationMs,
-            error: errorText,
-            env: env.value
-          })
-          throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`)
-        }
-        const data = await res.json()
-        logStore.addLog({
-          type: 'success',
-          category: 'USERS',
-          method: 'GET',
-          url,
-          headers,
-          status: res.status,
-          statusText: res.statusText,
-          durationMs,
-          env: env.value
-        })
-        this.users = data
+        const res = await pedir({ service: 'boletas', path: 'users', category: 'USERS' })
+        if (!res.operacionOk) throw res.error
+        this.users = res.datos
       } catch (err) {
         this.error = err.message
       } finally {
@@ -124,53 +112,23 @@ export const useUserStore = defineStore('userStore', {
     },
 
     async setEstado(idus, estado) {
-      const { apiBoletas, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBoletas.value}/estadoUsuario`
-      const headers = { 'Content-Type': 'application/json', ...getBoletasHeaders() }
       const bodyIn = { IdUsuario: idus, Estado: estado }
-      const start = Date.now()
 
       this.loading = true
       this.error = null
       try {
-        const res = await fetch(url, {
+        const res = await pedir({
+          service: 'boletas',
+          path: 'estadoUsuario',
           method: 'POST',
-          headers,
-          body: JSON.stringify(bodyIn)
+          body: bodyIn,
+          category: 'USER_STATE'
         })
-        const durationMs = Date.now() - start
-        if (res.ok) {
-          logStore.addLog({
-            type: 'success',
-            category: 'USER_STATE',
-            method: 'POST',
-            url,
-            headers,
-            requestBody: bodyIn,
-            status: res.status,
-            statusText: res.statusText,
-            durationMs,
-            env: env.value
-          })
+        if (res.operacionOk) {
           this.result = 'ok'
         } else {
-          const errorText = await res.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'USER_STATE',
-            method: 'POST',
-            url,
-            headers,
-            requestBody: bodyIn,
-            status: res.status,
-            statusText: res.statusText,
-            durationMs,
-            error: errorText,
-            env: env.value
-          })
           this.result = ''
-          this.error = new Error(`Error del servidor: ${res.status}`)
+          this.error = new Error(`Error del servidor: ${res.estado}`)
         }
       } catch (err) {
         this.error = err
@@ -212,12 +170,6 @@ export const useUserStore = defineStore('userStore', {
     },
 
     async fetchUser(dni) {
-      const { apiBoletas, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBoletas.value}/user/${dni}`
-      const headers = getBoletasHeaders()
-      const start = Date.now()
-
       this.loading = true
       this.error = null
       this.lastError = null
@@ -225,46 +177,21 @@ export const useUserStore = defineStore('userStore', {
       this.user = null
       this.auth = false
 
+      let res = null
       try {
-        const response = await fetch(url, { headers })
-        const durationMs = Date.now() - start
+        res = await pedir({ service: 'boletas', path: `user/${dni}`, category: 'AUTH' })
 
-        if (!response.ok) {
-          const errorBody = await response.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'AUTH',
-            method: 'GET',
-            url,
-            headers,
-            status: response.status,
-            statusText: response.statusText,
-            durationMs,
-            error: errorBody,
-            env: env.value
-          })
+        if (!res.operacionOk) {
           this.lastError = {
-            status: response.status,
-            statusText: response.statusText,
-            message: errorBody || response.statusText,
-            url
+            status: res.estado,
+            statusText: res.statusText,
+            message: res.rawText || res.statusText,
+            url: res.url
           }
-          throw new Error(`HTTP ${response.status}: ${errorBody || response.statusText}`)
+          throw res.error
         }
 
-        const data = await response.json()
-        logStore.addLog({
-          type: 'success',
-          category: 'AUTH',
-          method: 'GET',
-          url,
-          headers,
-          status: response.status,
-          statusText: response.statusText,
-          durationMs,
-          env: env.value
-        })
-        this.user = data[0]
+        this.user = res.datos?.[0]
         this.success = true
       } catch (error) {
         this.error = error.message
@@ -273,7 +200,7 @@ export const useUserStore = defineStore('userStore', {
             status: 0,
             statusText: 'Error de Red / Conexión',
             message: error.message,
-            url
+            url: res?.url || ''
           }
         }
       } finally {
@@ -282,12 +209,6 @@ export const useUserStore = defineStore('userStore', {
     },
 
     async fetchUserName(userName) {
-      const { apiBase, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBase.value}/api/view/users?UserName=${userName}`
-      const headers = getBoletasHeaders()
-      const start = Date.now()
-
       this.loading = true
       this.error = null
       this.lastError = null
@@ -296,69 +217,32 @@ export const useUserStore = defineStore('userStore', {
       this.auth = false
 
       try {
-        const response = await fetch(url, { headers })
-        const durationMs = Date.now() - start
+        const res = await pedir({
+          service: 'base',
+          path: 'view/users',
+          query: { UserName: userName },
+          category: 'AUTH'
+        })
 
-        if (!response.ok) {
-          const errorBody = await response.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'AUTH',
-            method: 'GET',
-            url,
-            headers,
-            status: response.status,
-            statusText: response.statusText,
-            durationMs,
-            error: errorBody,
-            env: env.value
-          })
-
+        if (!res.operacionOk) {
           this.lastError = {
-            status: response.status,
-            statusText: response.statusText,
-            message: errorBody || response.statusText,
-            url
+            status: res.estado,
+            statusText: res.statusText,
+            message: res.rawText || res.statusText,
+            url: res.url
           }
           this.error = this.lastError.message
           return
         }
 
-        const data = await response.json()
-        logStore.addLog({
-          type: 'success',
-          category: 'AUTH',
-          method: 'GET',
-          url,
-          headers,
-          status: response.status,
-          statusText: response.statusText,
-          durationMs,
-          env: env.value
-        })
-
-        this.user = data?.[0] || null
+        this.user = res.datos?.[0] || null
         this.success = true
       } catch (error) {
-        const durationMs = Date.now() - start
-        logStore.addLog({
-          type: 'error',
-          category: 'AUTH',
-          method: 'GET',
-          url,
-          headers,
-          status: 0,
-          statusText: 'Error de Conexión',
-          durationMs,
-          error: error.message,
-          env: env.value
-        })
-
         this.lastError = {
           status: 0,
           statusText: 'Error de Red / Conexión',
           message: error.message,
-          url
+          url: ''
         }
         this.error = error.message
       } finally {
@@ -367,12 +251,6 @@ export const useUserStore = defineStore('userStore', {
     },
 
     async fetchUserEmail(email) {
-      const { apiBase, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBase.value}/api/view/users?email=${email}`
-      const headers = getBoletasHeaders()
-      const start = Date.now()
-
       this.loading = true
       this.error = null
       this.success = false
@@ -380,39 +258,16 @@ export const useUserStore = defineStore('userStore', {
       this.auth = false
 
       try {
-        const response = await fetch(url, { headers })
-        const durationMs = Date.now() - start
-
-        if (!response.ok) {
-          const errorBody = await response.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'AUTH',
-            method: 'GET',
-            url,
-            headers,
-            status: response.status,
-            statusText: response.statusText,
-            durationMs,
-            error: errorBody,
-            env: env.value
-          })
-          throw new Error(`HTTP ${response.status}: ${errorBody || response.statusText}`)
-        }
-
-        const data = await response.json()
-        logStore.addLog({
-          type: 'success',
-          category: 'AUTH',
-          method: 'GET',
-          url,
-          headers,
-          status: response.status,
-          statusText: response.statusText,
-          durationMs,
-          env: env.value
+        const res = await pedir({
+          service: 'base',
+          path: 'view/users',
+          query: { email },
+          category: 'AUTH'
         })
-        this.user = data[0]
+
+        if (!res.operacionOk) throw res.error
+
+        this.user = res.datos?.[0]
         this.success = true
       } catch (error) {
         this.error = error.message
@@ -422,38 +277,28 @@ export const useUserStore = defineStore('userStore', {
     },
 
     async fetchRol() {
-      const { apiBase, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBase.value}/api/view/frontMenuRol?IdRol=${this.user.ROL}&sort={"IdMenu":"asc"}`
-      const headers = getBoletasHeaders()
-      const start = Date.now()
+      // La URL se arma antes del try: si no hay usuario cargado, el error
+      // debe propagarse igual que antes (no se captura como error de estado).
+      const query = {
+        IdRol: this.user.ROL,
+        sort: JSON.stringify({ IdMenu: 'asc' })
+      }
 
       this.loading = true
       this.error = null
       this.success = false
 
       try {
-        const response = await fetch(url, { headers })
-        const durationMs = Date.now() - start
+        const res = await pedir({
+          service: 'base',
+          path: 'view/frontMenuRol',
+          query,
+          category: 'AUTH'
+        })
 
-        if (!response.ok) {
-          const errorBody = await response.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'AUTH',
-            method: 'GET',
-            url,
-            headers,
-            status: response.status,
-            statusText: response.statusText,
-            durationMs,
-            error: errorBody,
-            env: env.value
-          })
-          throw new Error(`HTTP ${response.status}: ${errorBody || response.statusText}`)
-        }
+        if (!res.operacionOk) throw res.error
 
-        const rawData = await response.json()
+        const rawData = res.datos
         const data = Array.isArray(rawData) ? [...rawData] : []
 
         const hasArchivos = data.some(
@@ -483,17 +328,6 @@ export const useUserStore = defineStore('userStore', {
           }
         }
 
-        logStore.addLog({
-          type: 'success',
-          category: 'AUTH',
-          method: 'GET',
-          url,
-          headers,
-          status: response.status,
-          statusText: response.statusText,
-          durationMs,
-          env: env.value
-        })
         this.rol = uniqueData
         this.success = true
       } catch (error) {
@@ -521,12 +355,6 @@ export const useUserStore = defineStore('userStore', {
     },
 
     async fetchPers(dni) {
-      const { apiBoletas, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBoletas.value}/persona/${dni}`
-      const headers = getBoletasHeaders()
-      const start = Date.now()
-
       this.loading = true
       this.error = null
       this.success = false
@@ -534,39 +362,13 @@ export const useUserStore = defineStore('userStore', {
       this.allowSign = false
 
       try {
-        const response = await fetch(url, { headers })
-        const durationMs = Date.now() - start
+        const res = await pedir({ service: 'boletas', path: `persona/${dni}`, category: 'PERSONAS' })
 
-        if (!response.ok) {
-          const errorBody = await response.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'PERSONAS',
-            method: 'GET',
-            url,
-            headers,
-            status: response.status,
-            statusText: response.statusText,
-            durationMs,
-            error: errorBody,
-            env: env.value
-          })
+        if (!res.operacionOk) {
           throw new Error('Error fetching persona')
         }
 
-        const data = await response.json()
-        logStore.addLog({
-          type: 'success',
-          category: 'PERSONAS',
-          method: 'GET',
-          url,
-          headers,
-          status: response.status,
-          statusText: response.statusText,
-          durationMs,
-          env: env.value
-        })
-        this.pers = data[0]
+        this.pers = res.datos?.[0]
         this.success = true
       } catch (error) {
         this.error = error.message
@@ -576,12 +378,6 @@ export const useUserStore = defineStore('userStore', {
     },
 
     async fetchPersCargo(dni) {
-      const { apiBoletas, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBoletas.value}/personacargo/${dni}`
-      const headers = getBoletasHeaders()
-      const start = Date.now()
-
       this.loading = true
       this.error = null
       this.success = false
@@ -589,39 +385,17 @@ export const useUserStore = defineStore('userStore', {
       this.allowSign = false
 
       try {
-        const response = await fetch(url, { headers })
-        const durationMs = Date.now() - start
+        const res = await pedir({
+          service: 'boletas',
+          path: `personacargo/${dni}`,
+          category: 'PERSONAS'
+        })
 
-        if (!response.ok) {
-          const errorBody = await response.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'PERSONAS',
-            method: 'GET',
-            url,
-            headers,
-            status: response.status,
-            statusText: response.statusText,
-            durationMs,
-            error: errorBody,
-            env: env.value
-          })
+        if (!res.operacionOk) {
           throw new Error('Error fetching persona cargo')
         }
 
-        const data = await response.json()
-        logStore.addLog({
-          type: 'success',
-          category: 'PERSONAS',
-          method: 'GET',
-          url,
-          headers,
-          status: response.status,
-          statusText: response.statusText,
-          durationMs,
-          env: env.value
-        })
-        this.pers = data[0]
+        this.pers = res.datos?.[0]
         this.success = true
       } catch (error) {
         this.error = error.message
@@ -631,54 +405,25 @@ export const useUserStore = defineStore('userStore', {
     },
 
     async register(bodyIn) {
-      const { apiBoletas, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBoletas.value}/user`
-      const headers = { 'Content-Type': 'application/json', ...getBoletasHeaders() }
-      const start = Date.now()
-
       this.loading = true
       this.error = null
       this.result = ''
       bodyIn.Clave = btoa(bodyIn.Clave)
 
       try {
-        const res = await fetch(url, {
+        const res = await pedir({
+          service: 'boletas',
+          path: 'user',
           method: 'POST',
-          headers,
-          body: JSON.stringify(bodyIn)
+          body: bodyIn,
+          category: 'REGISTER'
         })
-        const durationMs = Date.now() - start
 
-        if (res.ok) {
-          logStore.addLog({
-            type: 'success',
-            category: 'REGISTER',
-            method: 'POST',
-            url,
-            headers,
-            status: res.status,
-            statusText: res.statusText,
-            durationMs,
-            env: env.value
-          })
+        if (res.operacionOk) {
           this.result = 'ok'
         } else {
-          const errorText = await res.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'REGISTER',
-            method: 'POST',
-            url,
-            headers,
-            status: res.status,
-            statusText: res.statusText,
-            durationMs,
-            error: errorText,
-            env: env.value
-          })
           this.result = ''
-          this.error = new Error(`Error del servidor: ${res.status}`)
+          this.error = new Error(`Error del servidor: ${res.estado}`)
         }
       } catch (err) {
         this.error = err
@@ -688,57 +433,29 @@ export const useUserStore = defineStore('userStore', {
     },
 
     async changePassword(newPass) {
-      const { apiBoletas, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBoletas.value}/claveUsuario`
-      const headers = { 'Content-Type': 'application/json', ...getBoletasHeaders() }
       const bodyIn = {
         IdUsuario: this.user?.ID ?? this.user?.id ?? 0,
         Clave: btoa(newPass)
       }
-      const start = Date.now()
 
       this.loading = true
       this.error = null
       this.result = ''
 
       try {
-        const res = await fetch(url, {
+        const res = await pedir({
+          service: 'boletas',
+          path: 'claveUsuario',
           method: 'POST',
-          headers,
-          body: JSON.stringify(bodyIn)
+          body: bodyIn,
+          category: 'PASSWORD'
         })
-        const durationMs = Date.now() - start
 
-        if (res.ok) {
-          logStore.addLog({
-            type: 'success',
-            category: 'PASSWORD',
-            method: 'POST',
-            url,
-            headers,
-            status: res.status,
-            statusText: res.statusText,
-            durationMs,
-            env: env.value
-          })
+        if (res.operacionOk) {
           this.result = 'ok'
         } else {
-          const errorText = await res.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'PASSWORD',
-            method: 'POST',
-            url,
-            headers,
-            status: res.status,
-            statusText: res.statusText,
-            durationMs,
-            error: errorText,
-            env: env.value
-          })
           this.result = ''
-          this.error = new Error(`Error del servidor: ${res.status}`)
+          this.error = new Error(`Error del servidor: ${res.estado}`)
         }
       } catch (err) {
         this.error = err
@@ -749,57 +466,29 @@ export const useUserStore = defineStore('userStore', {
     },
 
     async changeUserPassword(idus, newPass) {
-      const { apiBoletas, getBoletasHeaders, env } = useEndPoints()
-      const logStore = useLogStore()
-      const url = `${apiBoletas.value}/claveUsuario`
-      const headers = { 'Content-Type': 'application/json', ...getBoletasHeaders() }
       const bodyIn = {
         IdUsuario: idus,
         Clave: btoa(newPass)
       }
-      const start = Date.now()
 
       this.loading = true
       this.error = null
       this.result = ''
 
       try {
-        const res = await fetch(url, {
+        const res = await pedir({
+          service: 'boletas',
+          path: 'claveUsuario',
           method: 'POST',
-          headers,
-          body: JSON.stringify(bodyIn)
+          body: bodyIn,
+          category: 'PASSWORD'
         })
-        const durationMs = Date.now() - start
 
-        if (res.ok) {
-          logStore.addLog({
-            type: 'success',
-            category: 'PASSWORD',
-            method: 'POST',
-            url,
-            headers,
-            status: res.status,
-            statusText: res.statusText,
-            durationMs,
-            env: env.value
-          })
+        if (res.operacionOk) {
           this.result = 'ok'
         } else {
-          const errorText = await res.text().catch(() => '')
-          logStore.addLog({
-            type: 'error',
-            category: 'PASSWORD',
-            method: 'POST',
-            url,
-            headers,
-            status: res.status,
-            statusText: res.statusText,
-            durationMs,
-            error: errorText,
-            env: env.value
-          })
           this.result = ''
-          this.error = new Error(`Error del servidor: ${res.status}`)
+          this.error = new Error(`Error del servidor: ${res.estado}`)
         }
       } catch (err) {
         this.error = err

@@ -3,31 +3,45 @@ import { ref } from 'vue'
 import { PDFDocument, StandardFonts, rgb, PageSizes, BlendMode } from 'pdf-lib'
 import download from 'downloadjs'
 import logo from '../assets/logo.png'
-import { useApiClient } from '@/composables/useApiClient'
+import { leerDatos } from '@/shared/services/apiService'
+import { request } from '@/shared/services/httpClient'
 import { useTenantStore } from '@/stores/tenantStore'
 
 export const useBoletatxt = defineStore('boletatxt', () => {
-  const apiClient = useApiClient()
   const text = ref('')
   const cab = ref({})
   const det = ref([])
   const idliq = ref(0)
 
+  /**
+   * Descarga el logo de la boleta a través del cliente HTTP único.
+   *
+   * @param {string} url ruta o URL del recurso
+   * @returns {Promise<ArrayBuffer>}
+   */
+  async function descargarImagen(url) {
+    const res = await request({ url, responseType: 'arraybuffer' })
+    if (!res.operacionOk || !res.datos) {
+      throw new Error(res.errmsg || 'No se pudo descargar la imagen del logo')
+    }
+    return res.datos
+  }
+
   async function setId(id) {
     idliq.value = id
 
     try {
-      cab.value = await apiClient.get({
-        service: 'base',
-        path: '/api/view/boletaCabPie',
-        query: { IdLiq: idliq.value }
-      })
+      const resCab = await leerDatos('view/boletaCabPie', { query: { IdLiq: idliq.value } })
+      if (!resCab.operacionOk) {
+        throw new Error(resCab.errmsg || `Error ${resCab.estado} al obtener la cabecera`)
+      }
+      cab.value = resCab.datos
 
-      det.value = await apiClient.get({
-        service: 'base',
-        path: '/api/view/boletaDetalle',
-        query: { IdLiq: idliq.value }
-      })
+      const resDet = await leerDatos('view/boletaDetalle', { query: { IdLiq: idliq.value } })
+      if (!resDet.operacionOk) {
+        throw new Error(resDet.errmsg || `Error ${resDet.estado} al obtener el detalle`)
+      }
+      det.value = resDet.datos
     } catch (error) {
       console.log(error)
     }
@@ -104,7 +118,7 @@ export const useBoletatxt = defineStore('boletatxt', () => {
     const tenantStore = useTenantStore()
     const pngUrl = tenantStore.boletaLogo || logo
 
-    const pngImageBytes = await fetch(pngUrl).then((res) => res.arrayBuffer())
+    const pngImageBytes = await descargarImagen(pngUrl)
 
     const pngImage = await pdfDoc.embedPng(pngImageBytes)
 
@@ -233,7 +247,7 @@ export const useBoletatxt = defineStore('boletatxt', () => {
       const tenantStore = useTenantStore()
       const pngUrl = tenantStore.boletaLogo || logo
 
-      const pngImageBytes = await fetch(pngUrl).then((res) => res.arrayBuffer())
+      const pngImageBytes = await descargarImagen(pngUrl)
 
       const pngImage = await pdfDoc.embedPng(pngImageBytes)
 

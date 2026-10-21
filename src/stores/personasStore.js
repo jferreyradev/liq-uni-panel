@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { useEndPoints } from '@/composables/useEndPoints'
+import { leerDatos } from '@/shared/services/apiService'
 
 export const usePersonasStore = defineStore('personasListas', {
   state: () => ({
@@ -21,12 +21,14 @@ export const usePersonasStore = defineStore('personasListas', {
       return { name: 'Argentina', value: 1 }
     },
     async leerProvincias() {
-      const { apiBase, getBoletasHeaders } = useEndPoints()
-      const url = `${apiBase.value}/api/en/provincias?PaisId=1&sort={"Descripcion":"asc"}`
       try {
-        const respuesta = await fetch(url, {
-          headers: getBoletasHeaders()
-        }).then((res) => res.json())
+        const res = await leerDatos('en/provincias', {
+          query: { PaisId: 1, sort: JSON.stringify({ Descripcion: 'asc' }) },
+        })
+        if (!res.operacionOk) {
+          throw new Error(res.errmsg || `Error ${res.estado} al obtener provincias`)
+        }
+        const respuesta = res.datos
         if (Array.isArray(respuesta)) {
           this.provincias = respuesta.map((item) => ({
             name: item.DESCRIPCION,

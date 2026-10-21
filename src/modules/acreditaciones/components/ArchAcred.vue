@@ -4,6 +4,7 @@ import RepoHeader from "@/shared/components/RepoHeader.vue";
 import { useFilterStore } from "@/stores/filterStore";
 import { useEndPoints } from "@/composables/useEndPoints";
 import { useFetch } from "@/composables/useFetch";
+import { request } from "@/shared/services/httpClient";
 
 const preview = ref(false);
 const { apiBase, getBoletasHeaders, buildApiHeaders } = useEndPoints();
@@ -15,17 +16,18 @@ function printData() {
 
 const getTxtFromAPI = async (url) => {
   const headersFn = buildApiHeaders || getBoletasHeaders || (() => ({}));
-  const response = await fetch(url, {
-    method: "GET",
+  const res = await request({
+    url,
     headers: {
       ...headersFn(),
       "Content-Type": "text/plain",
     },
+    responseType: "blob",
   });
-  if (!response.ok) {
+  if (!res.operacionOk) {
     return null;
   }
-  const datos = await response.blob();
+  const datos = res.datos;
   const urlSalida = window.URL.createObjectURL(datos);
   return urlSalida;
 };

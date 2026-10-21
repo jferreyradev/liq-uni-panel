@@ -72,7 +72,7 @@ export async function eliminarRegistro(url = "", metodo = "DELETE", options = {}
  * arman la URL por su cuenta.
  *
  * @param {string} url ruta relativa a /api/ o URL absoluta
- * @param {{signal?: AbortSignal, timeout?: number, headers?: Object}} [options]
+ * @param {{signal?: AbortSignal, timeout?: number, headers?: Object, query?: Object, method?: string, body?: *}} [options]
  * @returns {Promise<{estado, operacionOk, errmsg, datos, notFound}>}
  */
 export async function leerDatos(url = "", options = {}) {
@@ -83,6 +83,7 @@ export async function leerDatos(url = "", options = {}) {
     method: options.method || "GET",
     body: options.body,
     headers: options.headers,
+    query: options.query,
     signal: options.signal,
     timeout: options.timeout,
   });
