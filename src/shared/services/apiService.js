@@ -1,178 +1,103 @@
-import { useEndPoints } from "@/composables/useEndPoints";
-
-function getUrlApi() {
-  const { apiBase } = useEndPoints();
-  return `${apiBase.value}/api/`;
-}
-
-function getUrlApiSp() {
-  const { apiSp } = useEndPoints();
-  return `${apiSp.value}/`;
-}
-
-function getHeaders(extraHeaders = {}) {
-  const { getBoletasHeaders } = useEndPoints();
-  return getBoletasHeaders(extraHeaders);
-}
+import { request, isAbsoluteUrl, RESPONSE_BLOB } from "@/shared/services/httpClient";
 
 /**
- * Lee el cuerpo de una respuesta tolerando cuerpos vacíos o no-JSON.
- * Evita que un 500 con cuerpo HTML termine reportado como "Error en la Red".
+ * Fachada de dominio sobre el cliente HTTP único (@/shared/services/httpClient).
  *
- * @param {Response} response
- * @returns {Promise<{ok: boolean, data: any, raw: string|null}>}
+ * Mantiene los nombres y las formas de retorno que usa la app:
+ *   leerDatos / grabarRegistro / eliminarRegistro / ejecutarSP / ejecutarSPStream
+ *   ejecutarSP_SinEspera / descargaTXT
+ *
+ * La política de negocio (por ejemplo, que un 404 en un listado no es un
+ * error fatal) vive acá; el transporte vive en httpClient.
  */
-async function parseJsonSafe(response) {
-  let text = "";
-  try {
-    text = await response.text();
-  } catch {
-    return { ok: false, data: null, raw: null };
-  }
 
-  if (!text || !text.trim()) {
-    return { ok: true, data: null, raw: null };
-  }
+/**
+ * Convierte el código de error del SP a número.
+ * Un valor no numérico (por ejemplo un texto de error) se traduce a -1,
+ * de modo que nunca pueda colarse un NaN en la comparación de éxito.
+ */
+function normalizeErrorCode(rawErr) {
+  if (rawErr === undefined || rawErr === null || rawErr === "") return 0;
+  if (typeof rawErr === "number") return Number.isFinite(rawErr) ? rawErr : -1;
 
-  try {
-    return { ok: true, data: JSON.parse(text), raw: null };
-  } catch {
-    return { ok: false, data: null, raw: text.slice(0, 200) };
-  }
-}
+  const str = String(rawErr).trim();
+  if (!str) return 0;
+  if (!/^-?\d+$/.test(str)) return -1;
 
-function isAbortError(error) {
-  return error?.name === "AbortError";
+  const num = Number(str);
+  return Number.isFinite(num) ? num : -1;
 }
 
 export async function grabarRegistro(url = "", data = {}, metodo = "POST", options = {}) {
-  let estado = 0;
-  let operacionOk = false;
-  let errmsg = "";
-  let datos = null;
-  try {
-    const response = await fetch(getUrlApi() + url, {
-      method: metodo,
-      mode: "cors",
-      cache: "no-cache",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(),
-      },
-      redirect: "follow",
-      referrerPolicy: "no-referrer",
-      body: JSON.stringify(data),
-      signal: options.signal,
-    });
-    estado = response.status;
-    operacionOk = response.ok;
-    if (response.ok) {
-      const parsed = await parseJsonSafe(response);
-      datos = parsed.data;
-      if (!parsed.ok) {
-        operacionOk = false;
-        errmsg = "La respuesta del servidor no tiene un formato válido";
-      }
-    } else {
-      errmsg = "Error al intentar grabar el registro";
-    }
-  } catch (error) {
-    if (isAbortError(error)) throw error;
-    estado = 999;
-    operacionOk = false;
-    errmsg = "Error en la Red";
-    datos = null;
-  }
-  return { estado, operacionOk, errmsg, datos };
+  const res = await request({
+    service: "base",
+    path: url,
+    method: metodo,
+    body: data,
+    signal: options.signal,
+    timeout: options.timeout,
+  });
+
+  return {
+    estado: res.estado,
+    operacionOk: res.operacionOk,
+    errmsg: res.errmsg || "Error al intentar grabar el registro",
+    datos: res.datos,
+  };
 }
 
 export async function eliminarRegistro(url = "", metodo = "DELETE", options = {}) {
-  let estado = 0;
-  let operacionOk = false;
-  let errmsg = "";
-  let datos = null;
-  try {
-    const response = await fetch(getUrlApi() + url, {
-      method: metodo,
-      mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(),
-      },
-      signal: options.signal,
-    });
-    estado = response.status;
-    operacionOk = response.ok;
-    if (response.ok) {
-      const parsed = await parseJsonSafe(response);
-      datos = parsed.data;
-      if (!parsed.ok) {
-        operacionOk = false;
-        errmsg = "La respuesta del servidor no tiene un formato válido";
-      }
-    } else {
-      errmsg = "Error al intentar eliminar el registro";
-    }
-  } catch (error) {
-    if (isAbortError(error)) throw error;
-    estado = 999;
-    operacionOk = false;
-    errmsg = "Error en la Red";
-    datos = null;
-  }
-  return { estado, operacionOk, errmsg, datos };
+  const res = await request({
+    service: "base",
+    path: url,
+    method: metodo,
+    body: options.body,
+    signal: options.signal,
+    timeout: options.timeout,
+  });
+
+  return {
+    estado: res.estado,
+    operacionOk: res.operacionOk,
+    errmsg: res.errmsg || "Error al intentar eliminar el registro",
+    datos: res.datos,
+  };
 }
 
 /**
  * Lee un listado.
  *
- * @param {string} url ruta relativa a /api/
- * @param {{signal?: AbortSignal}} [options]
+ * Acepta tanto una ruta relativa a /api/ ("en/cargo") como una URL absoluta
+ * ("https://host/api/en/cargo"), que es lo que necesitan los composables que
+ * arman la URL por su cuenta.
+ *
+ * @param {string} url ruta relativa a /api/ o URL absoluta
+ * @param {{signal?: AbortSignal, timeout?: number, headers?: Object}} [options]
  * @returns {Promise<{estado, operacionOk, errmsg, datos, notFound}>}
  */
 export async function leerDatos(url = "", options = {}) {
-  let estado = 0;
-  let operacionOk = false;
-  let errmsg = "";
-  let datos = null;
-  let notFound = false;
-  let response = null;
-  try {
-    response = await fetch(getUrlApi() + url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(),
-      },
-      signal: options.signal,
-    });
-    estado = response.status;
-    if (response.ok) {
-      const parsed = await parseJsonSafe(response);
-      if (parsed.ok) {
-        datos = parsed.data;
-        operacionOk = true;
-      } else {
-        errmsg = "La respuesta del servidor no tiene un formato válido";
-        operacionOk = false;
-      }
-    } else {
-      notFound = response.status === 404;
-      // Se conserva la semántica histórica: un 404 no se considera un error
-      // fatal del listado. El flag notFound permite distinguirlo si hace falta.
-      operacionOk = notFound;
-      errmsg = notFound
-        ? "No se encontraron los datos solicitados"
-        : "Error al intentar leer los datos";
-    }
-  } catch (error) {
-    if (isAbortError(error)) throw error;
-    estado = 999;
-    operacionOk = false;
-    errmsg = "Error en la Red";
-    datos = null;
-  }
-  return { estado, operacionOk, errmsg, datos, notFound };
+  const res = await request({
+    url: isAbsoluteUrl(url) ? url : "",
+    service: "base",
+    path: url,
+    method: options.method || "GET",
+    body: options.body,
+    headers: options.headers,
+    signal: options.signal,
+    timeout: options.timeout,
+  });
+
+  // Se conserva la semántica histórica: un 404 no se considera un error
+  // fatal del listado. El flag notFound permite distinguirlo si hace falta.
+  const operacionOk = res.operacionOk || res.notFound;
+
+  return {
+    estado: res.estado,
+    operacionOk,
+    errmsg: res.errmsg,
+    datos: res.datos,
+    notFound: res.notFound,
+  };
 }
 
 /**
@@ -181,7 +106,7 @@ export async function leerDatos(url = "", options = {}) {
  * @param {string} url ruta relativa al host de SP
  * @param {Object} data payload
  * @param {string} [metodo]
- * @param {{signal?: AbortSignal}} [options]
+ * @param {{signal?: AbortSignal, timeout?: number}} [options]
  */
 export async function ejecutarSP(url = "", data = {}, metodo = "POST", options = {}) {
   let estado = 0;
@@ -194,43 +119,21 @@ export async function ejecutarSP(url = "", data = {}, metodo = "POST", options =
   let out = null;
 
   try {
-    const response = await fetch(getUrlApiSp() + url, {
+    const res = await request({
+      service: "sp",
+      path: url,
       method: metodo,
-      mode: "cors",
-      cache: "no-cache",
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(),
-      },
-      redirect: "follow",
-      referrerPolicy: "no-referrer",
-      body: JSON.stringify(data),
+      body: data,
       signal: options.signal,
+      timeout: options.timeout,
+      cache: "no-cache",
     });
-    estado = response.status;
-    operacionOk = response.ok;
 
-    const parsed = await parseJsonSafe(response);
-    datos = parsed.data;
+    estado = res.estado;
+    operacionOk = res.operacionOk;
+    datos = res.datos;
 
-    if (response.ok) {
-      if (!parsed.ok) {
-        operacionOk = false;
-        errmsg = "La respuesta del servidor no tiene un formato válido";
-        errorMsg = errmsg;
-        return {
-          estado,
-          operacionOk,
-          errmsg,
-          valorError,
-          valorSalida,
-          errorMsg,
-          datos,
-          out,
-        };
-      }
-
+    if (operacionOk) {
       let payload = datos && datos.out ? datos.out : datos;
       if (Array.isArray(payload)) {
         payload = payload[0] || {};
@@ -266,12 +169,10 @@ export async function ejecutarSP(url = "", data = {}, metodo = "POST", options =
       }
     } else {
       errmsg = "Error al intentar ejecutar el proceso";
-      errorMsg = parsed.raw
-        ? `Error al intentar ejecutar el proceso (${parsed.raw})`
-        : errmsg;
+      errorMsg = errmsg;
     }
   } catch (error) {
-    if (isAbortError(error)) throw error;
+    if (error?.name === "AbortError") throw error;
     estado = 999;
     operacionOk = false;
     errmsg = "Error en la Red";
@@ -291,23 +192,6 @@ export async function ejecutarSP(url = "", data = {}, metodo = "POST", options =
   };
 }
 
-/**
- * Convierte el código de error del SP a número.
- * Un valor no numérico (por ejemplo un texto de error) se traduce a -1,
- * de modo que nunca pueda colarse un NaN en la comparación de éxito.
- */
-function normalizeErrorCode(rawErr) {
-  if (rawErr === undefined || rawErr === null || rawErr === "") return 0;
-  if (typeof rawErr === "number") return Number.isFinite(rawErr) ? rawErr : -1;
-
-  const str = String(rawErr).trim();
-  if (!str) return 0;
-  if (!/^-?\d+$/.test(str)) return -1;
-
-  const num = Number(str);
-  return Number.isFinite(num) ? num : -1;
-}
-
 export const ejecutaSP = ejecutarSP;
 
 /**
@@ -325,26 +209,20 @@ export async function ejecutarSP_SinEspera(
   let response = null;
 
   try {
-    response = fetch(getUrlApiSp() + url, {
+    const promise = request({
+      service: "sp",
+      path: url,
       method: metodo,
-      mode: "cors",
-      cache: "no-cache",
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(),
-      },
-      redirect: "follow",
-      referrerPolicy: "no-referrer",
-      body: JSON.stringify(data),
+      body: data,
       signal: options.signal,
+      timeout: options.timeout ?? 0,
     });
 
-    if (response && typeof response.catch === "function") {
-      response.catch((error) => {
-        console.error("Error en ejecutarSP_SinEspera:", error);
-      });
-    }
+    response = promise;
+
+    promise.catch((error) => {
+      console.error("Error en ejecutarSP_SinEspera:", error);
+    });
   } catch (error) {
     salida = 1;
   }
@@ -362,55 +240,45 @@ export async function ejecutarSPStream(
   let operacionOk = false;
   let errmsg = "";
   let datos = null;
+
   try {
-    const response = await fetch(getUrlApiSp() + url, {
+    const res = await request({
+      service: "sp",
+      path: url,
       method: metodo,
-      mode: "cors",
-      cache: "no-cache",
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(),
-      },
-      redirect: "follow",
-      referrerPolicy: "no-referrer",
-      body: JSON.stringify(data),
+      body: data,
       signal: options.signal,
+      timeout: options.timeout,
+      cache: "no-cache",
     });
-    estado = response.status;
-    operacionOk = response.ok;
-    if (response.ok) {
-      const parsed = await parseJsonSafe(response);
-      datos = parsed.data?.out?.Cursor;
-      if (!parsed.ok) {
-        operacionOk = false;
-        errmsg = "La respuesta del servidor no tiene un formato válido";
-      }
-    } else {
+
+    estado = res.estado;
+    operacionOk = res.operacionOk;
+    datos = res.datos?.out?.Cursor;
+
+    if (!operacionOk) {
       errmsg = "Error al intentar obtener el stream del archivo";
     }
   } catch (error) {
-    if (isAbortError(error)) throw error;
+    if (error?.name === "AbortError") throw error;
     estado = 999;
     operacionOk = false;
     errmsg = "Error en la Red";
     datos = null;
   }
+
   return { estado, operacionOk, errmsg, datos };
 }
 
 export async function descargaTXT(url) {
-  const urlDescargar = getUrlApi() + url;
-  const response = await fetch(urlDescargar, {
+  const res = await request({
+    service: "base",
+    path: url,
     method: "GET",
-    headers: {
-      "Content-Type": "text/plain",
-      ...getHeaders(),
-    },
+    responseType: RESPONSE_BLOB,
   });
-  if (!response.ok) {
-    return null;
-  }
-  const datos = await response.blob();
-  return window.URL.createObjectURL(datos);
+
+  if (!res.operacionOk || !res.datos) return null;
+
+  return window.URL.createObjectURL(res.datos);
 }
