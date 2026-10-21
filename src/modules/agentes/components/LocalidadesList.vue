@@ -15,10 +15,15 @@ const listaHeaders = [
 
 async function grabaRegistro(itemid) {
   let item = null;
-  if (itemid != null)
-    if (itemid !== 0) item = data.value.find((e) => e.ID == itemid);
-  props.seleccionaLocalidad(item);
-  props.cerrar();
+  if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
+    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+  }
+  if (item && props.seleccionaLocalidad) {
+    props.seleccionaLocalidad(item);
+  }
+  if (props.cerrar) {
+    props.cerrar();
+  }
 }
 
 // lectura de registros
@@ -29,13 +34,18 @@ const codPostal = ref(0);
 
 async function leerListaRegs() {
   isPending.value = true;
-  //const { datos, operacionOk } = await leerDatos('view/novAltas?HojaId=' + hojaEditar.ID)
   let url =
     "en/localidad?CP=" + codPostal.value + '&sort={"Descripcion":"asc"}';
-  const { datos, operacionOk } = await leerDatos(url);
-  data.value = datos;
-  lecturaListaRegs.value = operacionOk;
-  isPending.value = false;
+  try {
+    const { datos, operacionOk } = await leerDatos(url);
+    data.value = Array.isArray(datos) ? datos : datos ? [datos] : [];
+    lecturaListaRegs.value = operacionOk;
+  } catch (err) {
+    console.error("Error en leerListaRegs Localidades:", err);
+    lecturaListaRegs.value = false;
+  } finally {
+    isPending.value = false;
+  }
 }
 </script>
 

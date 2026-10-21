@@ -57,8 +57,9 @@ const itemMostrar = ref({
 function handleModif(itemid) {
   mostrarAlert.value = false;
   let item = null;
-  if (itemid != null)
-    if (itemid !== 0) item = data.value.find((e) => e.ID == itemid);
+  if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
+    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+  }
   abrirModal(item);
 }
 
@@ -97,17 +98,26 @@ async function grabarSP(item, id) {
   }
   //console.log(url, item)
 
-  const { valorError, valorSalida, errorMsg } = await ejecutarSP(url, item);
-  console.log(valorError, valorSalida);
-  if (valorError == 0) {
-    await leerListaRegs();
-    alertMensaje.value = "Se grabó el concepto de liquidación";
-    alertTipo.value = "success";
-    mostrarAlert.value = true;
-    return null;
-  }
+  try {
+    const { operacionOk, valorError, valorSalida, errorMsg, datos, out } = await ejecutarSP(url, item);
+    const errCode = valorError !== undefined && valorError !== -1
+      ? valorError
+      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
 
-  return errorMsg;
+    if (operacionOk && errCode == 0) {
+      Promise.resolve(leerListaRegs()).catch((e) => {
+        console.warn("Error al refrescar conceptos de cargo:", e);
+      });
+      alertMensaje.value = "Se grabó el concepto de liquidación";
+      alertTipo.value = "success";
+      mostrarAlert.value = true;
+      return null;
+    }
+    return errorMsg || out?.vErrorMsg || "No se pudo grabar el concepto de liquidación";
+  } catch (err) {
+    console.error("Error en grabarSP Conceptos:", err);
+    return err.message || "Error al grabar concepto";
+  }
 }
 
 async function eliminar(id) {
@@ -215,6 +225,7 @@ leerListaRegs();
           </v-dialog>
           <v-dialog v-model="muestraRegistro" max-width="80%" persistent="">
             <CargosConceptosVista
+              v-if="muestraRegistro"
               :Registro="itemMostrar"
               :cerrar="cierraForm"
               :funcion="grabarSP"

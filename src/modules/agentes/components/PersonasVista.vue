@@ -53,55 +53,53 @@ if (registroOrigen) {
 }
 
 const mostrarAlert = ref(false);
+const isSaving = ref(false);
 
 let mensajeError = ref("");
 
 async function grabaRegistro() {
   const isValid = await form.value.validate();
+  const valid = typeof isValid === "object" && isValid !== null ? isValid.valid : isValid;
 
-  if (!isValid) {
-    return;
-  }
-  if (formOK.value === false) {
+  if (!valid || formOK.value === false) {
     return;
   }
   mostrarAlert.value = false;
 
-  //console.log(registroActual.value.CBU.legnth)
-  //console.log()
-  let CBU = registroActual.value.CBU == null ? "" : registroActual.value.CBU;
-  let CUENTA =
-    registroActual.value.CUENTA == null ? "" : registroActual.value.CUENTA;
-
-  /* se elimina la restricción de no grabar cbu sin cuenta
- if (CBU > 0) {
-    if (CUENTA.length == 0) {
-      mensajeError.value = 'No puede especificar CBU si no especificó número de cuenta'
-      mostrarAlert.value = true
-      return
+  let fecNacimiento = "";
+  if (fechaNacimiento.value !== null && fechaNacimiento.value !== undefined) {
+    if (String(fechaNacimiento.value).trim().length > 0) {
+      fecNacimiento = getFechaToAPIFromDDMMYYYY(fechaNacimiento.value);
     }
   }
-    */
-
-  // si es esposa/o coloca valores predeterminados en campos de hijo
-
-  //
-
-  let fecNacimiento = "";
-  if (fechaNacimiento.value !== null)
-    if (fechaNacimiento.value.length > 0)
-      fecNacimiento = getFechaToAPIFromDDMMYYYY(fechaNacimiento.value);
 
   let fecIngreso = "";
-  if (fechaIngreso.value !== null)
-    if (fechaIngreso.value.length > 0)
+  if (fechaIngreso.value !== null && fechaIngreso.value !== undefined) {
+    if (String(fechaIngreso.value).trim().length > 0) {
       fecIngreso = getFechaToAPIFromDDMMYYYY(fechaIngreso.value);
+    }
+  }
+
+  const sexoVal =
+    typeof sexoSelected.value === "object" && sexoSelected.value !== null
+      ? sexoSelected.value.value
+      : sexoSelected.value;
+
+  const tipoDocVal =
+    typeof tipoDocSelected.value === "object" && tipoDocSelected.value !== null
+      ? tipoDocSelected.value.value
+      : tipoDocSelected.value;
+
+  const estCivilVal =
+    typeof estCivilSelected.value === "object" && estCivilSelected.value !== null
+      ? estCivilSelected.value.value
+      : estCivilSelected.value;
 
   let registroGrabar = {
     vDNI: registroActual.value.DOCUMENTO,
     vAPELLIDO: registroActual.value.APELLIDO,
     vCUIL: registroActual.value.CUIL,
-    vSEXO: sexoSelected.value.value,
+    vSEXO: sexoVal,
     vFECHANAC: fecNacimiento,
     vDOMICILIO: registroActual.value.DOMICILIOCALLE,
     vNRO: registroActual.value.DOMICILIONUMERO,
@@ -109,30 +107,38 @@ async function grabaRegistro() {
     vTELEFONO: registroActual.value.TELEFONO,
     vEMAIL: registroActual.value.EMAIL,
     vNOMBRE: registroActual.value.NOMBRE,
-    vIDTIPODOC: tipoDocSelected.value.value,
-    vIDESTCIVIL: estCivilSelected.value.value,
+    vIDTIPODOC: tipoDocVal,
+    vIDESTCIVIL: estCivilVal,
     vLOCALIDAD_ID: registroActual.value.LOCALIDADID,
     vPISO: registroActual.value.PISO,
     vDPTO: registroActual.value.DEPARTAMENTO,
     vCUENTA: registroActual.value.CUENTA,
     vCBU: registroActual.value.CBU,
   };
-  if (registroActual.value.ID !== 0) {
+  if (registroActual.value.ID && registroActual.value.ID !== 0) {
     registroGrabar = {
       vIDPERS: registroActual.value.ID,
       ...registroGrabar,
     };
   }
-  console.log("ESTE SERIA EL REGISTRO A GRABAR");
-  console.log(JSON.stringify(registroGrabar));
-  //return
-  let resultado = await props.funcion(registroGrabar, registroActual.value.ID);
 
-  if (resultado === null) {
-    props.cerrar();
-  } else {
-    mensajeError.value = resultado;
+  console.log("ESTE SERIA EL REGISTRO A GRABAR:", JSON.stringify(registroGrabar));
+  isSaving.value = true;
+  try {
+    let resultado = await props.funcion(registroGrabar, registroActual.value.ID || 0);
+
+    if (resultado === null) {
+      props.cerrar();
+    } else {
+      mensajeError.value = resultado;
+      mostrarAlert.value = true;
+    }
+  } catch (err) {
+    console.error("Error en grabaRegistro Persona:", err);
+    mensajeError.value = err.message || "Error al grabar datos de la persona";
     mostrarAlert.value = true;
+  } finally {
+    isSaving.value = false;
   }
 }
 
@@ -148,11 +154,12 @@ function cierraForm() {
 }
 
 function estableceLocalidad(item) {
-  registroActual.value.LOCALIDADID = item.ID;
-  registroActual.value.LOCALIDADDESCRIPCION = item.DESCRIPCION;
-  registroActual.value.LOCALIDADCODIGOPOSTAL = item.CP;
-  registroActual.value.PROVINCIADESCRIPCION = item.PROVINCIADESCRIPCION;
-  registroActual.value.PAISDESCRIPCION = "ARGENTINA";
+  if (!item) return;
+  registroActual.value.LOCALIDADID = item.ID ?? item.Id ?? 0;
+  registroActual.value.LOCALIDADDESCRIPCION = item.DESCRIPCION ?? "";
+  registroActual.value.LOCALIDADCODIGOPOSTAL = item.CP ?? "";
+  registroActual.value.PROVINCIADESCRIPCION = item.PROVINCIADESCRIPCION ?? "";
+  registroActual.value.PAISDESCRIPCION = item.PAISDESCRIPCION || "ARGENTINA";
 }
 
 ////////////////////////////
@@ -160,11 +167,12 @@ function estableceLocalidad(item) {
 
 <template>
   <v-container>
-    <v-card>
+    <v-card :loading="isSaving">
+      <v-progress-linear v-if="isSaving" indeterminate color="primary"></v-progress-linear>
       <v-form ref="form" v-model="formOK">
         <v-card-title>Detalle de la Persona</v-card-title>
         <v-card-subtitle>
-          {{ registroActual.ID == 0 ? "Agregar " : "Datos de la persona" }}
+          {{ (registroActual?.ID ?? registroActual?.Id ?? 0) == 0 ? "Agregar " : "Datos de la persona" }}
         </v-card-subtitle>
         <v-alert
           v-model="mostrarAlert"
@@ -196,7 +204,7 @@ function estableceLocalidad(item) {
                   hide-details="auto"
                   label="DNI"
                   :rules="[
-                    (val) => rules.longitudEntre(val, 8, 9),
+                    (val) => rules.longitudEntre(val, 7, 9),
                     ...rules.number,
                   ]"
                 ></v-text-field>
@@ -423,10 +431,17 @@ function estableceLocalidad(item) {
             elevation="3"
             outlined
             value="grabar"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="grabaRegistro()"
             >Grabar</v-btn
           >
-          <v-btn color="error" elevation="3" outlined @click="cerrar()"
+          <v-btn
+            color="error"
+            elevation="3"
+            outlined
+            :disabled="isSaving"
+            @click="cerrar()"
             >Cerrar</v-btn
           >
         </v-card-actions>

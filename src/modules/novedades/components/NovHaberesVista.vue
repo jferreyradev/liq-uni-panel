@@ -46,6 +46,7 @@ if (registroOrigen) {
 const mostrarAlert = ref(false);
 
 let mensajeError = ref("");
+const isSaving = ref(false);
 
 async function grabaRegistro() {
   if (formOK.value === false) {
@@ -79,14 +80,23 @@ async function grabaRegistro() {
     HojaId: registroActual.value.HOJAID,
     Id: registroActual.value.ID,
   };
-  console.log(registroGrabar);
-  let grabarOk = await props.funcion(registroGrabar);
+  console.log("NovHaberes registro a grabar:", registroGrabar);
+  isSaving.value = true;
+  try {
+    let grabarOk = await props.funcion(registroGrabar);
 
-  if (grabarOk) {
-    props.cerrar();
-  } else {
-    mensajeError.value = "No se pudieron grabar los datos";
+    if (grabarOk) {
+      props.cerrar();
+    } else {
+      mensajeError.value = "No se pudieron grabar los datos";
+      mostrarAlert.value = true;
+    }
+  } catch (err) {
+    console.error("Error en grabaRegistro NovHaberes:", err);
+    mensajeError.value = err.message || "Error al grabar novedades de haberes";
     mostrarAlert.value = true;
+  } finally {
+    isSaving.value = false;
   }
 }
 
@@ -97,7 +107,8 @@ function validarRegistro() {
 
 <template>
   <v-container>
-    <v-card>
+    <v-card :loading="isSaving">
+      <v-progress-linear v-if="isSaving" indeterminate color="primary"></v-progress-linear>
       <v-form ref="form" v-model="formOK">
         <v-card-title>Novedades de Haberes</v-card-title>
         <v-card-subtitle>Agregar en Hoja Nº {{ hojaId }}</v-card-subtitle>
@@ -317,10 +328,17 @@ function validarRegistro() {
             elevation="3"
             outlined
             value="grabar"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="grabaRegistro()"
             >Grabar</v-btn
           >
-          <v-btn color="error" elevation="3" outlined @click="cerrar()"
+          <v-btn
+            color="error"
+            elevation="3"
+            outlined
+            :disabled="isSaving"
+            @click="cerrar()"
             >Cancelar</v-btn
           >
         </v-card-actions>

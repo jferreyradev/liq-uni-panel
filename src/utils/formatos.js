@@ -108,8 +108,17 @@ export const getFechaToAPIFromMMYYYY = (periodo) => {
 
 export const getFechaToAPIFromDDMMYYYY = (fechaOrigen) => {
   if (!fechaOrigen) return ''
-  const parts = fechaOrigen.split('/')
+  const str = String(fechaOrigen).trim()
+  const sep = str.includes('/') ? '/' : str.includes('-') ? '-' : ''
+  if (!sep) return ''
+  const parts = str.split(sep)
   if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      const year = parts[0]
+      const month = String(parts[1]).padStart(2, '0')
+      const day = String(parts[2]).padStart(2, '0')
+      return `${year}-${month}-${day}T03:00:00.000Z`
+    }
     const day = String(parts[0]).padStart(2, '0')
     const month = String(parts[1]).padStart(2, '0')
     const year = parts[2]

@@ -55,8 +55,8 @@ async function obtieneApellidoYNombre() {
     }
 
     let persona = datos[0];
-    personaId.value = persona.ID;
-    apeynom.value = persona.APELLIDO;
+    personaId.value = persona?.ID ?? persona?.Id ?? 0;
+    apeynom.value = persona?.APELLIDO || persona?.APELLIDOYNOMBRE || "";
     return;
   } catch (error) {
     personaId.value = 0;
@@ -130,6 +130,8 @@ function onTipoProcesoChange() {
   formaLiquidarSelected.value = formasLiquidar[0];
 }
 
+const isRunning = ref(false);
+
 async function EjecutarAccion() {
   const isValid = await form.value.validate();
   let ejecucionOK = { resultado: "OK", mensaje: "" };
@@ -140,17 +142,27 @@ async function EjecutarAccion() {
     return;
   }
 
-  if (tipoProcesoSelected.value.value == 1) ejecucionOK = await Transformar();
-  if (tipoProcesoSelected.value.value == 2) ejecucionOK = await Liquidar();
-  if (tipoProcesoSelected.value.value == 3) ejecucionOK = await GenBoletas();
+  isRunning.value = true;
+  try {
+    if (tipoProcesoSelected.value.value == 1) ejecucionOK = await Transformar();
+    if (tipoProcesoSelected.value.value == 2) ejecucionOK = await Liquidar();
+    if (tipoProcesoSelected.value.value == 3) ejecucionOK = await GenBoletas();
 
-  if (ejecucionOK.resultado == 0) {
-    alertTipo.value = "success";
-  } else {
+    if (ejecucionOK.resultado == 0) {
+      alertTipo.value = "success";
+    } else {
+      alertTipo.value = "error";
+    }
+    alertMensaje.value = ejecucionOK.mensaje;
+    mostrarAlert.value = true;
+  } catch (err) {
+    console.error("Error en EjecutarAccion:", err);
     alertTipo.value = "error";
+    alertMensaje.value = err.message || "Error al ejecutar el proceso";
+    mostrarAlert.value = true;
+  } finally {
+    isRunning.value = false;
   }
-  alertMensaje.value = ejecucionOK.mensaje;
-  mostrarAlert.value = true;
 }
 
 async function Transformar() {
@@ -252,7 +264,8 @@ function cierraVerProcesos() {
 </script>
 <template>
   <v-container>
-    <v-card>
+    <v-card :loading="isRunning">
+      <v-progress-linear v-if="isRunning" indeterminate color="primary"></v-progress-linear>
       <v-form ref="form" v-model="formOK">
         <v-card-title>
           <v-row>
@@ -375,7 +388,7 @@ function cierraVerProcesos() {
                   @keydown.enter="obtieneApellidoYNombre"
                   :rules="[
                     ...rules.number,
-                    (val) => rules.longitudEntreONull(val, 8, 9),
+                    (val) => rules.longitudEntreONull(val, 7, 9),
                   ]"
                 ></v-text-field>
               </v-col>
@@ -396,6 +409,8 @@ function cierraVerProcesos() {
             elevation="3"
             outlined
             value="Ejecutar"
+            :loading="isRunning"
+            :disabled="isRunning"
             @click="EjecutarAccion()"
           >
             {{ tipoProcesoSelected.name }}

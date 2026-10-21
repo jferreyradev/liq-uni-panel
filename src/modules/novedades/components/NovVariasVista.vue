@@ -48,14 +48,13 @@ if (registroOrigen) {
 const mostrarAlert = ref(false);
 
 let mensajeError = ref("");
+const isSaving = ref(false);
 
 async function grabaRegistro() {
   const isValid = await form.value.validate();
+  const valid = typeof isValid === "object" && isValid !== null ? isValid.valid : isValid;
 
-  if (!isValid) {
-    return;
-  }
-  if (formOK.value === false) {
+  if (!valid || formOK.value === false) {
     return;
   }
   mostrarAlert.value = false;
@@ -65,8 +64,8 @@ async function grabaRegistro() {
   }
 
   let vto = "";
-  if (vencimiento.value != null) {
-    if (vencimiento.value.length > 0)
+  if (vencimiento.value != null && vencimiento.value !== undefined) {
+    if (String(vencimiento.value).trim().length > 0)
       vto = getFechaToAPIFromMMYYYY(vencimiento.value);
   }
   let registroGrabar = {
@@ -81,7 +80,7 @@ async function grabaRegistro() {
     vIDHOJANOV: hojaId,
     vPERIODO: getFechaToAPIFromMMYYYY(periodo.value),
   };
-  if (registroActual.value.ID !== 0) {
+  if (registroActual.value.ID && registroActual.value.ID !== 0) {
     registroGrabar = {
       vIDNOV: registroActual.value.ID,
       ...registroGrabar,
@@ -90,25 +89,31 @@ async function grabaRegistro() {
     };
   }
 
-  console.log(registroGrabar);
-  let grabarOk = await props.funcion(registroGrabar, registroActual.value.ID);
+  console.log("NovVarias registro a grabar:", registroGrabar);
+  isSaving.value = true;
+  try {
+    let grabarOk = await props.funcion(registroGrabar, registroActual.value.ID || 0);
 
-  if (grabarOk) {
-    props.cerrar();
-  } else {
-    mensajeError.value = "No se pudieron grabar los datos";
+    if (grabarOk) {
+      props.cerrar();
+    } else {
+      mensajeError.value = "No se pudieron grabar los datos";
+      mostrarAlert.value = true;
+    }
+  } catch (err) {
+    console.error("Error en grabaRegistro NovVarias:", err);
+    mensajeError.value = err.message || "Error al grabar novedad";
     mostrarAlert.value = true;
+  } finally {
+    isSaving.value = false;
   }
-}
-
-function validarRegistro() {
-  return true;
 }
 </script>
 
 <template>
   <v-container>
-    <v-card>
+    <v-card :loading="isSaving">
+      <v-progress-linear v-if="isSaving" indeterminate color="primary"></v-progress-linear>
       <v-form ref="form" v-model="formOK">
         <v-card-title>Novedades Varias</v-card-title>
         <v-card-subtitle>Agregar en Hoja Nº {{ hojaId }}</v-card-subtitle>
@@ -224,10 +229,17 @@ function validarRegistro() {
             elevation="3"
             outlined
             value="grabar"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="grabaRegistro()"
             >Grabar</v-btn
           >
-          <v-btn color="error" elevation="3" outlined @click="cerrar()"
+          <v-btn
+            color="error"
+            elevation="3"
+            outlined
+            :disabled="isSaving"
+            @click="cerrar()"
             >Cancelar</v-btn
           >
         </v-card-actions>

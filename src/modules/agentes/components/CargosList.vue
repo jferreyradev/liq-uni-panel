@@ -55,8 +55,9 @@ let cargoSoloLectura = ref(true);
 function handleModif(itemid) {
   mostrarAlert.value = false;
   let item = null;
-  if (itemid != null)
-    if (itemid !== 0) item = data.value.find((e) => e.ID == itemid);
+  if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
+    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+  }
   cargoSoloLectura.value = false;
   abrirModal(item);
 }
@@ -64,8 +65,9 @@ function handleModif(itemid) {
 function handleVerCargo(itemid) {
   mostrarAlert.value = false;
   let item = null;
-  if (itemid != null)
-    if (itemid !== 0) item = data.value.find((e) => e.ID == itemid);
+  if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
+    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+  }
   cargoSoloLectura.value = true;
   abrirModal(item);
 }
@@ -73,8 +75,9 @@ function handleVerCargo(itemid) {
 function handleListaConceptos(itemid) {
   mostrarAlert.value = false;
   let item = null;
-  if (itemid != null)
-    if (itemid !== 0) item = data.value.find((e) => e.ID == itemid);
+  if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
+    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+  }
   itemMostrar.value = item;
   muestraListaConceptos.value = true;
 }
@@ -123,16 +126,26 @@ async function grabarSP(item, id) {
     url = "sp/CargoUpd";
   }
 
-  const { valorError, errorMsg } = await ejecutarSP(url, item);
-  if (valorError == 0) {
-    await leerRegistros();
-    alertMensaje.value = "Se grabó el cargo";
-    alertTipo.value = "success";
-    mostrarAlert.value = true;
-    return null;
-  }
+  try {
+    const { operacionOk, valorError, errorMsg, datos, out } = await ejecutarSP(url, item);
+    const errCode = valorError !== undefined && valorError !== -1
+      ? valorError
+      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
 
-  return errorMsg;
+    if (operacionOk && errCode == 0) {
+      Promise.resolve(leerRegistros()).catch((e) => {
+        console.warn("Error refrescando registros de cargos:", e);
+      });
+      alertMensaje.value = "Se grabó el cargo";
+      alertTipo.value = "success";
+      mostrarAlert.value = true;
+      return null;
+    }
+    return errorMsg || out?.vErrorMsg || "No se pudo grabar el cargo";
+  } catch (err) {
+    console.error("Error en grabarSP Cargos:", err);
+    return err.message || "Error al grabar cargo";
+  }
 }
 
 let camposFiltros = props.filtros.getFiltroCampos();
@@ -275,17 +288,19 @@ leerRegistros(filtros.getFiltroString());
   </v-container>
   <v-dialog v-model="muestraRegistro" max-width="80%" persistent="">
     <CargosVista
+      v-if="muestraRegistro"
       :Registro="itemMostrar"
       :cerrar="cierraForm"
       :funcion="grabarSP"
-      :hojaId="itemMostrar.ID"
+      :hojaId="itemMostrar?.ID ?? itemMostrar?.Id ?? 0"
       :soloLectura="cargoSoloLectura"
     ></CargosVista>
   </v-dialog>
   <v-dialog v-model="muestraListaConceptos" max-width="80%" persistent="">
     <CargosConceptosList
+      v-if="muestraListaConceptos"
       :cerrar="cierraListaConceptos"
-      :cargoId="itemMostrar.ID"
+      :cargoId="itemMostrar?.ID ?? itemMostrar?.Id ?? 0"
     ></CargosConceptosList>
   </v-dialog>
 </template>

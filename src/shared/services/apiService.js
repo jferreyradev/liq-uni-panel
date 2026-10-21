@@ -88,8 +88,11 @@ export async function leerDatos(url = "") {
   try {
     response = await fetch(getUrlApi() + url, {
       method: "GET",
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
         ...getHeaders(),
       },
     });

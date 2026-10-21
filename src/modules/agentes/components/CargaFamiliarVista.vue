@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { getFechaToAPIFromDDMMYYYY, getFechaDMY } from "@/utils/formatos";
 import { rules } from "@/utils/reglasValidacion";
 import {
@@ -9,7 +9,6 @@ import {
 } from "@/utils/tipos";
 
 const props = defineProps(["Registro", "cerrar", "funcion", "personaId"]);
-let registroOrigen = props.Registro;
 let personaId = props.personaId;
 let registroActual = ref({});
 
@@ -33,21 +32,37 @@ const registroVacio = ref({
   ID: 0,
 });
 
-if (registroOrigen) {
-  registroActual.value = { ...registroOrigen };
-  registroActual.value.DISCAPACITADO = registroOrigen.DISCAPACITADO == 1;
-  fechaNacimiento.value = getFechaDMY(registroActual.value.FECHANACIMIENTO);
-  escolaridadSelected.value = getObjetList(
-    tipoEscolaridad,
-    registroOrigen.TIPOESCOLARIDADID,
-  );
-  relacionFamiliarSelected.value = getObjetList(
-    tipoRelacionFamiliar,
-    registroOrigen.TIPORELACIONID,
-  );
-} else {
-  registroActual.value = { ...registroVacio.value };
+function cargarRegistro(reg) {
+  const pId = props.personaId || personaId;
+  if (reg && (reg.ID !== undefined || reg.Id !== undefined || reg.DOCUMENTO)) {
+    registroActual.value = { ...reg };
+    registroActual.value.ID = reg.ID ?? reg.Id ?? 0;
+    registroActual.value.PERSONAID = reg.PERSONAID || pId;
+    registroActual.value.DISCAPACITADO = reg.DISCAPACITADO == 1;
+    fechaNacimiento.value = getFechaDMY(registroActual.value.FECHANACIMIENTO);
+    escolaridadSelected.value = getObjetList(
+      tipoEscolaridad,
+      reg.TIPOESCOLARIDADID,
+    );
+    relacionFamiliarSelected.value = getObjetList(
+      tipoRelacionFamiliar,
+      reg.TIPORELACIONID,
+    );
+  } else {
+    registroActual.value = { ...registroVacio.value, PERSONAID: pId };
+    fechaNacimiento.value = null;
+    escolaridadSelected.value = tipoEscolaridad[0];
+    relacionFamiliarSelected.value = tipoRelacionFamiliar[0];
+  }
 }
+
+watch(
+  () => props.Registro,
+  (newVal) => {
+    cargarRegistro(newVal);
+  },
+  { immediate: true },
+);
 
 const mostrarAlert = ref(false);
 
@@ -104,15 +119,16 @@ async function grabaRegistro() {
       vGRADO: idRel == 2 ? (registroActual.value.GRADO || 0) : 0,
       vDISCAPACITADO: idRel == 2 ? (registroActual.value.DISCAPACITADO ? 1 : 0) : 0,
     };
-    if (registroActual.value.ID && registroActual.value.ID !== 0) {
+    const regId = registroActual.value.ID ?? registroActual.value.Id ?? 0;
+    if (regId && regId !== 0) {
       registroGrabar = {
-        vIDCARFAM: registroActual.value.ID,
+        vIDCARFAM: regId,
         ...registroGrabar,
       };
     }
 
     console.log("se va a grabar el siguiente registro:", JSON.stringify(registroGrabar));
-    let resultado = await props.funcion(registroGrabar, registroActual.value.ID || 0);
+    let resultado = await props.funcion(registroGrabar, regId);
 
     if (resultado === null) {
       props.cerrar();
@@ -141,7 +157,7 @@ function validarRegistro() {
       <v-form ref="form" v-model="formOK">
         <v-card-title>Carga Familiar</v-card-title>
         <v-card-subtitle>
-          {{ registroActual.ID == 0 ? "Agregar " : "Modificar" }}
+          {{ (registroActual?.ID ?? registroActual?.Id ?? 0) == 0 ? "Agregar " : "Modificar" }}
         </v-card-subtitle>
         <v-alert
           v-model="mostrarAlert"

@@ -59,8 +59,9 @@ const itemMostrar = ref({
 function handleModif(itemid) {
   mostrarAlert.value = false;
   let item = null;
-  if (itemid != null)
-    if (itemid !== 0) item = data.value.find((e) => e.ID == itemid);
+  if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
+    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+  }
   abrirModal(item);
 }
 
@@ -90,25 +91,30 @@ function cierraForm() {
 
 // funciones de agregado, modificación y eliminación
 async function grabarSP(item, id) {
-  let url = "";
-  if (id == 0) {
-    url = "sp/ddjjIns";
-  } else {
-    url = "sp/ddjjUpd";
+  let url = id == 0 ? "sp/ddjjIns" : "sp/ddjjUpd";
+
+  try {
+    const { operacionOk, valorError, valorSalida, errorMsg, datos, out } =
+      await ejecutarSP(url, item);
+    const errCode =
+      valorError !== undefined && valorError !== -1
+        ? valorError
+        : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
+
+    if (operacionOk && errCode == 0) {
+      Promise.resolve(leerListaRegs()).catch((e) => {
+        console.warn("Error refrescando lista DDJJ:", e);
+      });
+      alertMensaje.value =
+        "Se grabó el rango de parámetros con Id=" + (valorSalida || "");
+      alertTipo.value = "success";
+      mostrarAlert.value = true;
+      return true;
+    }
+    console.log("error de grabacion: " + (errorMsg || out?.vErrorMsg || ""));
+  } catch (err) {
+    console.error("Error en grabarSP DDJJ:", err);
   }
-  const { datos } = await ejecutarSP(url, item);
-  const valorError = datos.out.vError;
-  const valorSalida = datos.out.vSALIDA;
-  const errorMsg = datos.out.vErrorMsg;
-  if (valorError == 0) {
-    await leerListaRegs();
-    alertMensaje.value =
-      "Se grabó el rango de parámetros con Id=" + valorSalida;
-    alertTipo.value = "success";
-    mostrarAlert.value = true;
-    return true;
-  }
-  console.log("error de grabacion: " + errorMsg);
 
   return false;
 }
@@ -120,16 +126,29 @@ async function eliminar(id) {
   };
   let url = "sp/ddjjDel";
 
-  const { datos } = await ejecutarSP(url, item);
-  const valorError = datos.out.vError;
+  try {
+    const { operacionOk, valorError, datos, out } = await ejecutarSP(url, item);
+    const errCode =
+      valorError !== undefined && valorError !== -1
+        ? valorError
+        : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
 
-  if (valorError == 0) {
-    await leerListaRegs();
-    alertMensaje.value = "Se eliminó el rango con ID: " + id;
-    alertTipo.value = "success";
-    mostrarAlert.value = true;
-    return true;
+    if (operacionOk && errCode == 0) {
+      Promise.resolve(leerListaRegs()).catch((e) => {
+        console.warn("Error refrescando lista DDJJ:", e);
+      });
+      alertMensaje.value = "Se eliminó el rango con ID: " + id;
+      alertTipo.value = "success";
+      mostrarAlert.value = true;
+      return true;
+    }
+  } catch (err) {
+    console.error("Error en eliminar DDJJ:", err);
   }
+
+  alertMensaje.value = "No se pudo eliminar el rango";
+  alertTipo.value = "error";
+  mostrarAlert.value = true;
   return false;
 }
 
@@ -138,20 +157,21 @@ function handleDownload() {
 }
 
 function exportFile() {
+  if (!Array.isArray(data.value)) return;
   const map1 = data.value.map((x) => {
     return [
-      x.ID,
-      getVto(x.PERIODO),
-      getVto(x.PERIODOHASTA),
-      x.JUBMIN,
-      x.JUBMAX,
-      x.PORCREP,
-      x.CONTJUBMAX,
-      x.CONTJUBPORC,
-      x.APOSMIN,
-      x.APOSMAX,
-      x.CONTOSMIN,
-      x.CONTOSMAX,
+      x?.ID || "",
+      getVto(x?.PERIODO),
+      getVto(x?.PERIODOHASTA),
+      x?.JUBMIN || 0,
+      x?.JUBMAX || 0,
+      x?.PORCREP || 0,
+      x?.CONTJUBMAX || 0,
+      x?.CONTJUBPORC || 0,
+      x?.APOSMIN || 0,
+      x?.APOSMAX || 0,
+      x?.CONTOSMIN || 0,
+      x?.CONTOSMAX || 0,
     ];
   });
 
@@ -294,6 +314,7 @@ function exportFile() {
 
   <v-dialog v-model="muestraRegistro" max-width="80%" persistent="">
     <ParametrosDDJJ_Vista
+      v-if="muestraRegistro"
       :Registro="itemMostrar"
       :cerrar="cierraForm"
       :funcion="grabarSP"

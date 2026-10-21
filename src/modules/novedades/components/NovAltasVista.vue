@@ -59,14 +59,13 @@ if (registroOrigen) {
 const mostrarAlert = ref(false);
 
 let mensajeError = ref("");
+const isSaving = ref(false);
 
 async function grabaRegistro() {
   const isValid = await form.value.validate();
+  const valid = typeof isValid === "object" && isValid !== null ? isValid.valid : isValid;
 
-  if (!isValid) {
-    return;
-  }
-  if (formOK.value === false) {
+  if (!valid || formOK.value === false) {
     return;
   }
   mostrarAlert.value = false;
@@ -75,10 +74,15 @@ async function grabaRegistro() {
     return;
   }
   let vto = "";
-  if (vencimiento.value != null) {
-    if (vencimiento.value.length > 0)
+  if (vencimiento.value != null && vencimiento.value !== undefined) {
+    if (String(vencimiento.value).trim().length > 0)
       vto = getFechaToAPIFromMMYYYY(vencimiento.value);
   }
+
+  const sexoVal =
+    typeof sexoSelected.value === "object" && sexoSelected.value !== null
+      ? sexoSelected.value.value
+      : sexoSelected.value;
 
   let registroGrabar = {
     vREP: registroActual.value.IDREP,
@@ -88,7 +92,7 @@ async function grabaRegistro() {
     vCUIL: registroActual.value.CUIL,
     vAPE: registroActual.value.APELLIDO,
     vNOM: registroActual.value.NOMBRE,
-    vSEXO: sexoSelected.value.value,
+    vSEXO: sexoVal,
     vTE: registroActual.value.TE,
     vCC: registroActual.value.CC,
     vCAT: registroActual.value.CAT,
@@ -99,7 +103,7 @@ async function grabaRegistro() {
     vAJUB: registroActual.value.AJUB ? 1 : 0,
     vPERIODO: getFechaToAPIFromMMYYYY(periodo.value),
   };
-  if (registroActual.value.ID !== 0) {
+  if (registroActual.value.ID && registroActual.value.ID !== 0) {
     registroGrabar = {
       vIDNOV: registroActual.value.ID,
       ...registroGrabar,
@@ -110,14 +114,23 @@ async function grabaRegistro() {
       vIDHOJANOV: hojaId,
     };
   }
-  console.log(registroGrabar);
-  let grabarOk = await props.funcion(registroGrabar, registroActual.value.ID);
+  console.log("NovAltas registro a grabar:", registroGrabar);
+  isSaving.value = true;
+  try {
+    let grabarOk = await props.funcion(registroGrabar, registroActual.value.ID || 0);
 
-  if (grabarOk) {
-    props.cerrar();
-  } else {
-    mensajeError.value = "No se pudieron grabar los datos";
+    if (grabarOk) {
+      props.cerrar();
+    } else {
+      mensajeError.value = "No se pudieron grabar los datos";
+      mostrarAlert.value = true;
+    }
+  } catch (err) {
+    console.error("Error en grabaRegistro NovAltas:", err);
+    mensajeError.value = err.message || "Error al grabar novedad";
     mostrarAlert.value = true;
+  } finally {
+    isSaving.value = false;
   }
 }
 
@@ -128,7 +141,8 @@ function validarRegistro() {
 
 <template>
   <v-container>
-    <v-card>
+    <v-card :loading="isSaving">
+      <v-progress-linear v-if="isSaving" indeterminate color="primary"></v-progress-linear>
       <v-form ref="form" v-model="formOK">
         <v-card-title>Novedades de Altas</v-card-title>
         <v-card-subtitle>Agregar en Hoja Nº {{ hojaId }}</v-card-subtitle>
@@ -341,10 +355,17 @@ function validarRegistro() {
             elevation="3"
             outlined
             value="grabar"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="grabaRegistro()"
             >Grabar</v-btn
           >
-          <v-btn color="error" elevation="3" outlined @click="cerrar()"
+          <v-btn
+            color="error"
+            elevation="3"
+            outlined
+            :disabled="isSaving"
+            @click="cerrar()"
             >Cancelar</v-btn
           >
         </v-card-actions>

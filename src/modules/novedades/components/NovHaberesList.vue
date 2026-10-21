@@ -71,7 +71,9 @@ const itemMostrar = ref({
 function handleModif(itemid) {
   mostrarAlert.value = false;
   let item = null;
-  if (itemid !== 0) item = data.value.find((e) => e.ID == itemid);
+  if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
+    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+  }
   abrirModal(item);
 }
 
@@ -102,10 +104,11 @@ function cierraForm() {
 // funciones de agregado, modificación y eliminación
 async function grabar(item) {
   let resultado = false;
-  if (item.Id == 0) {
+  const itemId = item?.ID ?? item?.Id ?? 0;
+  if (itemId == 0) {
     resultado = await grabarRegistro("novhaberes", item, "POST");
   } else {
-    resultado = await grabarRegistro("novhaberes?Id=" + item.ID, item, "PUT");
+    resultado = await grabarRegistro("novhaberes?Id=" + itemId, item, "PUT");
   }
   if (resultado.operacionOk) {
     await leerListaRegs();
@@ -210,10 +213,11 @@ async function grabar(item) {
 
   <v-dialog v-model="muestraRegistro" max-width="80%" persistent="">
     <NovHaberesVista
+      v-if="muestraRegistro"
       :Registro="itemMostrar"
       :cerrar="cierraForm"
       :funcion="grabar"
-      :hojaId="hojaEditar.ID"
+      :hojaId="hojaEditar?.ID ?? hojaEditar?.Id ?? 0"
     ></NovHaberesVista>
   </v-dialog>
 

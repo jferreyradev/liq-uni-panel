@@ -36,7 +36,9 @@ const itemMostrar = ref({
 function handleModif(itemid) {
   mostrarAlert.value = false;
   let item = null;
-  if (itemid !== null) item = data.value.find((e) => e.ID == itemid);
+  if (itemid !== null && itemid !== 0 && Array.isArray(data.value)) {
+    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+  }
   abrirModal(item);
 }
 
@@ -76,20 +78,27 @@ function cierraForm() {
 // llamadas a API de grabación y eliminación
 
 async function grabarSP(item, id) {
-  let url = "";
-  if (id == 0) {
-    url = "sp/HojaIns";
-  } else {
-    url = "sp/HojaUpd";
+  let url = id == 0 ? "sp/HojaIns" : "sp/HojaUpd";
+
+  try {
+    const { operacionOk, valorError, valorSalida, out, datos } = await ejecutarSP(url, item);
+    const errCode = valorError !== undefined && valorError !== -1
+      ? valorError
+      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
+
+    if (operacionOk && errCode == 0) {
+      Promise.resolve(leerHojas(props.filtros.getFiltroString())).catch((e) => {
+        console.warn("Error refrescando lista Hojas:", e);
+      });
+      alertMensaje.value = "Se grabó la hoja Nº " + (valorSalida || "");
+      alertTipo.value = "success";
+      mostrarAlert.value = true;
+      return true;
+    }
+  } catch (err) {
+    console.error("Error en grabarSP Hojas:", err);
   }
-  const { valorError, valorSalida } = await ejecutarSP(url, item);
-  if (valorError == 0) {
-    await leerHojas(props.filtros.getFiltroString());
-    alertMensaje.value = "Se grabó la hoja Nº " + valorSalida;
-    alertTipo.value = "success";
-    mostrarAlert.value = true;
-    return true;
-  }
+
   return false;
 }
 
@@ -139,7 +148,7 @@ async function leerHojas(filtro = null) {
 
 // editar registros de Hoja
 function handleEditarRegistros(itemid) {
-  let item = data.value.find((e) => e.ID == itemid);
+  let item = Array.isArray(data.value) ? data.value.find((e) => (e?.ID == itemid || e?.Id == itemid)) : null;
   props.setHojaEdicion(item);
 }
 
@@ -251,6 +260,7 @@ if (props.filtros.getFiltroString() != null)
 
   <v-dialog v-model="muestraRegistro" max-width="80%" persistent="">
     <hoja-vista
+      v-if="muestraRegistro"
       :Hoja="itemMostrar"
       :cerrar="cierraForm"
       :funcion="grabarSP"

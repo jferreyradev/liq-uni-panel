@@ -135,5 +135,7 @@ describe('getFechaToAPIFromDDMMYYYY', () => {
   it('convierte DD/MM/YYYY a ISO con día y mes con 2 dígitos', () => {
     expect(getFechaToAPIFromDDMMYYYY('1/9/2026')).toBe('2026-09-01T03:00:00.000Z')
     expect(getFechaToAPIFromDDMMYYYY('15/09/2026')).toBe('2026-09-15T03:00:00.000Z')
+    expect(getFechaToAPIFromDDMMYYYY('15-09-2026')).toBe('2026-09-15T03:00:00.000Z')
+    expect(getFechaToAPIFromDDMMYYYY('2026-09-15')).toBe('2026-09-15T03:00:00.000Z')
   })
 })

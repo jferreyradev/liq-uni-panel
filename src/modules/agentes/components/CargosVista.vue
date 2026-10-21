@@ -69,16 +69,15 @@ if (registroOrigen) {
 }
 
 const mostrarAlert = ref(false);
+const isSaving = ref(false);
 
 let mensajeError = ref("");
 
 async function grabaRegistro() {
   const isValid = await form.value.validate();
+  const valid = typeof isValid === "object" && isValid !== null ? isValid.valid : isValid;
 
-  if (!isValid) {
-    return;
-  }
-  if (formOK.value === false) {
+  if (!valid || formOK.value === false) {
     return;
   }
   mostrarAlert.value = false;
@@ -87,49 +86,57 @@ async function grabaRegistro() {
     return;
   }
 
-  // si es esposa/o coloca valores predeterminados en campos de hijo
-
-  //
-
   let fecBaja = "";
-  if (fechaBaja.value !== null)
-    if (fechaBaja.value.length > 0)
+  if (fechaBaja.value !== null && fechaBaja.value !== undefined) {
+    if (String(fechaBaja.value).trim().length > 0)
       fecBaja = getFechaToAPIFromDDMMYYYY(fechaBaja.value);
+  }
 
   let vtoEsc = "";
-  if (vtoEscalafon.value !== null)
-    if (vtoEscalafon.value.length > 0)
+  if (vtoEscalafon.value !== null && vtoEscalafon.value !== undefined) {
+    if (String(vtoEscalafon.value).trim().length > 0)
       vtoEsc = getFechaToAPIFromDDMMYYYY(vtoEscalafon.value);
+  }
+
+  const getVal = (item) => (typeof item === "object" && item !== null ? item.value : item);
 
   let registroGrabar = {
-    vIDREP: reparticionSelected.value.value,
+    vIDREP: getVal(reparticionSelected.value),
     vORDEN: registroActual.value.ORDEN,
     vAFILIADO: registroActual.value.AFILIADO,
     vANTIG: registroActual.value.ANTIGUEDAD,
     vVTOESC: vtoEsc,
-    vIDTE: tipoEmpleoSelected.value.value,
-    vIDSITREV: sitRevSelect.value.value,
-    vIDTIPOOS: tipoOSSelected.value.value,
+    vIDTE: getVal(tipoEmpleoSelected.value),
+    vIDSITREV: getVal(sitRevSelect.value),
+    vIDTIPOOS: getVal(tipoOSSelected.value),
     vCATEGORIA: registroActual.value.CATEGORIA,
-    vIDTIPOLIQ: tipoLiqSelected.value.value,
-    vIDESTADOCARGO: estadoCargoSelected.value.value,
+    vIDTIPOLIQ: getVal(tipoLiqSelected.value),
+    vIDESTADOCARGO: getVal(estadoCargoSelected.value),
     vFECHABAJA: fecBaja,
   };
-  if (registroActual.value.ID !== 0) {
+  if (registroActual.value.ID && registroActual.value.ID !== 0) {
     registroGrabar = {
       vIDCARGO: registroActual.value.ID,
       ...registroGrabar,
     };
   }
 
-  //console.log(JSON.stringify(registroGrabar))
-  let resultado = await props.funcion(registroGrabar, registroActual.value.ID);
+  isSaving.value = true;
+  try {
+    let resultado = await props.funcion(registroGrabar, registroActual.value.ID || 0);
 
-  if (resultado === null) {
-    props.cerrar();
-  } else {
-    mensajeError.value = resultado;
+    if (resultado === null) {
+      props.cerrar();
+    } else {
+      mensajeError.value = resultado;
+      mostrarAlert.value = true;
+    }
+  } catch (err) {
+    console.error("Error en grabaRegistro Cargo:", err);
+    mensajeError.value = err.message || "Error al grabar cargo";
     mostrarAlert.value = true;
+  } finally {
+    isSaving.value = false;
   }
 }
 
@@ -140,7 +147,8 @@ function validarRegistro() {
 
 <template>
   <v-container>
-    <v-card>
+    <v-card :loading="isSaving">
+      <v-progress-linear v-if="isSaving" indeterminate color="primary"></v-progress-linear>
       <v-form ref="form" v-model="formOK">
         <v-card-title>Detalle del Cargo</v-card-title>
         <v-card-subtitle>
@@ -358,10 +366,17 @@ function validarRegistro() {
             elevation="3"
             outlined
             value="grabar"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="grabaRegistro()"
             >Grabar</v-btn
           >
-          <v-btn color="error" elevation="3" outlined @click="cerrar()"
+          <v-btn
+            color="error"
+            elevation="3"
+            outlined
+            :disabled="isSaving"
+            @click="cerrar()"
             >Cerrar</v-btn
           >
         </v-card-actions>

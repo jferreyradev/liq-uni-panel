@@ -79,16 +79,15 @@ if (registroOrigen) {
 //}
 
 const mostrarAlert = ref(false);
+const isSaving = ref(false);
 
 let mensajeError = ref("");
 
 async function grabaRegistro() {
   const isValid = await form.value.validate();
+  const valid = typeof isValid === "object" && isValid !== null ? isValid.valid : isValid;
 
-  if (!isValid) {
-    return;
-  }
-  if (formOK.value === false) {
+  if (!valid || formOK.value === false) {
     return;
   }
   mostrarAlert.value = false;
@@ -97,17 +96,17 @@ async function grabaRegistro() {
     return;
   }
 
-  //
-
   let fecVencimiento = "";
-  if (vencimiento.value !== null)
-    if (vencimiento.value.length > 0)
+  if (vencimiento.value !== null && vencimiento.value !== undefined) {
+    if (String(vencimiento.value).trim().length > 0)
       fecVencimiento = getFechaToAPIFromMMYYYY(vencimiento.value);
+  }
 
   let fecPeriodo = "";
-  if (periodo.value !== null)
-    if (periodo.value.length > 0)
+  if (periodo.value !== null && periodo.value !== undefined) {
+    if (String(periodo.value).trim().length > 0)
       fecPeriodo = getFechaToAPIFromMMYYYY(periodo.value);
+  }
 
   let registroGrabar = {
     vIDCARGO: cargoId,
@@ -117,27 +116,34 @@ async function grabaRegistro() {
     vPARM2: registroActual.value.PARAMETRO2,
     vVTO: fecVencimiento,
     vIMPORTE: getDecimalToAPI(registroActual.value.IMPORTE),
-    //vIMPORTE: getDecimalToAPI(registroActual.value.IMPORTE),
     vPERIODO: fecPeriodo,
     vIDGRUPOADI: registroActual.value.GRUPOADICIONALID,
     vPENLEY: registroActual.value.PENLEY ? 1 : 0,
   };
-  if (registroActual.value.ID !== 0) {
+  if (registroActual.value.ID && registroActual.value.ID !== 0) {
     registroGrabar = {
       vIDCONCEPTOLIQ: registroActual.value.ID,
       ...registroGrabar,
     };
   }
 
-  console.log("se va a grabar el siguiente registro");
-  console.log(JSON.stringify(registroGrabar));
-  let resultado = await props.funcion(registroGrabar, registroActual.value.ID);
+  console.log("se va a grabar el siguiente registro:", JSON.stringify(registroGrabar));
+  isSaving.value = true;
+  try {
+    let resultado = await props.funcion(registroGrabar, registroActual.value.ID || 0);
 
-  if (resultado === null) {
-    props.cerrar();
-  } else {
-    mensajeError.value = resultado;
+    if (resultado === null) {
+      props.cerrar();
+    } else {
+      mensajeError.value = resultado;
+      mostrarAlert.value = true;
+    }
+  } catch (err) {
+    console.error("Error en grabaRegistro Concepto:", err);
+    mensajeError.value = err.message || "Error al grabar concepto de liquidación";
     mostrarAlert.value = true;
+  } finally {
+    isSaving.value = false;
   }
 }
 
@@ -148,7 +154,8 @@ function validarRegistro() {
 
 <template>
   <v-container>
-    <v-card>
+    <v-card :loading="isSaving">
+      <v-progress-linear v-if="isSaving" indeterminate color="primary"></v-progress-linear>
       <v-form ref="form" v-model="formOK">
         <v-card-title>Concepto de Liquidación</v-card-title>
         <v-card-subtitle>
@@ -277,10 +284,17 @@ function validarRegistro() {
             elevation="3"
             outlined
             value="grabar"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="grabaRegistro()"
             >Grabar</v-btn
           >
-          <v-btn color="error" elevation="3" outlined @click="cerrar()"
+          <v-btn
+            color="error"
+            elevation="3"
+            outlined
+            :disabled="isSaving"
+            @click="cerrar()"
             >Cancelar</v-btn
           >
         </v-card-actions>

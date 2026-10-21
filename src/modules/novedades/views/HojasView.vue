@@ -12,8 +12,8 @@ const tipoHoja = ref(-1);
 function setHojaEdicion(hoja) {
   hojaEdicion.value = hoja;
   if (hoja !== null) {
-    titulo.value = "Editar registros de Hoja: " + hoja.ID;
-    tipoHoja.value = hoja.TIPOHOJAID;
+    titulo.value = "Editar registros de Hoja: " + (hoja?.ID ?? hoja?.Id ?? "");
+    tipoHoja.value = hoja?.TIPOHOJAID ?? -1;
   } else {
     titulo.value = "Listado de hojas";
     tipoHoja.value = -1;

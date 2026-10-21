@@ -79,7 +79,7 @@ async function editarPersona(id) {
 }
 
 function editarCargaFamiliar(itemid) {
-  let item = data.value.find((e) => e.PERSONAID == itemid);
+  let item = Array.isArray(data.value) ? data.value.find((e) => (e?.PERSONAID == itemid || e?.ID == itemid || e?.Id == itemid)) : null;
   props.setPersonaEdicion(item, 1);
 }
 
@@ -92,16 +92,26 @@ async function grabarSP(item, id) {
     url = "sp/persUpd";
   }
 
-  const { valorError, errorMsg } = await ejecutarSP(url, item);
-  if (valorError == 0) {
-    await leerRegistros();
-    alertMensaje.value = "Se grabó la persona";
-    alertTipo.value = "success";
-    mostrarAlert.value = true;
-    return null;
-  }
+  try {
+    const { operacionOk, valorError, errorMsg, datos, out } = await ejecutarSP(url, item);
+    const errCode = valorError !== undefined && valorError !== -1
+      ? valorError
+      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
 
-  return errorMsg;
+    if (operacionOk && errCode == 0) {
+      Promise.resolve(leerRegistros()).catch((e) => {
+        console.warn("Error refrescando registros de personas:", e);
+      });
+      alertMensaje.value = "Se grabó la persona";
+      alertTipo.value = "success";
+      mostrarAlert.value = true;
+      return null;
+    }
+    return errorMsg || out?.vErrorMsg || "No se pudieron grabar los datos de la persona";
+  } catch (err) {
+    console.error("Error en grabarSP Personas:", err);
+    return err.message || "Error al grabar datos de la persona";
+  }
 }
 
 leerRegistros();
@@ -183,6 +193,7 @@ leerRegistros();
   </v-container>
   <v-dialog v-model="muestraRegistro" max-width="80%" persistent="">
     <PersonasVista
+      v-if="muestraRegistro"
       :Registro="itemMostrar"
       :cerrar="cierraForm"
       :funcion="grabarSP"

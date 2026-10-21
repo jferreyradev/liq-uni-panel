@@ -67,8 +67,9 @@ const itemMostrar = ref({
 function handleModif(itemid) {
   mostrarAlert.value = false;
   let item = null;
-  if (itemid != null)
-    if (itemid !== 0) item = data.value.find((e) => e.ID == itemid);
+  if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
+    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+  }
   abrirModal(item);
 }
 
@@ -98,22 +99,25 @@ function cierraForm() {
 
 // funciones de agregado, modificación y eliminación
 async function grabarSP(item, id) {
-  let url = "";
-  console.log(item);
-  if (id == 0) {
-    url = "sp/NovVariasIns";
-  } else {
-    url = "sp/NovVariasUpd";
-  }
-  //console.log(url, item)
+  let url = id == 0 ? "sp/NovVariasIns" : "sp/NovVariasUpd";
 
-  const { valorError, valorSalida } = await ejecutarSP(url, item);
-  if (valorError == 0) {
-    await leerListaRegs();
-    alertMensaje.value = "Se grabó la novedad Nº " + valorSalida;
-    alertTipo.value = "success";
-    mostrarAlert.value = true;
-    return true;
+  try {
+    const { operacionOk, valorError, valorSalida, out, datos } = await ejecutarSP(url, item);
+    const errCode = valorError !== undefined && valorError !== -1
+      ? valorError
+      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
+
+    if (operacionOk && errCode == 0) {
+      Promise.resolve(leerListaRegs()).catch((e) => {
+        console.warn("Error refrescando lista NovVarias:", e);
+      });
+      alertMensaje.value = "Se grabó la novedad Nº " + (valorSalida || "");
+      alertTipo.value = "success";
+      mostrarAlert.value = true;
+      return true;
+    }
+  } catch (err) {
+    console.error("Error en grabarSP NovVarias:", err);
   }
 
   return false;
@@ -327,10 +331,11 @@ function exportFile() {
 
   <v-dialog v-model="muestraRegistro" max-width="80%" persistent="">
     <NovVariasVista
+      v-if="muestraRegistro"
       :Registro="itemMostrar"
       :cerrar="cierraForm"
       :funcion="grabarSP"
-      :hojaId="hojaEditar.ID"
+      :hojaId="hojaEditar?.ID ?? hojaEditar?.Id ?? 0"
     ></NovVariasVista>
   </v-dialog>
 

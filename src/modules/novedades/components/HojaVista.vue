@@ -68,6 +68,8 @@ const estadoHojaTxt = getName(estadosHoja, hojaActual.value.ESTADOHOJAID);
 
 const mostrarAlert = ref(false);
 
+const isSaving = ref(false);
+
 async function grabaRegistro() {
   mostrarAlert.value = false;
   const mes = months.indexOf(month.value) + 1;
@@ -78,34 +80,45 @@ async function grabaRegistro() {
     "-01" +
     "T03:00:00.000Z";
 
+  const getVal = (item) => (typeof item === "object" && item !== null ? item.value : item);
+
   let registro = {
-    vIDTIPOHOJA: tipoHojaSelected.value.value,
+    vIDTIPOHOJA: getVal(tipoHojaSelected.value),
     vPERIODO: periodo,
-    vIDTIPOLIQ: liqSelected.value.value,
+    vIDTIPOLIQ: getVal(liqSelected.value),
     vIDGRUPOADI: hojaActual.value.GRUPOADICIONAL,
     vIDESTADOHOJA: hojaActual.value.ESTADOHOJAID,
-    vIDTIPOCARGA: tipoCargaSelected.value.value,
+    vIDTIPOCARGA: getVal(tipoCargaSelected.value),
   };
-  if (hojaActual.value.ID !== 0)
+  if (hojaActual.value.ID && hojaActual.value.ID !== 0)
     registro = {
       vIDHOJANOV: hojaActual.value.ID,
       vFECHAALTA: hojaActual.value.FECHACREACION,
       ...registro,
     };
 
-  let grabarOk = await props.funcion(registro, hojaActual.value.ID);
+  isSaving.value = true;
+  try {
+    let grabarOk = await props.funcion(registro, hojaActual.value.ID || 0);
 
-  if (grabarOk) {
-    props.cerrar();
-  } else {
+    if (grabarOk) {
+      props.cerrar();
+    } else {
+      mostrarAlert.value = true;
+    }
+  } catch (err) {
+    console.error("Error en grabaRegistro Hoja:", err);
     mostrarAlert.value = true;
+  } finally {
+    isSaving.value = false;
   }
 }
 </script>
 
 <template>
   <v-container>
-    <v-card>
+    <v-card :loading="isSaving">
+      <v-progress-linear v-if="isSaving" indeterminate color="primary"></v-progress-linear>
       <v-card-title>Hojas</v-card-title>
       <v-card-subtitle>Agregar Nueva</v-card-subtitle>
       <v-alert
@@ -216,10 +229,21 @@ async function grabaRegistro() {
         </v-container>
       </v-card-text>
       <v-card-actions class="d-flex justify-end">
-        <v-btn color="primary" elevation="3" outlined @click="grabaRegistro()"
+        <v-btn
+          color="primary"
+          elevation="3"
+          outlined
+          :loading="isSaving"
+          :disabled="isSaving"
+          @click="grabaRegistro()"
           >Grabar</v-btn
         >
-        <v-btn color="error" elevation="3" outlined @click="cerrar()"
+        <v-btn
+          color="error"
+          elevation="3"
+          outlined
+          :disabled="isSaving"
+          @click="cerrar()"
           >Cancelar</v-btn
         >
       </v-card-actions>

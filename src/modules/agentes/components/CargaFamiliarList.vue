@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import Confirmacion from "./Confirmacion.vue";
 import { leerDatos, ejecutarSP } from "./llamadaAPI";
 import botonTooltip from "./botonTooltip.vue";
@@ -10,7 +10,6 @@ import { agregaTitulosExcel } from "@/utils/reportes.js";
 import CargaFamiliarCargos from "./CargaFamiliarCargos.vue";
 
 const props = defineProps(["setPersonaEdicion", "personaEditar"]);
-// prueba de commir en github
 const personaEditar = props.personaEditar;
 
 // cerrar editar registros de Hoja
@@ -36,16 +35,19 @@ const error = null;
 
 const lecturaListaRegs = ref(true);
 
-const personaId = personaEditar?.PERSONAID || personaEditar?.ID || personaEditar?.Id;
+const personaId = computed(
+  () => props.personaEditar?.PERSONAID || props.personaEditar?.ID || props.personaEditar?.Id || 0,
+);
 
 async function leerListaRegs() {
-  if (!personaId) return;
+  const pId = personaId.value;
+  if (!pId) return;
   isPending.value = true;
   try {
     const { datos, operacionOk } = await leerDatos(
-      "en/cargaFamiliar?PersonaId=" + personaId,
+      "en/cargaFamiliar?PersonaId=" + pId + "&_t=" + Date.now(),
     );
-    data.value = datos;
+    data.value = Array.isArray(datos) ? datos : datos ? [datos] : [];
     lecturaListaRegs.value = operacionOk;
   } catch (err) {
     console.error("Error en leerListaRegs:", err);
@@ -61,26 +63,27 @@ const cargoAsociado = ref({
 });
 
 async function leerCargoAsoc() {
-  if (!personaId) return;
+  const pId = personaId.value;
+  if (!pId) return;
   let resultado = {
     cargoId: 0,
     descripcion: "No se pudieron establecer obtener datos del cargo",
   };
   try {
     const { datos, operacionOk } = await leerDatos(
-      "en/cargo?PersonaId=" + personaId + "&Salario=1",
+      "en/cargo?PersonaId=" + pId + "&Salario=1&_t=" + Date.now(),
     );
     if (operacionOk === true) {
-      if (!datos || !Array.isArray(datos) || datos.length === 0) {
+      const cargoAsoc = Array.isArray(datos) && datos.length > 0 ? datos[0] : null;
+      if (!cargoAsoc) {
         resultado.descripcion = "No hay cargo asociado aún para el salario";
       } else {
-        let cargoAsoc = datos[0];
-        resultado.cargoId = cargoAsoc.ID;
+        resultado.cargoId = cargoAsoc.ID || cargoAsoc.Id || 0;
         resultado.descripcion =
           "Rep.: " +
-          cargoAsoc.REPARTICIONID +
+          (cargoAsoc.REPARTICIONID || "") +
           " - Orden: " +
-          cargoAsoc.ORDEN +
+          (cargoAsoc.ORDEN || "") +
           " - Tipo: " +
           getTipoDescripcion(
             cargoAsoc.TIPOEMPLEOID,
@@ -104,16 +107,14 @@ const alertTipo = ref(null);
 
 // manejadores de altas, bajas y modificaciones
 
-const itemMostrar = ref({
-  HojaId: 0,
-  Id: 0,
-});
+const itemMostrar = ref(null);
 
 function handleModif(itemid) {
   mostrarAlert.value = false;
   let item = null;
-  if (itemid != null)
-    if (itemid !== 0) item = data.value.find((e) => e.ID == itemid);
+  if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
+    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+  }
   abrirModal(item);
 }
 
@@ -180,10 +181,8 @@ async function grabarSP(item, id) {
       : (out?.vError ?? out?.ValorError ?? datos?.out?.vError ?? datos?.out?.ValorError ?? (operacionOk ? 0 : -1));
 
     if (operacionOk && errCode == 0) {
-      Promise.allSettled([leerCargoAsoc(), leerListaRegs()]).catch((e) => {
-        console.warn("Error al refrescar listas posteriores a la grabacion:", e);
-      });
-      alertMensaje.value = "Se grabó el registro";
+      await Promise.allSettled([leerListaRegs(), leerCargoAsoc()]);
+      alertMensaje.value = id == 0 ? "Familiar agregado correctamente" : "Familiar modificado correctamente";
       alertTipo.value = "success";
       mostrarAlert.value = true;
       return null;
@@ -302,11 +301,11 @@ function exportFile() {
     "Disc.",
   ];
   const filtros = "";
-  const doc = personaEditar.DOCUMENTO || personaEditar.DNI || "";
-  const apeNom = (personaEditar.APELLIDO && personaEditar.NOMBRE)
+  const doc = personaEditar?.DOCUMENTO || personaEditar?.DNI || "";
+  const apeNom = (personaEditar?.APELLIDO && personaEditar?.NOMBRE)
     ? `${personaEditar.APELLIDO}, ${personaEditar.NOMBRE}`
-    : (personaEditar.APELLIDOYNOMBRE || "");
-  const persId = personaEditar.PERSONAID || personaEditar.ID || "";
+    : (personaEditar?.APELLIDOYNOMBRE || "");
+  const persId = personaEditar?.PERSONAID || personaEditar?.ID || "";
 
   const tituloReporte =
     "Cargas de Familia: " +
@@ -387,26 +386,30 @@ function exportFile() {
         >
       </v-row>
     </v-container>
-    <div v-if="isPending">loading...</div>
+
+    <v-alert
+      v-if="mostrarAlert"
+      v-model="mostrarAlert"
+      border="start"
+      close-label="Close Alert"
+      :color="alertTipo"
+      :icon="'$' + alertTipo"
+      closable
+      class="my-3"
+    >
+      {{ alertMensaje }}
+    </v-alert>
+
+    <div v-if="isPending && (!data || data.length === 0)">loading...</div>
     <div v-else-if="!lecturaListaRegs">Sin datos para mostrar</div>
     <div v-else-if="data">
-      <v-alert
-        v-model="mostrarAlert"
-        border="start"
-        close-label="Close Alert"
-        :color="alertTipo"
-        :icon="'$' + alertTipo"
-        closable
-      >
-        {{ alertMensaje }}
-      </v-alert>
-
       <v-data-table
         class="text-caption"
         hover
         density="compact"
         :items="data"
         :headers="listaHeaders"
+        :loading="isPending"
       >
         <template v-slot:item="{ item }">
           <tr class="pa-0 ma-0">
@@ -462,10 +465,11 @@ function exportFile() {
 
   <v-dialog v-model="muestraRegistro" max-width="80%" persistent="">
     <CargaFamiliarVista
+      v-if="muestraRegistro"
       :Registro="itemMostrar"
       :cerrar="cierraForm"
       :funcion="grabarSP"
-      :personaId="personaEditar.PERSONAID || personaEditar.ID"
+      :personaId="personaEditar?.PERSONAID || personaEditar?.ID || 0"
     ></CargaFamiliarVista>
   </v-dialog>
 
@@ -491,9 +495,10 @@ function exportFile() {
 
   <v-dialog v-model="muestraListaCargos" max-width="80%" persistent="">
     <CargaFamiliarCargos
+      v-if="muestraListaCargos"
       :cerrar="cierraFormCargos"
       :funcion="grabarSPCargos"
-      :personaId="personaEditar.PERSONAID || personaEditar.ID"
+      :personaId="personaEditar?.PERSONAID || personaEditar?.ID || 0"
     ></CargaFamiliarCargos>
   </v-dialog>
 </template>

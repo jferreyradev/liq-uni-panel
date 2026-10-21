@@ -693,7 +693,7 @@ export const useUserStore = defineStore('userStore', {
       const url = `${apiBoletas.value}/claveUsuario`
       const headers = { 'Content-Type': 'application/json', ...getBoletasHeaders() }
       const bodyIn = {
-        IdUsuario: this.user.ID,
+        IdUsuario: this.user?.ID ?? this.user?.id ?? 0,
         Clave: btoa(newPass)
       }
       const start = Date.now()

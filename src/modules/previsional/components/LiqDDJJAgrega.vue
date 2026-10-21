@@ -15,38 +15,53 @@ const liqSelected = ref(tipoLiq[0]);
 
 const mostrarAlert = ref(false);
 let mensajeError = ref("");
+const isSaving = ref(false);
 
 async function grabaRegistro() {
   const isValid = await form.value.validate();
+  const valid = typeof isValid === "object" && isValid !== null ? isValid.valid : isValid;
 
-  if (!isValid) {
-    return;
-  }
-  if (formOK.value === false) {
+  if (!valid || formOK.value === false) {
     return;
   }
   mostrarAlert.value = false;
 
+  const tipoLiqId =
+    typeof liqSelected.value === "object" && liqSelected.value !== null
+      ? liqSelected.value.value
+      : liqSelected.value;
+
   let registroGrabar = {
     PERIODODDJJ: getFechaToAPIFromMMYYYY(props.periodoActivo),
-    TIPOLIQUIDACIONID: liqSelected.value.value,
+    TIPOLIQUIDACIONID: tipoLiqId,
     GRUPOADICIONALID: grupoAdi.value ? 1 : 0,
     REPARTICIONID: -1,
     PERIODOLIQ: getFechaToAPIFromMMYYYY(periodoLiq.value),
   };
-  let resultadoGrabacion = await props.funcion(registroGrabar, null);
-  if (resultadoGrabacion == "OK") {
-    props.cerrar();
-  } else {
-    mensajeError.value = resultadoGrabacion;
+
+  isSaving.value = true;
+  try {
+    let resultadoGrabacion = await props.funcion(registroGrabar, null);
+    if (resultadoGrabacion == "OK") {
+      props.cerrar();
+    } else {
+      mensajeError.value = resultadoGrabacion || "No se pudo grabar la liquidación";
+      mostrarAlert.value = true;
+    }
+  } catch (err) {
+    console.error("Error en grabaRegistro LiqDDJJ:", err);
+    mensajeError.value = err.message || "Error al grabar la liquidación";
     mostrarAlert.value = true;
+  } finally {
+    isSaving.value = false;
   }
 }
 </script>
 
 <template>
   <v-container>
-    <v-card>
+    <v-card :loading="isSaving">
+      <v-progress-linear v-if="isSaving" indeterminate color="primary"></v-progress-linear>
       <v-form ref="form" v-model="formOK">
         <v-card-title>Liquidaciones de DDJJ</v-card-title>
         <v-card-subtitle>Agregar Liquidacion</v-card-subtitle>
@@ -101,10 +116,17 @@ async function grabaRegistro() {
             elevation="3"
             outlined
             value="grabar"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="grabaRegistro()"
             >Grabar</v-btn
           >
-          <v-btn color="error" elevation="3" outlined @click="cerrar()"
+          <v-btn
+            color="error"
+            elevation="3"
+            outlined
+            :disabled="isSaving"
+            @click="cerrar()"
             >Cancelar</v-btn
           >
         </v-card-actions>
