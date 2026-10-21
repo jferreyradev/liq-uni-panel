@@ -81,4 +81,7 @@ npx vitest run src/utils/__tests__/boletas.spec.js
 
 # Suite completa de todo el sistema (69 tests):
 npm run test:unit
+
+# Lint (solo errores reales; no reformatea el código):
+npm run lint
 ```

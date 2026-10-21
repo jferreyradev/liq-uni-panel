@@ -203,3 +203,4 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
 5. **Preservar la salud del repositorio:**
    * Siempre ejecutar `npm run test:unit` antes de hacer un commit o push.
    * Ejecutar `npm run build` para asegurar que las importaciones dinámicas y los chunks de Vite se resuelvan correctamente.
+   * Ejecutar `npm run lint` para detectar errores reales (variables sin usar, referencias inexistentes, sintaxis inválida). No reformatea el código: el formato del proyecto no es el de Prettier por defecto, así que la regla `prettier/prettier` está desactivada. Para aplicar correcciones automáticas de estilo usar `npm run lint:fix`.
