@@ -13,6 +13,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    setupFiles: ['./src/test/setup.js'],
     server: {
       deps: {
         // Vuetify importa CSS desde los .js de cada componente: sin inlinear

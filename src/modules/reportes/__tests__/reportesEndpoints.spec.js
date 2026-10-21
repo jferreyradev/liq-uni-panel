@@ -49,78 +49,91 @@ import RepoBajasLey from '../components/RepoBajasLey.vue'
 import RepoPlanillaResSueldoComp from '../components/RepoPlanillaResSueldoComp.vue'
 import RepoPlanillaResumenCargos from '../components/RepoPlanillaResumenCargos.vue'
 
+/** Componentes de Vuetify usados por los reportes: se stubean para que
+ * Vue no avise por cada componente no resuelto (el ruido tapaba warnings
+ * reales) y para no depender del registro global de Vuetify. */
+const stubsVuetify = {
+  'v-container': true,
+  'v-row': true,
+  'v-col': true,
+  'v-card': true,
+  'v-btn': true,
+  'v-data-table': true,
+  'v-alert': true
+}
+
 describe('Reportes Endpoints - Verificación de URLs de API para cada componente', () => {
   beforeEach(() => {
     fetchUrls.length = 0
   })
 
   it('RepoResumenLiq (Reporte 1) consulta /api/repo/resumenLiq', () => {
-    shallowMount(RepoResumenLiq)
+    shallowMount(RepoResumenLiq, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('https://api.midliq.test/api/repo/resumenLiq?periodo=202409'))).toBe(true)
   })
 
   it('RepoCod153 (Reporte 2) consulta /api/view/resumenCodigo con Codigo=153', () => {
-    shallowMount(RepoCod153)
+    shallowMount(RepoCod153, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/resumenCodigo') && u.includes('Codigo=153'))).toBe(true)
   })
 
   it('RepoResumenCod (Reporte 4) consulta /api/view/resumenCodLiq', () => {
-    shallowMount(RepoResumenCod)
+    shallowMount(RepoResumenCod, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/resumenCodLiq'))).toBe(true)
   })
 
   it('RepoResumenLiqFDO (Reporte 5) consulta /api/view/resumenFdo', () => {
-    shallowMount(RepoResumenLiqFDO)
+    shallowMount(RepoResumenLiqFDO, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/resumenFdo'))).toBe(true)
   })
 
   it('RepoApoPatronales (Reporte 6) consulta /api/view/aportesPat', () => {
-    shallowMount(RepoApoPatronales)
+    shallowMount(RepoApoPatronales, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/aportesPat'))).toBe(true)
   })
 
   it('RepoPlanillaDetLiq (Reporte 7) consulta /api/view/planillaDetLiq', () => {
-    shallowMount(RepoPlanillaDetLiq)
+    shallowMount(RepoPlanillaDetLiq, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/planillaDetLiq'))).toBe(true)
   })
 
   it('RepoPlanillaRet (Reporte 8) consulta /api/view/planillaRet', () => {
-    shallowMount(RepoPlanillaRet)
+    shallowMount(RepoPlanillaRet, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/planillaRet'))).toBe(true)
   })
 
   it('RepoPlanillaLey (Reporte 9) consulta /api/view/planillaLey', () => {
-    shallowMount(RepoPlanillaLey)
+    shallowMount(RepoPlanillaLey, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/planillaLey'))).toBe(true)
   })
 
   it('RepoPlanillaResSueldo (Reporte 10) consulta /api/view/resumenSueldos', () => {
-    shallowMount(RepoPlanillaResSueldo)
+    shallowMount(RepoPlanillaResSueldo, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/resumenSueldos'))).toBe(true)
   })
 
   it('RepoPlanillaRetCargo (Reporte 12) consulta /api/view/retencionesCargo', () => {
-    shallowMount(RepoPlanillaRetCargo)
+    shallowMount(RepoPlanillaRetCargo, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/retencionesCargo'))).toBe(true)
   })
 
   it('RepoPlanillaRetencionesCPA (Reporte 11) consulta /api/view/planillaRetCPA', () => {
-    shallowMount(RepoPlanillaRetencionesCPA)
+    shallowMount(RepoPlanillaRetencionesCPA, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/planillaRetCPA'))).toBe(true)
   })
 
   it('RepoBajasLey (Reporte 13) consulta /api/view/bajasLey', () => {
-    shallowMount(RepoBajasLey)
+    shallowMount(RepoBajasLey, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/bajasLey'))).toBe(true)
   })
 
   it('RepoPlanillaResSueldoComp (Reporte 14) consulta /api/view/resumenSueldosComp', () => {
-    shallowMount(RepoPlanillaResSueldoComp)
+    shallowMount(RepoPlanillaResSueldoComp, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/resumenSueldosComp'))).toBe(true)
   })
 
   it('RepoPlanillaResumenCargos (Reporte 15) consulta /api/view/resumenCargos', () => {
-    shallowMount(RepoPlanillaResumenCargos)
+    shallowMount(RepoPlanillaResumenCargos, { global: { stubs: stubsVuetify } })
     expect(fetchUrls.some((u) => u.includes('/api/view/resumenCargos'))).toBe(true)
   })
 })

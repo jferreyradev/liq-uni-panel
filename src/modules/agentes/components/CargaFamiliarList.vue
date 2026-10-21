@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { ConfirmacionDialog, TooltipButton } from "@/shared/components";
 import { getFechaDMY, getTipoDescripcion } from "@/utils/formatos";
 import CargaFamiliarVista from "./CargaFamiliarVista.vue";
@@ -14,7 +14,15 @@ const props = defineProps({
   personaEditar: { type: Object, default: null },
 });
 
-const personaEditar = props.personaEditar;
+/**
+ * Persona en edicion.
+ *
+ * Antes se copiaba el prop a una constante (`const personaEditar = props.personaEditar`),
+ * lo que congelaba el valor: al cambiar de persona sin remontar el
+ * componente (navegacion entre rutas) la vista seguia mostrando y usando la
+ * persona anterior.
+ */
+const personaEditar = computed(() => props.personaEditar);
 
 // cerrar editar registros de Hoja
 function handleCerrarEdicion() {
@@ -100,6 +108,18 @@ async function cargarDatos() {
   if (!pId) return;
   await Promise.allSettled([loadLista(pId), loadCargo(pId)]);
 }
+
+/**
+ * Recarga los datos cuando cambia la persona en edicion.
+ *
+ * La pantalla se puede abrir con una persona y pasar a otra sin salir del
+ * componente (por ejemplo, con la navegacion por rutas).
+ */
+watch(personaId, (nuevo, anterior) => {
+  if (!nuevo) return;
+  if (String(nuevo) === String(anterior)) return;
+  cargarDatos();
+});
 
 /**
  * La grilla se dibuja siempre (aunque esté vacía); `data` es null cuando
@@ -254,12 +274,12 @@ function exportFile() {
     "Disc.",
   ];
   const filtros = "";
-  const doc = personaEditar?.DOCUMENTO || personaEditar?.DNI || "";
+  const doc = personaEditar.value?.DOCUMENTO || personaEditar.value?.DNI || "";
   const apeNom =
-    personaEditar?.APELLIDO && personaEditar?.NOMBRE
-      ? `${personaEditar.APELLIDO}, ${personaEditar.NOMBRE}`
-      : personaEditar?.APELLIDOYOMBRE || "";
-  const persId = personaEditar?.PERSONAID || personaEditar?.ID || "";
+    personaEditar.value?.APELLIDO && personaEditar.value?.NOMBRE
+      ? `${personaEditar.value.APELLIDO}, ${personaEditar.value.NOMBRE}`
+      : personaEditar.value?.APELLIDOYOMBRE || "";
+  const persId = personaEditar.value?.PERSONAID || personaEditar.value?.ID || "";
 
   const tituloReporte =
     "Cargas de Familia: " + doc + (apeNom ? " - " + apeNom : "");
