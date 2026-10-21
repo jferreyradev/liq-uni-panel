@@ -24,10 +24,9 @@ Nombre.value = campos.Nombre ?? null;
 /**
  * Arma el query string del filtro.
  *
- * Nota: los parámetros "search" se emiten uno por campo (search=Apellido:...&search=Nombre:...).
- * Se mantiene el formato original porque es el contrato que espera el backend;
- * si el mismo listado recibe dos "search", hay que confirmar con el backend
- * cuál se aplica.
+ * Los campos de busqueda se acumulan en un array y se entregan a `buildQuery`,
+ * que decide el formato final (un "search" por campo o uno compuesto) segun
+ * `src/config/busqueda.js`. El componente no decide ese contrato.
  */
 function buildFiltro() {
   const params = {};

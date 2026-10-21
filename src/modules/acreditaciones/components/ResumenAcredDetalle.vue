@@ -170,7 +170,6 @@ function exportFile() {
         density="compact"
         :items="data"
         :headers="headers"
-        :items-per-page="10"
       >
         <template #item="{ item }">
           <tr class="pa-0 ma-0">

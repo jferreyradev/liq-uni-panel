@@ -245,6 +245,40 @@ describe('Reglas de Oro de arquitectura', () => {
     })
   })
 
+  describe('configuracion central', () => {
+    it('la paginacion de las grillas no se define en los componentes', () => {
+      // La cantidad de filas por pagina se define una sola vez, como default
+      // de Vuetify (src/config/paginacion.js). Antes cada grilla declaraba su
+      // propia (10, 15 o 20) y ninguna dejaba cambiarla.
+      const ofensores = []
+
+      for (const [ruta, contenido] of Object.entries(fuentes)) {
+        if (!esCodigoDeProduccion(ruta)) continue
+        if (!ruta.endsWith('.vue')) continue
+        if (/:?items-per-page\s*=/.test(contenido)) ofensores.push(ruta)
+      }
+
+      expect(ofensores).toEqual([])
+    })
+
+    it('el formato del parametro "search" no se define en los componentes', () => {
+      // El formato (repetido o compuesto) vive en src/config/busqueda.js.
+      // Un componente que arme el "search" a mano se queda atado al contrato
+      // vigente y no puede cambiar sin tocar todos los filtros.
+      const ofensores = []
+
+      for (const [ruta, contenido] of Object.entries(fuentes)) {
+        if (!esCodigoDeProduccion(ruta)) continue
+        if (!ruta.endsWith('.vue')) continue
+        if (/["'`]\s*search\s*[:=]/.test(contenido) && !/buildQuery|buildSearchValue/.test(contenido)) {
+          ofensores.push(ruta)
+        }
+      }
+
+      expect(ofensores).toEqual([])
+    })
+  })
+
   describe('organizacion de tests', () => {
     it('un test vive junto al componente que prueba', () => {
       // Un test en src/components/ que importa un componente de

@@ -113,7 +113,6 @@ onMounted(() => {
         :headers="liqHeaders"
         :items="users"
         item-key="ID"
-        items-per-page="20"
         :search="search"
         hover
         density="compact"

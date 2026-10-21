@@ -76,7 +76,6 @@ const getVto = (vto) => {
         :headers="liqHeaders"
         :items="data"
         item-key="LIQUIDACIONID"
-        items-per-page="20"
         :search="search"
         hover
         density="compact"
