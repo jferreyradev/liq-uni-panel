@@ -264,8 +264,8 @@ async function createPdf() {
       <tbody>
         <tr
           v-for="item in data"
-          :key="item.id"
           v-show="item.TIPOCONCEPTOID !== 5"
+          :key="item.id"
           :class="{
             'bg-orange-lighten-3': item.TIPOCONCEPTOID === 6,
             'bg-orange-lighten-4': item.TIPOCONCEPTOID === 3,

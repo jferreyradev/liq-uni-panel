@@ -115,15 +115,16 @@ function openDiagnosticsFromError() {
 
       <v-card-text class="pa-5">
         <h3 class="text-subtitle-1 font-weight-bold mb-3">Acceso al sistema</h3>
-        <v-form @submit.prevent="login" v-if="!forgot">
+        <v-form v-if="!forgot" @submit.prevent="login">
           <v-text-field
+            v-model="userInput.username"
             label="Usuario"
             prepend-inner-icon="mdi-account-circle"
             variant="outlined"
             density="comfortable"
-            v-model="userInput.username"
           />
           <v-text-field
+            v-model="userInput.password"
             :type="showPassword ? 'text' : 'password'"
             label="Contraseña"
             prepend-inner-icon="mdi-lock"
@@ -131,7 +132,6 @@ function openDiagnosticsFromError() {
             density="comfortable"
             :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
             @click:append-inner="showPassword = !showPassword"
-            v-model="userInput.password"
           />
           <div class="d-flex justify-end mt-2">
             <v-btn
@@ -146,13 +146,13 @@ function openDiagnosticsFromError() {
           </div>
         </v-form>
 
-        <v-form @submit.prevent="sendEmail" v-if="forgot">
+        <v-form v-if="forgot" @submit.prevent="sendEmail">
           <v-text-field
+            v-model="userInput.email"
             label="Correo electrónico"
             prepend-inner-icon="mdi-email"
             variant="outlined"
             density="comfortable"
-            v-model="userInput.email"
             type="email"
           />
           <div class="d-flex justify-end gap-2 mt-2">
@@ -184,8 +184,8 @@ function openDiagnosticsFromError() {
     <v-dialog v-model="dialog" max-width="500">
       <v-card class="rounded-lg">
         <v-card-title
-          class="pa-4 bg-red-lighten-5 d-flex align-center text-error"
           v-if="isTechnicalError"
+          class="pa-4 bg-red-lighten-5 d-flex align-center text-error"
         >
           <v-icon
             icon="mdi-alert-circle-outline"
@@ -196,7 +196,7 @@ function openDiagnosticsFromError() {
             >Error de Conexión — {{ tenantStore.tenantName }}</span
           >
         </v-card-title>
-        <v-card-title class="pa-4 d-flex align-center" v-else>
+        <v-card-title v-else class="pa-4 d-flex align-center">
           <v-icon
             icon="mdi-information-outline"
             class="me-2"

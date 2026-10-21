@@ -69,9 +69,9 @@ watch(
     <v-row align="center">
       <v-col cols="12" md="8">
         <v-select
+          v-model="repo"
           label="Reportes"
           :items="reportes"
-          v-model="repo"
           item-title="title"
           item-value="value"
         ></v-select>

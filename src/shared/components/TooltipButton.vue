@@ -6,13 +6,13 @@ const show = ref(false);
 
 <template>
   <v-tooltip v-model="show" location="top">
-    <template v-slot:activator="{ props }">
+    <template #activator="{ props }">
       <v-btn
         v-bind="props"
         size="x-small"
         :icon="prop.icono"
-        @click="prop.funcion(prop.itemid)"
         color="primary"
+        @click="prop.funcion(prop.itemid)"
       ></v-btn>
     </template>
     <span>{{ prop.toolMsg }}</span>

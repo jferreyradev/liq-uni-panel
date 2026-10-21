@@ -195,11 +195,11 @@ function validarRegistro() {
             <v-row>
               <v-col cols="6">
                 <v-select
+                  v-model="relacionFamiliarSelected"
                   label="Relación"
                   :items="tipoRelacionFamiliar"
                   item-title="name"
                   item-value="value"
-                  v-model="relacionFamiliarSelected"
                   return-object
                 >
                 </v-select>
@@ -208,11 +208,11 @@ function validarRegistro() {
             <v-row v-if="relacionFamiliarSelected && (relacionFamiliarSelected.value == 2 || relacionFamiliarSelected == 2)">
               <v-col cols="6">
                 <v-select
+                  v-model="escolaridadSelected"
                   label="Escolaridad"
                   :items="tipoEscolaridad"
                   item-title="name"
                   item-value="value"
-                  v-model="escolaridadSelected"
                   return-object
                 >
                 </v-select>

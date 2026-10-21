@@ -169,7 +169,7 @@ async function grabar(item) {
         :headers="listaHeaders"
         fixed-header
       >
-        <template v-slot:item="{ item }">
+        <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center m-0 p-0">
               <botonTooltip

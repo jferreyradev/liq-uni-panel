@@ -290,15 +290,6 @@ function exportFile() {
 cargarDatos();
 </script>
 
-<style scoped>
-.sticky {
-  position: sticky !important;
-  left: 0 !important;
-  min-width: 100px !important;
-  z-index: 10 !important;
-}
-</style>
-
 <template>
   <v-container>
     <v-container>
@@ -308,14 +299,14 @@ cargarDatos();
           ><div>{{ cargoAsociado.descripcion }}</div></v-col
         >
         <v-col cols="5">
-          <v-btn color="blue" @click="abrirModalCargos" :disabled="!data"
+          <v-btn color="blue" :disabled="!data" @click="abrirModalCargos"
             >Asociar cargo</v-btn
           >
           <v-btn
             v-if="cargoAsociado.cargoId !== 0"
             color="teal"
-            @click="handleDesasociar(cargoAsociado.cargoId)"
             :disabled="!data"
+            @click="handleDesasociar(cargoAsociado.cargoId)"
             >Desvincular de cargo</v-btn
           >
         </v-col>
@@ -328,7 +319,7 @@ cargarDatos();
           @click="handleModif(null)"
           >Agregar</v-btn
         >
-        <v-btn color="primary" @click="handleDownload" :disabled="!data"
+        <v-btn color="primary" :disabled="!data" @click="handleDownload"
           >Descargar</v-btn
         >
         <v-btn
@@ -365,7 +356,7 @@ cargarDatos();
         :headers="listaHeaders"
         :loading="isPending"
       >
-        <template v-slot:item="{ item }">
+        <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center m-0 p-0 sticky">
               <TooltipButton
@@ -455,3 +446,12 @@ cargarDatos();
     ></CargaFamiliarCargos>
   </v-dialog>
 </template>
+
+<style scoped>
+.sticky {
+  position: sticky !important;
+  left: 0 !important;
+  min-width: 100px !important;
+  z-index: 10 !important;
+}
+</style>

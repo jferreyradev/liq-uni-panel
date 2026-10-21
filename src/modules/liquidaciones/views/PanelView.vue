@@ -47,9 +47,9 @@ function handleSelect(id, objElement) {
     <v-row>
       <v-col class="px-0">
         <LiquidacionTable
-          @select="handleSelect"
           title="Liquidaciones"
           :subtitle="store.liqString"
+          @select="handleSelect"
         ></LiquidacionTable>
       </v-col>
       <v-col class="px-0">

@@ -126,8 +126,8 @@ const modules = [
               color="primary"
               size="large"
               prepend-icon="mdi-view-dashboard"
-              @click="router.push('/panel')"
               class="elevation-2"
+              @click="router.push('/panel')"
             >
               Ir al Panel Principal
             </v-btn>

@@ -113,7 +113,7 @@ async function handleDownload(item) {
       </div>
 
       <v-card v-else-if="data" flat class="w-100">
-        <template v-slot:text>
+        <template #text>
           <v-text-field
             v-model="search"
             label="Búsqueda por DNI, Apellido o Nombre"
@@ -132,22 +132,22 @@ async function handleDownload(item) {
           :search="search"
           item-value="LIQUIDACIONID"
         >
-          <template v-slot:[`item.PERIODO`]="{ value }">
+          <template #[`item.PERIODO`]="{ value }">
             {{ getVto(value) }}
           </template>
-          <template v-slot:[`item.FECHADEV`]="{ value }">
+          <template #[`item.FECHADEV`]="{ value }">
             {{ getVto(value) }}
           </template>
 
-          <template v-slot:[`item.LIQUIDACIONID`]="{ item }">
+          <template #[`item.LIQUIDACIONID`]="{ item }">
             <v-btn
               variant="outlined"
               size="small"
               color="primary"
               :loading="downloadingId === item.LIQUIDACIONID"
               :disabled="downloadingId === item.LIQUIDACIONID"
-              @click="handleDownload(item)"
               prepend-icon="mdi-download"
+              @click="handleDownload(item)"
             >
               Descargar
             </v-btn>

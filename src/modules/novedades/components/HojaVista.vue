@@ -145,23 +145,23 @@ async function grabaRegistro() {
             </v-col>
             <v-col cols="6">
               <v-select
+                v-model="tipoHojaSelected"
                 label="Tipo Hoja"
                 :items="tipoHoja"
                 item-title="name"
                 item-value="value"
-                v-model="tipoHojaSelected"
                 return-object
               >
               </v-select>
             </v-col>
 
             <v-col cols="2">
-              <v-select label="Mes" :items="months" v-model="month"></v-select>
+              <v-select v-model="month" label="Mes" :items="months"></v-select>
             </v-col>
             <v-col cols="2">
               <v-text-field
-                label="Año"
                 v-model="year"
+                label="Año"
                 required
                 type="number"
                 :rules="[
@@ -175,22 +175,22 @@ async function grabaRegistro() {
           <v-row>
             <v-col cols="4">
               <v-select
+                v-model="tipoCargaSelected"
                 label="Tipo Carga"
                 :items="tipoCarga"
                 item-title="name"
                 item-value="value"
-                v-model="tipoCargaSelected"
                 return-object
               >
               </v-select>
             </v-col>
             <v-col cols="4">
               <v-select
+                v-model="liqSelected"
                 label="Tipo Liq"
                 :items="tipoLiq"
                 item-title="name"
                 item-value="value"
-                v-model="liqSelected"
                 return-object
               >
               </v-select>

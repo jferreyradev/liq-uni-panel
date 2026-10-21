@@ -197,11 +197,11 @@ function validarRegistro() {
             <v-row>
               <v-col cols="6">
                 <v-select
+                  v-model="reparticionSelected"
                   label="Reparticion"
                   :items="reparticiones"
                   item-title="name"
                   item-value="value"
-                  v-model="reparticionSelected"
                   return-object
                   :readonly="soloLectura"
                 >
@@ -237,11 +237,11 @@ function validarRegistro() {
             <v-row>
               <v-col cols="4">
                 <v-select
+                  v-model="tipoEmpleoSelected"
                   label="Tipo Empleo"
                   :items="tiposEmpleo"
                   item-title="name"
                   item-value="value"
-                  v-model="tipoEmpleoSelected"
                   return-object
                   :readonly="soloLectura"
                 >
@@ -274,11 +274,11 @@ function validarRegistro() {
             <v-row>
               <v-col cols="4">
                 <v-select
+                  v-model="sitRevSelect"
                   label="Sit. Revista"
                   :items="sitRev"
                   item-title="name"
                   item-value="value"
-                  v-model="sitRevSelect"
                   return-object
                   :readonly="soloLectura"
                 >
@@ -311,11 +311,11 @@ function validarRegistro() {
             <v-row>
               <v-col cols="4">
                 <v-select
+                  v-model="estadoCargoSelected"
                   label="Estado Cargo"
                   :items="estadosCargo"
                   item-title="name"
                   item-value="value"
-                  v-model="estadoCargoSelected"
                   return-object
                   :readonly="soloLectura"
                 >
@@ -323,11 +323,11 @@ function validarRegistro() {
               </v-col>
               <v-col cols="4">
                 <v-select
+                  v-model="tipoOSSelected"
                   label="Tipo OS"
                   :items="tiposOS"
                   item-title="name"
                   item-value="value"
-                  v-model="tipoOSSelected"
                   return-object
                   :readonly="soloLectura"
                 >
@@ -335,11 +335,11 @@ function validarRegistro() {
               </v-col>
               <v-col cols="4">
                 <v-select
+                  v-model="tipoLiqSelected"
                   label="Tipo Liq."
                   :items="tipoLiq"
                   item-title="name"
                   item-value="value"
-                  v-model="tipoLiqSelected"
                   return-object
                   :readonly="soloLectura"
                 >

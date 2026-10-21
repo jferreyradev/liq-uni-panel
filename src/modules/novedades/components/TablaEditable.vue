@@ -45,7 +45,7 @@ function LlamaGrabar() {
           :items="data"
           :headers="hojasHeaders"
         >
-          <template v-slot:item="{ item }">
+          <template #item="{ item }">
             <tr>
               <td>{{ item.Id }}</td>
               <td>{{ item.Apellido }}</td>

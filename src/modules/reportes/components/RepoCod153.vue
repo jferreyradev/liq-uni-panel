@@ -98,7 +98,7 @@ function exportFile() {
       title="Resumen de código 153 de liquidación"
       :subtitle="store.liqString"
     >
-      <v-btn color="primary" @click="handleDownload" :disabled="!data"
+      <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
       >
     </RepoHeader>

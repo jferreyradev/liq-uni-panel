@@ -141,10 +141,10 @@ async function handleConfirm() {
     </v-card-text>
     <v-card-actions>
       <v-btn
-        @click="router.go(-1)"
         color="deep-purple-accent-4"
         text="Cancelar"
         variant="text"
+        @click="router.go(-1)"
       ></v-btn>
     </v-card-actions>
   </v-card>
@@ -156,7 +156,7 @@ async function handleConfirm() {
       :text="text"
       title="Información"
     >
-      <template v-slot:actions>
+      <template #actions>
         <v-btn class="ms-auto" text="Ok" @click="handleConfirm"></v-btn>
       </template>
     </v-card>

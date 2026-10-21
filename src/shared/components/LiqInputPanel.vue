@@ -133,29 +133,29 @@ const handleClick = () => {
     <v-row class="pa-0 ma-0">
       <v-col v-if="props.tipoliq" align-self="center">
         <v-select
+          v-model="liqSelected"
           label="Liquidación"
           :items="liq"
           item-title="name"
           item-value="value"
-          v-model="liqSelected"
           return-object
         >
         </v-select>
       </v-col>
       <v-col v-if="props.nroadi">
         <v-text-field
-          label="Nro. Adicional"
           v-model="nroAdi"
+          label="Nro. Adicional"
           required
         ></v-text-field>
       </v-col>
       <v-col>
-        <v-select label="Mes" :items="months" v-model="month"></v-select>
+        <v-select v-model="month" label="Mes" :items="months"></v-select>
       </v-col>
       <v-col>
         <v-text-field
-          label="Año"
           v-model="year"
+          label="Año"
           required
           type="number"
         ></v-text-field>

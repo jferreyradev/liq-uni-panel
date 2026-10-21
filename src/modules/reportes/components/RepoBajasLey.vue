@@ -89,7 +89,7 @@ function exportFile() {
 <template>
   <v-container>
     <RepoHeader title="Bajas de Ley" :subtitle="store.periodoString">
-      <v-btn color="primary" @click="handleDownload" :disabled="!data"
+      <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
       >
     </RepoHeader>
@@ -103,7 +103,7 @@ function exportFile() {
         :items="data"
         :headers="headers"
       >
-        <template v-slot:item="{ item }">
+        <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center">{{ item.DOCUMENTO }}</td>
             <td class="text-left ma-0 pa-0">{{ item.APENOM }}</td>

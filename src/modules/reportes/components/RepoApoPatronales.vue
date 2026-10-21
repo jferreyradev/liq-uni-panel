@@ -129,7 +129,7 @@ function exportFile() {
       title="Resumen de Aportes Patromales"
       :subtitle="store.liqString"
     >
-      <v-btn color="primary" @click="handleDownload" :disabled="!data"
+      <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
       >
     </RepoHeader>
@@ -143,7 +143,7 @@ function exportFile() {
         :items="data"
         :headers="headers"
       >
-        <template v-slot:item="{ item }">
+        <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-right">{{ item.IDREP }}</td>
             <td class="text-right">{{ item.ORDEN }}</td>
@@ -154,7 +154,7 @@ function exportFile() {
             <td class="text-right">{{ financial(item.PATART) }}</td>
           </tr>
         </template>
-        <template v-slot:[`body.append`]>
+        <template #[`body.append`]>
           <tr>
             <th></th>
             <th></th>

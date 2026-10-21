@@ -135,7 +135,7 @@ function exportFile() {
       :headers="headers"
       :items-per-page="15"
     >
-      <template v-slot:item="{ item }">
+      <template #item="{ item }">
         <tr class="pa-0 ma-0">
           <td class="text-left py-1">{{ getVto(item.FECHADEV) }}</td>
           <td class="text-right py-1 font-weight-medium">{{ item.CODIGO }}</td>
@@ -145,7 +145,7 @@ function exportFile() {
         </tr>
       </template>
 
-      <template v-slot:[`body.append`]>
+      <template #[`body.append`]>
         <tr class="bg-blue-lighten-5 font-weight-bold">
           <td colspan="4" class="text-right py-2">Total Retenciones IPSST:</td>
           <td class="text-right py-2 text-primary font-weight-bold">{{ financial(totalImporte) }}</td>

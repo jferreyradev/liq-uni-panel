@@ -217,15 +217,6 @@ function exportFile() {
 }
 </script>
 
-<style>
-.sticky {
-  position: sticky !important;
-  left: 0 !important;
-  min-width: 100px !important;
-  z-index: 10 !important;
-}
-</style>
-
 <template>
   <v-container>
     <v-row>
@@ -243,7 +234,7 @@ function exportFile() {
         @click="handleModif(null)"
         >Nuevo rango</v-btn
       >
-      <v-btn color="primary" @click="handleDownload" :disabled="!data"
+      <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
       >
       <v-btn
@@ -275,7 +266,7 @@ function exportFile() {
         :items="data"
         :headers="listaHeaders"
       >
-        <template v-slot:item="{ item }">
+        <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center m-0 p-0 sticky">
               <botonTooltip
@@ -331,3 +322,12 @@ function exportFile() {
     ></Confirmacion>
   </v-dialog>
 </template>
+
+<style>
+.sticky {
+  position: sticky !important;
+  left: 0 !important;
+  min-width: 100px !important;
+  z-index: 10 !important;
+}
+</style>

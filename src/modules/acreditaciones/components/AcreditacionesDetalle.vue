@@ -115,20 +115,20 @@ filtrar();
       <v-row>
         <v-col cols="3">
           <v-select
+            v-model="filtroCuentaSel"
             label="Filtro de cuenta"
             :items="filtroCuentaArray"
             item-title="descripcion"
             item-value="id"
-            v-model="filtroCuentaSel"
             return-object
           ></v-select>
         </v-col>
         <v-col cols="4">
           <v-btn color="info" @click="filtrar">Filtrar</v-btn>
           <v-btn
+            v-if="datosFiltrados && datosFiltrados.length > 0"
             color="info"
             @click="exportFile"
-            v-if="datosFiltrados && datosFiltrados.length > 0"
             >Exportar</v-btn
           >
         </v-col>
@@ -144,7 +144,7 @@ filtrar();
             :items="datosFiltrados"
             :headers="listaHeaders"
           >
-            <template v-slot:item="{ item }">
+            <template #item="{ item }">
               <tr class="pa-0 ma-0">
                 <td class="text-left m-0 p-0">{{ item.ORDEN }}</td>
                 <td class="text-left m-0 p-0">{{ item.DNI }}</td>

@@ -130,7 +130,7 @@ async function leerListaRegsDetalle() {
               >
             </v-col>
             <v-col cols="3">
-              <v-btn color="info" v-if="cab" @click="ExportaArchivo"
+              <v-btn v-if="cab" color="info" @click="ExportaArchivo"
                 >Exportar archivo</v-btn
               >
             </v-col>
@@ -156,11 +156,11 @@ async function leerListaRegsDetalle() {
             <v-row>
               <v-col cols="12" md="4">
                 <v-select
+                  v-model="tipoLiqSel"
                   label="Tipo de Liquidación"
                   :items="tipoLiq"
                   item-title="name"
                   item-value="value"
-                  v-model="tipoLiqSel"
                   return-object
                 ></v-select>
               </v-col>

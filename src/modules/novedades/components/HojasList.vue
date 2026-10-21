@@ -156,15 +156,6 @@ if (props.filtros.getFiltroString() != null)
   leerHojas(props.filtros.getFiltroString());
 </script>
 
-<style>
-.sticky {
-  position: sticky !important;
-  left: 0 !important;
-  min-width: 130px !important;
-  z-index: 10 !important;
-}
-</style>
-
 <template>
   <v-container>
     <v-container>
@@ -202,7 +193,7 @@ if (props.filtros.getFiltroString() != null)
         :items="data"
         :headers="hojasHeaders"
       >
-        <template v-slot:item="{ item }">
+        <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center m-0 p-0 sticky">
               <botonTooltip
@@ -286,3 +277,12 @@ if (props.filtros.getFiltroString() != null)
     ></confirmacion>
   </v-dialog>
 </template>
+
+<style>
+.sticky {
+  position: sticky !important;
+  left: 0 !important;
+  min-width: 130px !important;
+  z-index: 10 !important;
+}
+</style>

@@ -79,11 +79,11 @@ async function grabaRegistro() {
           <v-container>
             <v-row>
               <v-select
+                v-model="liqSelected"
                 label="Tipo Liq"
                 :items="tipoLiq"
                 item-title="name"
                 item-value="value"
-                v-model="liqSelected"
                 return-object
               >
               </v-select>

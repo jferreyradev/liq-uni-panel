@@ -89,19 +89,19 @@ function Cancelar() {
       <v-form ref="form" v-model="formOK">
         <v-list density="compact" class="bg-grey-lighten-4 rounded mb-3">
           <v-list-item>
-            <template v-slot:prepend>
+            <template #prepend>
               <span class="font-weight-medium me-2">Período:</span>
             </template>
             <span class="font-mono">{{ props.periodo }}</span>
           </v-list-item>
           <v-list-item>
-            <template v-slot:prepend>
+            <template #prepend>
               <span class="font-weight-medium me-2">Tipo de Liquidación:</span>
             </template>
             <span>{{ props.tipoLiquidacion?.name || props.tipoLiquidacion }}</span>
           </v-list-item>
           <v-list-item>
-            <template v-slot:prepend>
+            <template #prepend>
               <span class="font-weight-medium me-2">Grupo Adicional:</span>
             </template>
             <span>{{ props.grupoAdicionalId }}</span>
@@ -109,8 +109,8 @@ function Cancelar() {
         </v-list>
 
         <v-text-field
-          label="Valor Fijo"
           v-model="valorFijo"
+          label="Valor Fijo"
           type="number"
           variant="outlined"
           density="comfortable"
@@ -119,8 +119,8 @@ function Cancelar() {
         ></v-text-field>
 
         <v-text-field
-          label="Cant. Cuotas"
           v-model="cantCuotas"
+          label="Cant. Cuotas"
           type="number"
           variant="outlined"
           density="comfortable"
@@ -134,7 +134,7 @@ function Cancelar() {
     </v-card-text>
 
     <v-card-actions class="d-flex justify-end pa-3 border-t">
-      <v-btn color="grey-darken-1" variant="text" @click="Cancelar" :disabled="isSubmitting">
+      <v-btn color="grey-darken-1" variant="text" :disabled="isSubmitting" @click="Cancelar">
         Cancelar
       </v-btn>
       <v-btn

@@ -160,22 +160,22 @@ async function filtar() {
         </v-col>
         <v-col cols="2">
           <v-select
+            v-model="liqSelected"
             label="Tipo Liq"
             :items="tipoLiqFilter"
             item-title="name"
             item-value="value"
-            v-model="liqSelected"
             return-object
           >
           </v-select>
         </v-col>
         <v-col cols="2">
           <v-select
+            v-model="estCargoSelected"
             label="Est. Cargo"
             :items="estadosCargoFilter"
             item-title="name"
             item-value="value"
-            v-model="estCargoSelected"
             return-object
           >
           </v-select>

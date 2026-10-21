@@ -55,7 +55,7 @@ leerRegistros();
             :items="data"
             :headers="headers"
           >
-            <template v-slot:item="{ item }">
+            <template #item="{ item }">
               <tr class="pa-0 ma-0">
                 <td class="text-right m-0 p-0">{{ item.ID }}</td>
                 <td class="text-left m-0 p-0">{{ item.ESTADO }}</td>

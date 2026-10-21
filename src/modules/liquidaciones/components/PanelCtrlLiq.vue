@@ -292,23 +292,23 @@ function cierraVerProcesos() {
             <v-row>
               <v-col cols="6">
                 <v-select
+                  v-model="tipoProcesoSelected"
                   label="Proceso"
                   :items="tiposProceso"
                   item-title="name"
                   item-value="value"
-                  v-model="tipoProcesoSelected"
                   return-object
-                  @update:modelValue="onTipoProcesoChange"
+                  @update:model-value="onTipoProcesoChange"
                 >
                 </v-select>
               </v-col>
               <v-col cols="6">
                 <v-select
+                  v-model="tipoLiqSelected"
                   label="Tipo Liq."
                   :items="tipoLiq"
                   item-title="name"
                   item-value="value"
-                  v-model="tipoLiqSelected"
                   return-object
                 >
                 </v-select>
@@ -342,11 +342,11 @@ function cierraVerProcesos() {
             <v-row v-if="tipoProcesoSelected.value == 2">
               <v-col cols="6">
                 <v-select
+                  v-model="formaLiquidarSelected"
                   label="Forma de Liquidar"
                   :items="formasLiquidar"
                   item-title="name"
                   item-value="value"
-                  v-model="formaLiquidarSelected"
                   return-object
                 >
                 </v-select>
@@ -355,11 +355,11 @@ function cierraVerProcesos() {
             <v-row v-if="formaLiquidarSelected.value == 1">
               <v-col cols="6">
                 <v-select
+                  v-model="grupoRepSelected"
                   label="Grupo de Reparticiones"
                   :items="gruposRep"
                   item-title="name"
                   item-value="value"
-                  v-model="grupoRepSelected"
                   return-object
                 >
                 </v-select>
@@ -367,11 +367,11 @@ function cierraVerProcesos() {
 
               <v-col v-if="tipoProcesoSelected.value == 2" cols="6">
                 <v-select
+                  v-model="repSelected"
                   label="Repartición"
                   :items="reparticiones"
                   item-title="name"
                   item-value="value"
-                  v-model="repSelected"
                   return-object
                 >
                 </v-select>
@@ -384,12 +384,12 @@ function cierraVerProcesos() {
                   v-model="dni"
                   hide-details="auto"
                   label="DNI"
-                  @blur="obtieneApellidoYNombre"
-                  @keydown.enter="obtieneApellidoYNombre"
                   :rules="[
                     ...rules.number,
                     (val) => rules.longitudEntreONull(val, 7, 9),
                   ]"
+                  @blur="obtieneApellidoYNombre"
+                  @keydown.enter="obtieneApellidoYNombre"
                 ></v-text-field>
               </v-col>
               <v-col cols="6">

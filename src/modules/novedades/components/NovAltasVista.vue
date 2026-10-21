@@ -244,11 +244,11 @@ function validarRegistro() {
             <v-row>
               <v-col cols="3">
                 <v-select
+                  v-model="sexoSelected"
                   label="Sexo"
                   :items="sexos"
                   item-title="name"
                   item-value="value"
-                  v-model="sexoSelected"
                   return-object
                 >
                 </v-select>

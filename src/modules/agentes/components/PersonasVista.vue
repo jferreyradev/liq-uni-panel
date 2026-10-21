@@ -188,11 +188,11 @@ function estableceLocalidad(item) {
             <v-row>
               <v-col cols="4">
                 <v-select
+                  v-model="tipoDocSelected"
                   label="Tipo Doc."
                   :items="tiposDoc"
                   item-title="name"
                   item-value="value"
-                  v-model="tipoDocSelected"
                   return-object
                 >
                 </v-select>
@@ -241,11 +241,11 @@ function estableceLocalidad(item) {
               </v-col>
               <v-col cols="4">
                 <v-select
+                  v-model="sexoSelected"
                   label="Sexo"
                   :items="sexos"
                   item-title="name"
                   item-value="value"
-                  v-model="sexoSelected"
                   return-object
                 >
                 </v-select>
@@ -273,11 +273,11 @@ function estableceLocalidad(item) {
               </v-col>
               <v-col cols="4">
                 <v-select
+                  v-model="estCivilSelected"
                   label="Est. Civil"
                   :items="estadosCivil"
                   item-title="name"
                   item-value="value"
-                  v-model="estCivilSelected"
                   return-object
                 >
                 </v-select>

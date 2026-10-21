@@ -51,7 +51,7 @@ const getVto = (vto) => {
 <template>
   <v-container>
     <div v-if="isPending">loading...</div>
-    <v-card flat v-else-if="data">
+    <v-card v-else-if="data" flat>
       <v-card-title class="d-flex align-center pe-2 bg-blue-accent-1">
         {{ props.title }}
         <v-spacer></v-spacer>
@@ -82,7 +82,7 @@ const getVto = (vto) => {
         density="compact"
         class="elevation-1 text-caption pa-0 ma-0 w-auto"
       >
-        <template v-slot:item="{ item }">
+        <template #item="{ item }">
           <tr class="pa-0 ma-0" @click="handleClick(item)">
             <td class="text-right ma-0 pa-0">{{ item.ORDEN }}</td>
             <td class="text-right">{{ item.DOCUMENTO }}</td>

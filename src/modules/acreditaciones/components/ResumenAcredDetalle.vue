@@ -172,7 +172,7 @@ function exportFile() {
         :headers="headers"
         :items-per-page="10"
       >
-        <template v-slot:item="{ item }">
+        <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-right py-1">{{ item.GRUPOADICIONALID }}</td>
             <td class="text-right py-1">{{ getVto(item.PERIODO) }}</td>

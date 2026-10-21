@@ -55,7 +55,7 @@ async function selectTenant(tenantId) {
 <template>
   <div class="tenant-selector-wrapper">
     <v-menu location="bottom end" transition="scale-transition">
-      <template v-slot:activator="{ props }">
+      <template #activator="{ props }">
         <v-btn
           v-bind="props"
           variant="tonal"
@@ -80,10 +80,10 @@ async function selectTenant(tenantId) {
           :value="tenant.id"
           :active="tenant.id === activeTenant.id"
           color="primary"
-          @click="selectTenant(tenant.id)"
           class="py-2"
+          @click="selectTenant(tenant.id)"
         >
-          <template v-slot:prepend>
+          <template #prepend>
             <v-avatar size="32" class="me-2" rounded="sm" :color="tenant.id === 'desarrollo' ? 'deep-purple-darken-1' : undefined">
               <v-icon v-if="tenant.id === 'desarrollo'" icon="mdi-flask" color="white" size="small"></v-icon>
               <v-img
@@ -103,7 +103,7 @@ async function selectTenant(tenantId) {
             Puerto: {{ tenant.projectPort }} &bull; Key: {{ tenant.projectKey }}
           </v-list-item-subtitle>
 
-          <template v-slot:append>
+          <template #append>
             <v-icon
               v-if="tenant.id === activeTenant.id"
               icon="mdi-check"

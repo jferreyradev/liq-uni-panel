@@ -128,7 +128,7 @@ const headers = [
           :headers="headers"
           :items-per-page="10"
         >
-          <template v-slot:item="{ item }">
+          <template #item="{ item }">
             <tr class="pa-0 ma-0">
               <td class="text-left font-mono py-1 text-no-wrap">{{ item.CADENA }}</td>
             </tr>

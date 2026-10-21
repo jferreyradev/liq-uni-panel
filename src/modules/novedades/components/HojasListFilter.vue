@@ -132,33 +132,33 @@ const formOK = ref(null);
         </v-col>
         <v-col cols="2">
           <v-select
+            v-model="liqSelected"
             label="Tipo Liq"
             :items="tipoLiqFilter"
             item-title="name"
             item-value="value"
-            v-model="liqSelected"
             return-object
           >
           </v-select>
         </v-col>
         <v-col cols="2">
           <v-select
+            v-model="tipoHojaSelected"
             label="Tipo Hoja"
             :items="tipoHojaFilter"
             item-title="name"
             item-value="value"
-            v-model="tipoHojaSelected"
             return-object
           >
           </v-select>
         </v-col>
         <v-col cols="2">
           <v-select
+            v-model="tipoCargaSelected"
             label="Tipo Carga"
             :items="tipoCargaFilter"
             item-title="name"
             item-value="value"
-            v-model="tipoCargaSelected"
             return-object
           >
           </v-select>

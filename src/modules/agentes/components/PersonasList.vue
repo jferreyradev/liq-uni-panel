@@ -95,15 +95,6 @@ const { grabar: grabarSP } = useSpGrabar({
 load(filterStore.personasFiltro);
 </script>
 
-<style scoped>
-.sticky {
-  position: sticky !important;
-  left: 0 !important;
-  min-width: 130px !important;
-  z-index: 10 !important;
-}
-</style>
-
 <template>
   <v-container>
     <h1>Agentes</h1>
@@ -137,7 +128,7 @@ load(filterStore.personasFiltro);
         :items="data"
         :headers="hojasHeaders"
       >
-        <template v-slot:item="{ item }">
+        <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center m-0 p-0 sticky">
               <TooltipButton
@@ -179,3 +170,12 @@ load(filterStore.personasFiltro);
     ></PersonasVista>
   </v-dialog>
 </template>
+
+<style scoped>
+.sticky {
+  position: sticky !important;
+  left: 0 !important;
+  min-width: 130px !important;
+  z-index: 10 !important;
+}
+</style>

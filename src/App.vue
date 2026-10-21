@@ -93,8 +93,8 @@ function handleLogout() {
         class="me-1 font-weight-medium"
         :color="storeFilter.hasServerConfig ? 'white' : (storeFilter.serverConfigError ? 'error' : 'grey-lighten-2')"
         :variant="storeFilter.hasServerConfig ? 'outlined' : 'tonal'"
-        @click="logStore.openDialog"
         style="cursor: pointer;"
+        @click="logStore.openDialog"
       >
         <v-icon
           :icon="storeFilter.serverConfigLoading ? 'mdi-loading mdi-spin' : (storeFilter.hasServerConfig ? 'mdi-database-check' : (storeFilter.serverConfigError ? 'mdi-database-alert' : 'mdi-database-clock-outline'))"
@@ -121,7 +121,7 @@ function handleLogout() {
       </v-chip>
 
       <!-- Conmutador Tema Claro/Oscuro -->
-      <v-btn @click="toggleTheme" icon="mdi-theme-light-dark" size="small" class="me-1">
+      <v-btn icon="mdi-theme-light-dark" size="small" class="me-1" @click="toggleTheme">
         <v-tooltip activator="parent" location="bottom">Cambiar tema</v-tooltip>
         <v-icon icon="mdi-theme-light-dark"></v-icon>
       </v-btn>
@@ -147,7 +147,7 @@ function handleLogout() {
       <!-- Menú de Usuario -->
       <div v-if="store.auth">
         <v-menu location="bottom end">
-          <template v-slot:activator="{ props }">
+          <template #activator="{ props }">
             <v-btn icon="mdi-account-circle" v-bind="props" size="small">
               <v-icon icon="mdi-account-circle"></v-icon>
             </v-btn>
@@ -158,7 +158,7 @@ function handleLogout() {
               :subtitle="store.user?.EMAIL || ''"
               :title="store.user?.USERNAME || store.user?.NOMBRE || 'Usuario'"
             >
-              <template v-slot:prepend>
+              <template #prepend>
                 <v-icon icon="mdi-account"></v-icon>
               </template>
             </v-list-item>
@@ -197,8 +197,8 @@ function handleLogout() {
         <v-list-item
           prepend-icon="mdi-home"
           title="Inicio"
-          @click="router.push('/')"
           :active="$route.path === '/'"
+          @click="router.push('/')"
         />
 
         <template v-if="navItems && navItems.length > 0">
@@ -206,8 +206,8 @@ function handleLogout() {
             v-for="item in navItems"
             :key="item.IDMENU || item.PATH"
             :title="item.DESCRIPCION"
-            @click="router.push(item.PATH)"
             :active="$route.path === item.PATH"
+            @click="router.push(item.PATH)"
           />
         </template>
 
@@ -230,8 +230,8 @@ function handleLogout() {
         <v-list-item
           prepend-icon="mdi-logout"
           title="Cerrar sesión"
-          @click="handleLogout"
           color="error"
+          @click="handleLogout"
         />
       </v-list>
     </v-navigation-drawer>

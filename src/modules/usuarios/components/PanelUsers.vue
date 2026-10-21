@@ -88,7 +88,7 @@ onMounted(() => {
 <template>
   <v-container>
     <div v-if="loading">loading...</div>
-    <v-card flat v-else-if="users">
+    <v-card v-else-if="users" flat>
       <v-card-title class="d-flex align-center pe-2 bg-blue-accent-1">
         {{ props.title }}
         <v-spacer></v-spacer>
@@ -119,23 +119,23 @@ onMounted(() => {
         density="compact"
         class="elevation-1 text-caption pa-0 ma-0 w-auto"
       >
-        <template v-slot:item="{ item }">
+        <template #item="{ item }">
           <tr>
             <td class="text-right ma-0 pa-0">{{ item.ID }}</td>
             <td class="text-right">{{ item.DNI }}</td>
             <td class="text-left">{{ item.USERNAME }}</td>
             <td class="text-left">{{ item.EMAIL }}</td>
-            <td class="text-left" v-if="item.ESTADO === 1">{{ "Activo" }}</td>
-            <td class="text-left" v-if="item.ESTADO === 2">
+            <td v-if="item.ESTADO === 1" class="text-left">{{ "Activo" }}</td>
+            <td v-if="item.ESTADO === 2" class="text-left">
               {{ "Bloqueado" }}
             </td>
             <td>
               <v-menu>
-                <template v-slot:activator="{ props }">
+                <template #activator="{ props: activatorProps }">
                   <v-btn
                     icon="mdi-dots-vertical"
                     variant="text"
-                    v-bind="props"
+                    v-bind="activatorProps"
                   ></v-btn>
                 </template>
 
@@ -170,7 +170,7 @@ onMounted(() => {
         :text="text"
         title="Información"
       >
-        <template v-slot:actions>
+        <template #actions>
           <v-spacer></v-spacer>
 
           <v-btn @click="dialog = false"> Cancelar </v-btn>
