@@ -8,11 +8,15 @@ import { agregaTitulosExcel } from "@/utils/reportes.js";
 import CargaFamiliarCargos from "./CargaFamiliarCargos.vue";
 import { useDataTable } from "@/composables/useDataTable";
 import { useSpGrabar } from "@/composables/useSpGrabar";
+import { usePII } from "@/composables/usePII";
 
 const props = defineProps({
   setPersonaEdicion: { type: Function, required: true },
   personaEditar: { type: Object, default: null },
 });
+
+/** Datos personales: se enmascaran segun el rol del usuario. */
+const { documento } = usePII();
 
 /**
  * Persona en edicion.
@@ -392,7 +396,7 @@ cargarDatos();
                 :itemid="item.ID"
               ></TooltipButton>
             </td>
-            <td class="text-right m-0 p-0">{{ item.DOCUMENTO }}</td>
+            <td class="text-right m-0 p-0">{{ documento(item.DOCUMENTO) }}</td>
             <td class="text-left m-0 p-0">{{ item.APELLIDOYOMBRE }}</td>
             <td class="text-left m-0 p-0">
               {{ item.TIPORELACIONDESCRIPCION }}

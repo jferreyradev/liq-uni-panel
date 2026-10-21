@@ -8,12 +8,14 @@ import PersonasVista from "./PersonasVista.vue";
 import { useDataTable } from "@/composables/useDataTable";
 import { useSpGrabar } from "@/composables/useSpGrabar";
 import { useAgentesFilterStore } from "@/stores/agentesFilterStore";
+import { usePII } from "@/composables/usePII";
 
 const props = defineProps({
   setPersonaEdicion: { type: Function, required: true },
 });
 
 const filterStore = useAgentesFilterStore();
+const { documento, cuil } = usePII();
 
 const hojasHeaders = [
   { title: "", key: "ACCIONES" },
@@ -145,10 +147,10 @@ load(filterStore.personasFiltro);
               ></TooltipButton>
             </td>
 
-            <td class="text-right m-0 p-0">{{ item.DOCUMENTO }}</td>
+            <td class="text-right m-0 p-0">{{ documento(item.DOCUMENTO) }}</td>
             <td class="text-left m-0 p-0">{{ item.APELLIDO }}</td>
             <td class="text-left m-0 p-0">{{ item.NOMBRE }}</td>
-            <td class="text-right m-0 p-0">{{ item.PERSONACUIL }}</td>
+            <td class="text-right m-0 p-0">{{ cuil(item.PERSONACUIL) }}</td>
             <td class="text-left m-0 p-0">
               {{ getFechaDMY(item.FECHAINGRESO) }}
             </td>

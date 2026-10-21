@@ -10,8 +10,12 @@ import { useSpGrabar } from "@/composables/useSpGrabar";
 import { useAgentesFilterStore } from "@/stores/agentesFilterStore";
 import { buildQuery, parseQueryString } from "@/utils/query";
 import { estadosCargo, getName } from "@/utils/tipos";
+import { usePII } from "@/composables/usePII";
 
 const filterStore = useAgentesFilterStore();
+
+/** Datos personales: se enmascaran segun el rol del usuario. */
+const { documento } = usePII();
 
 const hojasHeaders = [
   { title: "", key: "ACCIONES" },
@@ -177,7 +181,7 @@ load(filterStore.cargosFiltro);
               ></TooltipButton>
             </td>
 
-            <td class="text-right m-0 p-0">{{ item.PERSONADOCUMENTO }}</td>
+            <td class="text-right m-0 p-0">{{ documento(item.PERSONADOCUMENTO) }}</td>
             <td class="text-left m-0 p-0">{{ item.PERSONAAPELLIDO }}</td>
             <td class="text-left m-0 p-0">{{ item.PERSONANOMBRE }}</td>
             <td class="text-left m-0 p-0">
