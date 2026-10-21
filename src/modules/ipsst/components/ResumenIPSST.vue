@@ -98,11 +98,6 @@ function exportFile() {
     compression: true
   })
 }
-
-function cargarPeriodoAnterior() {
-  store.month = '08'
-  store.year = 2026
-}
 </script>
 
 <template>
@@ -150,7 +145,7 @@ function cargarPeriodoAnterior() {
         </tr>
       </template>
 
-      <template v-slot:body.append>
+      <template v-slot:[`body.append`]>
         <tr class="bg-blue-lighten-5 font-weight-bold">
           <td colspan="4" class="text-right py-2">Total Retenciones IPSST:</td>
           <td class="text-right py-2 text-primary font-weight-bold">{{ financial(totalImporte) }}</td>

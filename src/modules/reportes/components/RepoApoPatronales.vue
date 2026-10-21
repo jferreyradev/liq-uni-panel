@@ -154,7 +154,7 @@ function exportFile() {
             <td class="text-right">{{ financial(item.PATART) }}</td>
           </tr>
         </template>
-        <template v-slot:body.append>
+        <template v-slot:[`body.append`]>
           <tr>
             <th></th>
             <th></th>

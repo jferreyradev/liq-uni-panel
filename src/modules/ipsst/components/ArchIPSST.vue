@@ -95,11 +95,6 @@ async function downloadIpsst() {
     downloading.value = false
   }
 }
-
-function cargarPeriodoAnterior() {
-  store.month = '08'
-  store.year = 2026
-}
 </script>
 
 <template>

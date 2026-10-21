@@ -3,13 +3,11 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTenantStore } from '@/stores/tenantStore'
 import { useFilterStore } from '@/stores/filterStore'
-import { useUserStore } from '@/stores/userStore'
 import { useEndPoints } from '@/composables/useEndPoints'
 
 const router = useRouter()
 const tenantStore = useTenantStore()
 const filterStore = useFilterStore()
-const userStore = useUserStore()
 const { env } = useEndPoints()
 
 const activeTenant = computed(() => tenantStore.activeTenant)

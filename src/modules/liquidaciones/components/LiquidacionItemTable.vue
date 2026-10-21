@@ -23,14 +23,6 @@ const liqHeaders = [
   { title: "Importe", key: "IMPORTETICKET" },
 ];
 
-const getVto = (vto) => {
-  if (vto) {
-    const d = vto.split("-");
-    return `${d[1]}/${d[0]}`;
-  }
-  return null;
-};
-
 const sortedItems = computed(() => {
   if (!data.value || !Array.isArray(data.value)) return [];
   return [...data.value].sort((a, b) => {

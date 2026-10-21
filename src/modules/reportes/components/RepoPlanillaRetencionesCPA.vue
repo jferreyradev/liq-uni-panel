@@ -168,7 +168,7 @@ function exportFile() {
             <td class="text-center">{{ getVto(item.VTO) }}</td>
           </tr>
         </template>
-        <template v-slot:body.append>
+        <template v-slot:[`body.append`]>
           <tr>
             <th></th>
             <th></th>

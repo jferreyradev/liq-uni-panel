@@ -97,7 +97,7 @@ async function grabarSP(item, id) {
   //console.log(url, item)
 
   try {
-    const { operacionOk, valorError, valorSalida, errorMsg, datos, out } = await ejecutarSP(url, item);
+    const { operacionOk, valorError, errorMsg, datos, out } = await ejecutarSP(url, item);
     const errCode = valorError !== undefined && valorError !== -1
       ? valorError
       : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));

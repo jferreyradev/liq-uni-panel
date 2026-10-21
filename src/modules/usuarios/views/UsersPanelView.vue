@@ -3,23 +3,6 @@ import { ref } from "vue";
 import PanelUsers from "../components/PanelUsers.vue";
 
 const dialog = ref(false);
-
-const text = ref("");
-
-const idliqitem = ref(null);
-
-function handleSelect(id, objElement) {
-  idliqitem.value = id;
-  text.value =
-    "Orden:" +
-    objElement.orden +
-    " DNI:" +
-    objElement.dni +
-    " Nombre:" +
-    objElement.apellido +
-    " " +
-    objElement.nombre;
-}
 </script>
 
 <template>

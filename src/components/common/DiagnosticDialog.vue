@@ -10,10 +10,7 @@ const logStore = useLogStore()
 const filterStore = useFilterStore()
 const {
   env,
-  isDesa,
   apiBase,
-  apiBoletas,
-  apiSp,
   setDesaOverrides,
   resetDesaOverrides,
   getDesaOverrides

@@ -194,7 +194,7 @@ function exportFile() {
             <td class="text-left">{{ getVto(item.FECHADEV) }}</td>
           </tr>
         </template>
-        <template v-slot:body.append>
+        <template v-slot:[`body.append`]>
           <tr>
             <th></th>
             <th></th>

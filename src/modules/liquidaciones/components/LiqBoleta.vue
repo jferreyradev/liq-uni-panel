@@ -16,16 +16,7 @@ const liqHeaders = [
   { title: "Importe", key: "IMPORTE" },
 ];
 
-const getVto = (vto) => {
-  if (vto) {
-    const d = vto.split("-");
-    return `${d[1]}/${d[0]}`;
-  }
-  return null;
-};
-
 //const items = ref([])
-
 const sortItems = () => {
   //let items = data.filter((x) => x.LIQUIDACIONID === 3360)
 
@@ -173,7 +164,8 @@ async function createPdf() {
 
   const pdfDoc = await PDFDocument.create();
   const fontCur = await pdfDoc.embedFont(StandardFonts.Courier);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.CourierBold);
+  // La fuente en negrita se incrusta en el PDF aunque hoy no se use para drawText.
+  await pdfDoc.embedFont(StandardFonts.CourierBold);
 
   const page = pdfDoc.addPage([841.89, 595.28]);
   const { width, height } = page.getSize();

@@ -48,7 +48,7 @@ describe('capa HTTP unica', () => {
 
   it('el cliente unico es el unico archivo que invoca fetch', () => {
     const conFetch = Object.entries(fuentes)
-      .filter(([ruta, contenido]) => !ruta.includes('__tests__'))
+      .filter(([ruta]) => !ruta.includes('__tests__'))
       .filter(([, contenido]) => typeof contenido === 'string' && /fetch\s*\(/.test(contenido))
       .map(([ruta]) => ruta)
 

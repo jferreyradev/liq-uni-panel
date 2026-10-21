@@ -181,7 +181,6 @@ export const useBoletatxt = defineStore('boletatxt', () => {
     let cadenacab = ''
     let cadenapie = ''
     let cadenaley = ''
-    let filename = ''
     let idLiq = 0
 
     if (cab.value.length === 1 && cab.value.length > 0) {
@@ -195,8 +194,6 @@ export const useBoletatxt = defineStore('boletatxt', () => {
 
       idLiq = line['IDLIQ']
       cadenapie += 'Sup. Gobierno de Tucumán  30-67542808-1' + '\n'
-
-      filename = line['FILENAME']
     }
 
     let cadenadet =
@@ -204,13 +201,11 @@ export const useBoletatxt = defineStore('boletatxt', () => {
 
     let hab = 0
     let ret = 0
-    let ley = 0
 
     if (det.value && det.value.length > 0) {
       det.value.forEach((element) => {
         if (element['ESLEY'] == 1) {
           cadenaley += element['CADENA'].replace('  0.00', '      ') + '\n'
-          ley += element['HABERES']
         } else {
           cadenadet += element['CADENA'].replace('  0.00', '      ') + '\n'
           hab += element['HABERES']
@@ -227,10 +222,6 @@ export const useBoletatxt = defineStore('boletatxt', () => {
       cadenapie += 'LIQUIDO: '.toString().padStart(79) + Number.parseFloat(liquid).toFixed(2).toLocaleString().padStart(19) + '\n'
 
       cadenapie += '\nRECIBO NRO: '.padStart(77) + idLiq
-
-      const text = cadenacab + '\n' + cadenadet + '\n' + cadenaley + '\n' + cadenapie
-
-      const textByline = text.toString().split('\n')
 
       const textCab = cadenacab.toString().split('\n')
       const textDet = cadenadet.toString().split('\n')
