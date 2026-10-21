@@ -1,8 +1,7 @@
 <script setup>
 import { ref } from "vue";
-import Confirmacion from "./Confirmacion.vue";
-import { leerDatos, ejecutarSP } from "./llamadaAPI";
-import botonTooltip from "./botonTooltip.vue";
+import { leerDatos, ejecutarSP } from "@/shared/services/apiService";
+import { TooltipButton } from "@/shared/components";
 import { getVto, getFechaDMY } from "@/utils/formatos";
 import NovAltasVista from "./NovAltasVista.vue";
 import { utils, writeFileXLSX } from "xlsx";
@@ -288,7 +287,7 @@ function exportFile() {
         <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center m-0 p-0 sticky">
-              <botonTooltip
+              <TooltipButton
                 v-if="
                   hojaEditar.ESTADOHOJAID != 4 && hojaEditar.ESTADOHOJAID != 6
                 "
@@ -296,8 +295,8 @@ function exportFile() {
                 :toolMsg="'Editar'"
                 :funcion="handleModif"
                 :itemid="item.ID"
-              ></botonTooltip>
-              <botonTooltip
+              ></TooltipButton>
+              <TooltipButton
                 v-if="
                   hojaEditar.ESTADOHOJAID != 4 && hojaEditar.ESTADOHOJAID != 6
                 "
@@ -305,7 +304,7 @@ function exportFile() {
                 :toolMsg="'Eliminar'"
                 :funcion="handleEliminar"
                 :itemid="item.ID"
-              ></botonTooltip>
+              ></TooltipButton>
             </td>
             <td class="text-right m-0 p-0">{{ item.IDREP }}</td>
             <td class="text-right m-0 p-0">{{ item.ORDEN }}</td>

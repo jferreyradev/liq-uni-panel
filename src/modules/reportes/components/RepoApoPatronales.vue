@@ -2,7 +2,7 @@
 import { utils, writeFileXLSX } from "xlsx";
 import { useFilterStore } from "@/stores/filterStore";
 import { useFetch } from "@/composables/useFetch";
-import RepoHeader from "./RepoHeader.vue";
+import { RepoHeader } from "@/shared/components";
 import { financial, agregaTitulosExcel } from "@/utils/reportes.js";
 import { computed } from "vue";
 import { useEndPoints } from "@/composables/useEndPoints";

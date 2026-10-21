@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import { useFilterStore } from "@/stores/filterStore.js";
 import { useFetch } from "@/composables/useFetch";
-import RepoHeader from "@/shared/components/RepoHeader.vue";
+import { RepoHeader } from "@/shared/components";
 import { useLiqStore } from "@/stores/liqStore.js";
 import { useEndPoints } from "@/composables/useEndPoints";
 import { request } from "@/shared/services/httpClient";

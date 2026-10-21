@@ -1,5 +1,5 @@
 <script setup>
-import LiqInputPanel from "@/shared/components/LiqInputPanel.vue";
+import { LiqInputPanel } from "@/shared/components";
 import ResumenAcred from "../components/ResumenAcred.vue";
 import ResumenAcredDetalle from "../components/ResumenAcredDetalle.vue";
 import ArchAcred from "../components/ArchAcred.vue";

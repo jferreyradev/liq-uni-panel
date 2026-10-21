@@ -2,7 +2,7 @@
 import { utils, writeFileXLSX } from "xlsx";
 import { useFilterStore } from "@/stores/filterStore";
 import { useFetch } from "@/composables/useFetch";
-import RepoHeader from "./RepoHeader.vue";
+import { RepoHeader } from "@/shared/components";
 import { useEndPoints } from "@/composables/useEndPoints";
 
 const { apiBase } = useEndPoints();

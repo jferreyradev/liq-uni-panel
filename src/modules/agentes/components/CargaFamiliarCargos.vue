@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { getTipoDescripcion } from "@/utils/formatos";
-import { leerDatos } from "./llamadaAPI";
+import { leerDatos } from "@/shared/services/apiService";
 import { TooltipButton } from "@/shared/components";
 
 const props = defineProps(["cerrar", "funcion", "personaId"]);

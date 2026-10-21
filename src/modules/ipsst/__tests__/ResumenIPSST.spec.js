@@ -24,13 +24,13 @@ vi.mock('@/composables/useEndPoints', () => ({
   })
 }))
 
-vi.mock('../RepoHeader.vue', () => ({
+vi.mock('@/shared/components/RepoHeader.vue', () => ({
   default: {
     template: '<div><slot /></div>'
   }
 }))
 
-import ResumenIPSST from '../ResumenIPSST.vue'
+import ResumenIPSST from '../components/ResumenIPSST.vue'
 
 describe('ResumenIPSST', () => {
   beforeEach(() => {

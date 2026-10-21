@@ -1,5 +1,5 @@
 <script setup>
-import RepoHeader from "@/shared/components/RepoHeader.vue";
+import { RepoHeader } from "@/shared/components";
 import { useFilterStore } from "@/stores/filterStore";
 import { useEndPoints } from "@/composables/useEndPoints";
 import { useFetch } from "@/composables/useFetch";

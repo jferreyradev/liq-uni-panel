@@ -3,7 +3,7 @@ import RepoCod153 from "../components/RepoCod153.vue";
 import RepoResumenLiq from "../components/RepoResumenLiq.vue";
 import RepoResumenCod from "../components/RepoResumenCod.vue";
 import RepoResumenLiqFDO from "../components/RepoResumenLiqFdo.vue";
-import LiqInputPanel from "@/shared/components/LiqInputPanel.vue";
+import { LiqInputPanel } from "@/shared/components";
 import RepoApoPatronales from "../components/RepoApoPatronales.vue";
 import RepoPlanillaDetLiq from "../components/RepoPlanillaDetLiq.vue";
 import RepoPlanillaRet from "../components/RepoPlanillaRet.vue";

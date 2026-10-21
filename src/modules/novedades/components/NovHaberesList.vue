@@ -1,8 +1,7 @@
 <script setup>
 import { ref } from "vue";
-import Confirmacion from "./Confirmacion.vue";
-import { leerDatos, grabarRegistro } from "./llamadaAPI";
-import botonTooltip from "./botonTooltip.vue";
+import { leerDatos, grabarRegistro } from "@/shared/services/apiService";
+import { TooltipButton } from "@/shared/components";
 import { getVto, getFechaDMY, financial } from "@/utils/formatos";
 import NovHaberesVista from "./NovHaberesVista.vue";
 
@@ -172,18 +171,18 @@ async function grabar(item) {
         <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center m-0 p-0">
-              <botonTooltip
+              <TooltipButton
                 :icono="'mdi-pencil'"
                 :toolMsg="'Editar'"
                 :funcion="handleModif"
                 :itemid="item.ID"
-              ></botonTooltip>
-              <botonTooltip
+              ></TooltipButton>
+              <TooltipButton
                 :icono="'mdi-delete'"
                 :toolMsg="'Eliminar'"
                 :funcion="handleEliminar"
                 :itemid="item.ID"
-              ></botonTooltip>
+              ></TooltipButton>
             </td>
             <td class="text-right m-0 p-0">{{ item.NROREPARTICION }}</td>
             <td class="text-right m-0 p-0">{{ item.NROBOLETA }}</td>

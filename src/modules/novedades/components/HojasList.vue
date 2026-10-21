@@ -1,10 +1,9 @@
 <script setup>
 import { ref } from "vue";
 import HojaVista from "./HojaVista.vue";
-import Confirmacion from "./Confirmacion.vue";
 import { getName, tipoCarga, estadosHoja } from "@/utils/tipos";
-import { leerDatos, ejecutarSP } from "./llamadaAPI";
-import botonTooltip from "./botonTooltip.vue";
+import { leerDatos, ejecutarSP } from "@/shared/services/apiService";
+import { TooltipButton } from "@/shared/components";
 import { getVto, getFechaDMY } from "@/utils/formatos";
 import HojasListFilter from "./HojasListFilter.vue";
 
@@ -196,33 +195,33 @@ if (props.filtros.getFiltroString() != null)
         <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center m-0 p-0 sticky">
-              <botonTooltip
+              <TooltipButton
                 v-if="item.ESTADOHOJAID != 4 && item.ESTADOHOJAID != 6"
                 :icono="'mdi-pencil'"
                 :toolMsg="'Editar'"
                 :funcion="handleModif"
                 :itemid="item.ID"
-              ></botonTooltip>
-              <botonTooltip
+              ></TooltipButton>
+              <TooltipButton
                 v-if="item.ESTADOHOJAID != 4 && item.ESTADOHOJAID != 6"
                 :icono="'mdi-delete'"
                 :toolMsg="'Eliminar'"
                 :funcion="handleAnular"
                 :itemid="item.ID"
-              ></botonTooltip>
-              <botonTooltip
+              ></TooltipButton>
+              <TooltipButton
                 :icono="'mdi-list-box-outline'"
                 :toolMsg="'Editar Registros'"
                 :funcion="handleEditarRegistros"
                 :itemid="item.ID"
-              ></botonTooltip>
-              <botonTooltip
+              ></TooltipButton>
+              <TooltipButton
                 v-if="item.ESTADOHOJAID != 4 && item.ESTADOHOJAID != 6"
                 :icono="'mdi-check-bold'"
                 :toolMsg="'Cerrar'"
                 :funcion="handleCerrarHoja"
                 :itemid="item.ID"
-              ></botonTooltip>
+              ></TooltipButton>
             </td>
 
             <td class="text-right m-0 p-0">{{ item.ID }}</td>

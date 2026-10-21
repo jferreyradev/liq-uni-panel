@@ -1,8 +1,8 @@
 <script setup>
 import { ref } from "vue";
-import Confirmacion from "@/shared/components/ConfirmacionDialog.vue";
+import { ConfirmacionDialog, TooltipButton } from "@/shared/components";
 import { leerDatos, ejecutarSP } from "@/shared/services/apiService";
-import botonTooltip from "@/shared/components/TooltipButton.vue";
+
 import {
   getVto,
   getPeriodoFromMMYYYY,
@@ -142,7 +142,7 @@ function cierraConfirmacion() {
           <template #item="{ item }">
             <tr class="pa-0 ma-0">
               <td class="text-center m-0 p-0 sticky">
-                <botonTooltip
+                <TooltipButton
                   :icono="'mdi-delete'"
                   :toolMsg="'Eliminar'"
                   :funcion="handleEliminar"
@@ -153,7 +153,7 @@ function cierraConfirmacion() {
                     REPARTICIONID: -1,
                     PERIODOLIQ: item.PERIODOLIQ,
                   }"
-                ></botonTooltip>
+                ></TooltipButton>
               </td>
               <td class="text-left m-0 p-0">
                 {{ item.TIPOLIQUIDACIONDESCRIPCION }}
@@ -175,12 +175,12 @@ function cierraConfirmacion() {
     ></LiqDDJJAgrega>
   </v-dialog>
   <v-dialog v-model="muestraConfirmacion" max-width="80%" persistent="">
-    <Confirmacion
+    <ConfirmacionDialog
       :titulo="'Quitar Liquidación'"
       :mensaje="'Seguro que desea Quitar la liquidación de la DDJJ?'"
       :cerrar="cierraConfirmacion"
       :aceptar="eliminar"
       :parametro="itemEliminar"
-    ></Confirmacion>
+    ></ConfirmacionDialog>
   </v-dialog>
 </template>

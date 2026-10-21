@@ -30,24 +30,24 @@ vi.mock('@/composables/useEndPoints', () => ({
   })
 }))
 
-vi.mock('../RepoHeader.vue', () => ({
+vi.mock('@/shared/components/RepoHeader.vue', () => ({
   default: { template: '<div><slot /></div>' }
 }))
 
-import RepoResumenLiq from '../RepoResumenLiq.vue'
-import RepoCod153 from '../RepoCod153.vue'
-import RepoResumenCod from '../RepoResumenCod.vue'
-import RepoResumenLiqFDO from '../RepoResumenLiqFdo.vue'
-import RepoApoPatronales from '../RepoApoPatronales.vue'
-import RepoPlanillaDetLiq from '../RepoPlanillaDetLiq.vue'
-import RepoPlanillaRet from '../RepoPlanillaRet.vue'
-import RepoPlanillaLey from '../RepoPlanillaLey.vue'
-import RepoPlanillaResSueldo from '../RepoPlanillaResSueldo.vue'
-import RepoPlanillaRetCargo from '../RepoPlanillaRetCargo.vue'
-import RepoPlanillaRetencionesCPA from '../RepoPlanillaRetencionesCPA.vue'
-import RepoBajasLey from '../RepoBajasLey.vue'
-import RepoPlanillaResSueldoComp from '../RepoPlanillaResSueldoComp.vue'
-import RepoPlanillaResumenCargos from '../RepoPlanillaResumenCargos.vue'
+import RepoResumenLiq from '../components/RepoResumenLiq.vue'
+import RepoCod153 from '../components/RepoCod153.vue'
+import RepoResumenCod from '../components/RepoResumenCod.vue'
+import RepoResumenLiqFDO from '../components/RepoResumenLiqFdo.vue'
+import RepoApoPatronales from '../components/RepoApoPatronales.vue'
+import RepoPlanillaDetLiq from '../components/RepoPlanillaDetLiq.vue'
+import RepoPlanillaRet from '../components/RepoPlanillaRet.vue'
+import RepoPlanillaLey from '../components/RepoPlanillaLey.vue'
+import RepoPlanillaResSueldo from '../components/RepoPlanillaResSueldo.vue'
+import RepoPlanillaRetCargo from '../components/RepoPlanillaRetCargo.vue'
+import RepoPlanillaRetencionesCPA from '../components/RepoPlanillaRetencionesCPA.vue'
+import RepoBajasLey from '../components/RepoBajasLey.vue'
+import RepoPlanillaResSueldoComp from '../components/RepoPlanillaResSueldoComp.vue'
+import RepoPlanillaResumenCargos from '../components/RepoPlanillaResumenCargos.vue'
 
 describe('Reportes Endpoints - Verificación de URLs de API para cada componente', () => {
   beforeEach(() => {

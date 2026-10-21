@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue";
-import { leerDatos } from "./llamadaAPI";
+import { leerDatos } from "@/shared/services/apiService";
 import { TooltipButton } from "@/shared/components";
 import { rules } from "@/utils/reglasValidacion";
 

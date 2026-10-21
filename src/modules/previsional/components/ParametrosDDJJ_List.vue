@@ -1,8 +1,8 @@
 <script setup>
 import { ref } from "vue";
-import Confirmacion from "@/shared/components/ConfirmacionDialog.vue";
+import { ConfirmacionDialog, TooltipButton } from "@/shared/components";
 import { leerDatos, ejecutarSP } from "@/shared/services/apiService";
-import botonTooltip from "@/shared/components/TooltipButton.vue";
+
 import { getVto, financial } from "@/utils/formatos";
 import ParametrosDDJJ_Vista from "./ParametrosDDJJ_Vista.vue";
 import { utils, writeFileXLSX } from "xlsx";
@@ -269,18 +269,18 @@ function exportFile() {
         <template #item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center m-0 p-0 sticky">
-              <botonTooltip
+              <TooltipButton
                 :icono="'mdi-pencil'"
                 :toolMsg="'Editar'"
                 :funcion="handleModif"
                 :itemid="item.ID"
-              ></botonTooltip>
-              <botonTooltip
+              ></TooltipButton>
+              <TooltipButton
                 :icono="'mdi-delete'"
                 :toolMsg="'Eliminar'"
                 :funcion="handleEliminar"
                 :itemid="item.ID"
-              ></botonTooltip>
+              ></TooltipButton>
             </td>
             <td class="text-right m-0 p-0">{{ item.ID }}</td>
             <td class="text-right m-0 p-0">{{ getVto(item.PERIODO) }}</td>
@@ -313,13 +313,13 @@ function exportFile() {
   </v-dialog>
 
   <v-dialog v-model="muestraConfirmacion" max-width="80%" persistent="">
-    <Confirmacion
+    <ConfirmacionDialog
       :titulo="'Eliminar registro'"
       :mensaje="'Seguro que desea eliminar el registro?'"
       :cerrar="cierraConfirmacion"
       :aceptar="eliminar"
       :parametro="itemEliminar"
-    ></Confirmacion>
+    ></ConfirmacionDialog>
   </v-dialog>
 </template>
 

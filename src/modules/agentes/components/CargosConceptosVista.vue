@@ -5,7 +5,7 @@ import {
   getFechaToAPIFromMMYYYY,
   getVto,
 } from "@/utils/formatos";
-import { leerDatos } from "./llamadaAPI";
+import { leerDatos } from "@/shared/services/apiService";
 import { rules } from "@/utils/reglasValidacion";
 import { financial } from "@/utils/reportes";
 

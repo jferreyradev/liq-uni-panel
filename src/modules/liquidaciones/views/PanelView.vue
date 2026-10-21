@@ -1,5 +1,5 @@
 <script setup>
-import LiqInputPanel from "@/shared/components/LiqInputPanel.vue";
+import { LiqInputPanel } from "@/shared/components";
 import { ref } from "vue";
 import { useFilterStore } from "@/stores/filterStore.js";
 import LiquidacionTable from "../components/LiquidacionTable.vue";

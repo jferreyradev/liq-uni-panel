@@ -1,5 +1,5 @@
 <script setup>
-import LiqInputPanel from '@/shared/components/LiqInputPanel.vue'
+import { LiqInputPanel } from "@/shared/components";
 import ResumenIPSST from '../components/ResumenIPSST.vue'
 import ArchIPSST from '../components/ArchIPSST.vue'
 </script>

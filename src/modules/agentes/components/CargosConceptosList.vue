@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { getVto, financial } from "@/utils/formatos";
-import { leerDatos, ejecutarSP } from "./llamadaAPI";
+import { leerDatos, ejecutarSP } from "@/shared/services/apiService";
 import { ConfirmacionDialog, TooltipButton } from "@/shared/components";
 import CargosConceptosVista from "./CargosConceptosVista.vue";
 

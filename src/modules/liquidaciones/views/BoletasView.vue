@@ -1,6 +1,6 @@
 <script setup>
 import LiqBoletas from "../components/LiqBoletas.vue";
-import LiqInputPanel from "@/shared/components/LiqInputPanel.vue";
+import { LiqInputPanel } from "@/shared/components";
 </script>
 
 <template>
