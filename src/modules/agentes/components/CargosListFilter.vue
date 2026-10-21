@@ -2,14 +2,21 @@
 import { ref } from "vue";
 import { rules } from "@/utils/reglasValidacion";
 import { tipoLiq, estadosCargo } from "@/utils/tipos";
+import { buildQuery, buildSearchValue } from "@/utils/query";
+import { useAgentesFilterStore } from "@/stores/agentesFilterStore";
 
-const props = defineProps(["filtrar", "filtros"]);
+const props = defineProps({
+  filtrar: { type: Function, required: true },
+});
+
+const filterStore = useAgentesFilterStore();
 
 const form = ref(null);
 const DNI = ref(null);
 const Apellido = ref(null);
 const IdRep = ref(null);
 const Orden = ref(null);
+const formOK = ref(null);
 
 const tipoLiqFilter = [
   {
@@ -30,107 +37,90 @@ const estadosCargoFilter = [
 const liqSelected = ref(tipoLiqFilter[1]);
 const estCargoSelected = ref(estadosCargoFilter[1]);
 
-function ObtieneFiltro() {
-  let filtro = "";
-  let expresion = "";
+const campos = filterStore.cargos.campos;
+DNI.value = campos.DNI ?? null;
+Apellido.value = campos.Apellido ?? null;
+IdRep.value = campos.IdRep ?? null;
+Orden.value = campos.Orden ?? null;
+liqSelected.value =
+  campos.liqSelected !== undefined && campos.liqSelected !== null
+    ? typeof campos.liqSelected === "object"
+      ? campos.liqSelected
+      : tipoLiqFilter.find((item) => item.value === campos.liqSelected) ||
+        tipoLiqFilter[1]
+    : tipoLiqFilter[1];
+estCargoSelected.value =
+  campos.estCargoSelected !== undefined && campos.estCargoSelected !== null
+    ? typeof campos.estCargoSelected === "object"
+      ? campos.estCargoSelected
+      : estadosCargoFilter.find((item) => item.value === campos.estCargoSelected) ||
+        estadosCargoFilter[1]
+    : estadosCargoFilter[1];
 
-  if (formOK.value === false) {
-    return "error";
+/**
+ * Arma el query string del filtro de cargos.
+ */
+function buildFiltro() {
+  const params = {};
+
+  if (DNI.value !== null && DNI.value !== undefined) {
+    const dni = String(DNI.value).trim();
+    if (dni.length > 0) params.PersonaDocumento = dni;
   }
 
-  if (DNI.value !== null) {
-    if (DNI.value.length > 0) {
-      expresion = `PersonaDocumento=${DNI.value}`;
-      filtro = expresion;
-    }
+  if (Apellido.value !== null && Apellido.value !== undefined) {
+    const valor = buildSearchValue("PersonaApellido", Apellido.value);
+    if (valor) params.search = valor;
   }
 
-  if (Apellido.value !== null) {
-    if (Apellido.value.length > 0) {
-      expresion = `search=PersonaApellido:${Apellido.value}`;
-      filtro = filtro.length == 0 ? expresion : filtro + "&" + expresion;
-    }
+  if (IdRep.value !== null && IdRep.value !== undefined) {
+    const rep = String(IdRep.value).trim();
+    if (rep.length > 0) params.ReparticionId = rep;
   }
 
-  if (IdRep.value !== null) {
-    if (IdRep.value.length > 0) {
-      expresion = `ReparticionId=${IdRep.value}`;
-      filtro = filtro.length == 0 ? expresion : filtro + "&" + expresion;
-    }
+  if (Orden.value !== null && Orden.value !== undefined) {
+    const orden = String(Orden.value).trim();
+    if (orden.length > 0) params.Orden = orden;
   }
 
-  if (Orden.value !== null) {
-    if (Orden.value.length > 0) {
-      expresion = `Orden=${Orden.value}`;
-      filtro = filtro.length == 0 ? expresion : filtro + "&" + expresion;
-    }
+  if (liqSelected.value && liqSelected.value.value !== -1) {
+    params.TipoLiquidacionId = liqSelected.value.value;
   }
 
-  if (liqSelected.value.value !== -1) {
-    expresion = `TipoLiquidacionId=${liqSelected.value.value}`;
-    filtro = filtro.length == 0 ? expresion : filtro + "&" + expresion;
+  if (estCargoSelected.value && estCargoSelected.value.value !== -1) {
+    params.EstadoCargoId = estCargoSelected.value.value;
   }
 
-  if (estCargoSelected.value.value !== -1) {
-    expresion = `EstadoCargoId=${estCargoSelected.value.value}`;
-    filtro = filtro.length == 0 ? expresion : filtro + "&" + expresion;
-  }
-
-  return filtro;
+  return buildQuery(params);
 }
 
-function setCamposFiltros() {
-  let campos = {
+async function filtar() {
+  if (!form.value) return;
+
+  // Vuetify 3 devuelve { valid, errors } o un booleano según la versión
+  const resultado = await form.value.validate();
+  const isValid =
+    typeof resultado === "object" && resultado !== null
+      ? resultado.valid
+      : resultado;
+
+  if (!isValid || formOK.value === false) {
+    return;
+  }
+
+  const filtro = buildFiltro();
+
+  filterStore.setCargosFiltros(filtro, {
     DNI: DNI.value,
     Apellido: Apellido.value,
     IdRep: IdRep.value,
     Orden: Orden.value,
     liqSelected: liqSelected.value,
     estCargoSelected: estCargoSelected.value,
-  };
-  return campos;
-}
+  });
 
-async function filtar() {
-  // Forzar la validación del formulario y esperar a que se complete
-  const isValid = await form.value.validate();
-
-  if (!isValid) {
-    return;
-  }
-  let filtro = ObtieneFiltro();
-  if (filtro == "error") {
-    return;
-  }
-  props.filtros.setFiltrosCampos(filtro, setCamposFiltros());
   props.filtrar(filtro);
 }
-
-let camposFiltros = props.filtros.getFiltroCampos();
-
-if (camposFiltros != null) {
-  DNI.value = camposFiltros.DNI;
-  Apellido.value = camposFiltros.Apellido;
-  IdRep.value = camposFiltros.IdRep;
-  Orden.value = camposFiltros.Orden;
-  if (camposFiltros.liqSelected !== undefined) {
-    liqSelected.value =
-      typeof camposFiltros.liqSelected === "object" && camposFiltros.liqSelected !== null
-        ? camposFiltros.liqSelected
-        : tipoLiqFilter.find((item) => item.value === camposFiltros.liqSelected) ||
-          tipoLiqFilter[1];
-  }
-  if (camposFiltros.estCargoSelected !== undefined) {
-    estCargoSelected.value =
-      typeof camposFiltros.estCargoSelected === "object" && camposFiltros.estCargoSelected !== null
-        ? camposFiltros.estCargoSelected
-        : estadosCargoFilter.find(
-            (item) => item.value === camposFiltros.estCargoSelected,
-          ) || estadosCargoFilter[1];
-  }
-}
-
-const formOK = ref(null);
 </script>
 
 <template>

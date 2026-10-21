@@ -2,8 +2,7 @@
 import { ref } from "vue";
 import { getVto, financial } from "@/utils/formatos";
 import { leerDatos, ejecutarSP } from "./llamadaAPI";
-import Confirmacion from "./Confirmacion.vue";
-import botonTooltip from "./botonTooltip.vue";
+import { ConfirmacionDialog, TooltipButton } from "@/shared/components";
 import CargosConceptosVista from "./CargosConceptosVista.vue";
 
 const props = defineProps(["cerrar", "cargoId"]);
@@ -90,7 +89,6 @@ function cierraForm() {
 // funciones de agregado, modificación y eliminación
 async function grabarSP(item, id) {
   let url = "";
-  console.log(item);
   if (id == 0) {
     url = "sp/ConceptoLiqIns";
   } else {
@@ -183,18 +181,18 @@ leerListaRegs();
             <template v-slot:item="{ item }">
               <tr class="pa-0 ma-0">
                 <td class="text-center m-0 p-0 sticky">
-                  <botonTooltip
+                  <TooltipButton
                     :icono="'mdi-pencil'"
                     :toolMsg="'Editar'"
                     :funcion="handleModif"
                     :itemid="item.ID"
-                  ></botonTooltip>
-                  <botonTooltip
+                  ></TooltipButton>
+                  <TooltipButton
                     :icono="'mdi-delete'"
                     :toolMsg="'Eliminar'"
                     :funcion="handleEliminar"
                     :itemid="item.ID"
-                  ></botonTooltip>
+                  ></TooltipButton>
                 </td>
                 <td class="text-right m-0 p-0">{{ item.CODIGO }}</td>
                 <td class="text-right m-0 p-0">{{ item.SUBCODIGO }}</td>
@@ -215,13 +213,13 @@ leerListaRegs();
             </template>
           </v-data-table>
           <v-dialog v-model="muestraConfirmacion" max-width="80%" persistent="">
-            <confirmacion
+            <ConfirmacionDialog
               :titulo="'Eliminar registro'"
               :mensaje="'Seguro que desea eliminar el registro?'"
               :cerrar="cierraConfirmacion"
               :aceptar="eliminar"
               :parametro="itemEliminar"
-            ></confirmacion>
+            ></ConfirmacionDialog>
           </v-dialog>
           <v-dialog v-model="muestraRegistro" max-width="80%" persistent="">
             <CargosConceptosVista

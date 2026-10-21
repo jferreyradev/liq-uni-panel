@@ -1,79 +1,80 @@
 <script setup>
 import { ref } from "vue";
 import { rules } from "@/utils/reglasValidacion";
+import { buildQuery, buildSearchValue } from "@/utils/query";
+import { useAgentesFilterStore } from "@/stores/agentesFilterStore";
 
-const props = defineProps(["filtrar", "filtros"]);
+const props = defineProps({
+  filtrar: { type: Function, required: true },
+});
+
+const filterStore = useAgentesFilterStore();
 
 const form = ref(null);
 const DNI = ref(null);
 const Apellido = ref(null);
 const Nombre = ref(null);
+const formOK = ref(null);
 
-function ObtieneFiltro() {
-  let filtro = "";
-  let expresion = "";
+const campos = filterStore.personas.campos;
+DNI.value = campos.DNI ?? null;
+Apellido.value = campos.Apellido ?? null;
+Nombre.value = campos.Nombre ?? null;
 
-  if (formOK.value === false) {
-    return "error";
+/**
+ * Arma el query string del filtro.
+ *
+ * Nota: los parámetros "search" se emiten uno por campo (search=Apellido:...&search=Nombre:...).
+ * Se mantiene el formato original porque es el contrato que espera el backend;
+ * si el mismo listado recibe dos "search", hay que confirmar con el backend
+ * cuál se aplica.
+ */
+function buildFiltro() {
+  const params = {};
+
+  if (DNI.value !== null && DNI.value !== undefined) {
+    const dni = String(DNI.value).trim();
+    if (dni.length > 0) params.Documento = dni;
   }
 
-  if (DNI.value !== null) {
-    if (DNI.value.length > 0) {
-      expresion = `Documento=${DNI.value}`;
-      filtro = expresion;
-    }
+  const search = [];
+  if (Apellido.value !== null && Apellido.value !== undefined) {
+    const valor = buildSearchValue("Apellido", Apellido.value);
+    if (valor) search.push(valor);
   }
-
-  if (Apellido.value !== null) {
-    if (Apellido.value.length > 0) {
-      expresion = `search=Apellido:${Apellido.value}`;
-      filtro = filtro.length == 0 ? expresion : filtro + "&" + expresion;
-    }
+  if (Nombre.value !== null && Nombre.value !== undefined) {
+    const valor = buildSearchValue("Nombre", Nombre.value);
+    if (valor) search.push(valor);
   }
+  if (search.length > 0) params.search = search;
 
-  if (Nombre.value !== null) {
-    if (Nombre.value.length > 0) {
-      expresion = `search=Nombre:${Nombre.value}`;
-      filtro = filtro.length == 0 ? expresion : filtro + "&" + expresion;
-    }
-  }
-
-  return filtro;
-}
-
-function setCamposFiltros() {
-  let campos = {
-    DNI: DNI.value,
-    Apellido: Apellido.value,
-    Nombre: Nombre.value,
-  };
-  return campos;
+  return buildQuery(params);
 }
 
 async function filtar() {
-  // Forzar la validación del formulario y esperar a que se complete
-  const isValid = await form.value.validate();
+  if (!form.value) return;
 
-  if (!isValid) {
+  // Vuetify 3 devuelve { valid, errors } o un booleano según la versión
+  const resultado = await form.value.validate();
+  const isValid =
+    typeof resultado === "object" && resultado !== null
+      ? resultado.valid
+      : resultado;
+
+  if (!isValid || formOK.value === false) {
     return;
   }
-  let filtro = ObtieneFiltro();
-  if (filtro == "error") {
-    return;
-  }
-  props.filtros.setFiltrosCampos(filtro, setCamposFiltros());
+
+  const filtro = buildFiltro();
+
+  filterStore.setPersonasFiltros(filtro, {
+    DNI: DNI.value,
+    Apellido: Apellido.value,
+    Nombre: Nombre.value,
+  });
+
   props.filtrar(filtro);
 }
-
-let camposFiltros = props.filtros.getFiltroCampos();
-
-if (camposFiltros != null) {
-  DNI.value = camposFiltros.DNI;
-  Apellido.value = camposFiltros.Apellido;
-  Nombre.value = camposFiltros.Nombre;
-}
-
-const formOK = ref(null);
 </script>
 
 <template>

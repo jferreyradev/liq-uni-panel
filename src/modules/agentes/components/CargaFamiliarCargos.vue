@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import { getTipoDescripcion } from "@/utils/formatos";
 import { leerDatos } from "./llamadaAPI";
-import botonTooltip from "./botonTooltip.vue";
+import { TooltipButton } from "@/shared/components";
 
 const props = defineProps(["cerrar", "funcion", "personaId"]);
 let personaId = props.personaId;
@@ -25,8 +25,6 @@ async function grabaRegistro(idCargo) {
     vASIGNA: 1,
   };
 
-  console.log("se va a grabar el siguiente registro");
-  console.log(JSON.stringify(registroGrabar));
   let resultado = await props.funcion(registroGrabar);
 
   if (resultado === null) {
@@ -87,12 +85,12 @@ leerListaRegs();
             <template v-slot:item="{ item }">
               <tr class="pa-0 ma-0">
                 <td class="text-center m-0 p-0 sticky">
-                  <botonTooltip
+                  <TooltipButton
                     :icono="'mdi-pencil'"
                     :toolMsg="'Asociar'"
                     :funcion="grabaRegistro"
                     :itemid="item.ID"
-                  ></botonTooltip>
+                  ></TooltipButton>
                 </td>
                 <td class="text-left m-0 p-0">
                   {{

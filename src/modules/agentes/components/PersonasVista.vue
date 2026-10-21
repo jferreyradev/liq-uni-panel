@@ -122,7 +122,6 @@ async function grabaRegistro() {
     };
   }
 
-  console.log("ESTE SERIA EL REGISTRO A GRABAR:", JSON.stringify(registroGrabar));
   isSaving.value = true;
   try {
     let resultado = await props.funcion(registroGrabar, registroActual.value.ID || 0);

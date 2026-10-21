@@ -127,7 +127,6 @@ async function grabaRegistro() {
       };
     }
 
-    console.log("se va a grabar el siguiente registro:", JSON.stringify(registroGrabar));
     let resultado = await props.funcion(registroGrabar, regId);
 
     if (resultado === null) {

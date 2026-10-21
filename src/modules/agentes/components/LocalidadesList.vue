@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import { getTipoDescripcion } from "@/utils/formatos";
 import { leerDatos } from "./llamadaAPI";
-import botonTooltip from "./botonTooltip.vue";
+import { TooltipButton } from "@/shared/components";
 import { rules } from "@/utils/reglasValidacion";
 
 const props = defineProps(["cerrar", "seleccionaLocalidad"]);
@@ -85,12 +85,12 @@ async function leerListaRegs() {
             <template v-slot:item="{ item }">
               <tr class="pa-0 ma-0">
                 <td class="text-center m-0 p-0 sticky">
-                  <botonTooltip
+                  <TooltipButton
                     :icono="'mdi-pencil'"
                     :toolMsg="'Seleccionar'"
                     :funcion="grabaRegistro"
                     :itemid="item.ID"
-                  ></botonTooltip>
+                  ></TooltipButton>
                 </td>
                 <td class="text-left m-0 p-0">{{ item.DESCRIPCION }}</td>
                 <td class="text-left m-0 p-0">

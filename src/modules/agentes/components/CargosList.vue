@@ -1,22 +1,17 @@
 <script setup>
 import { ref } from "vue";
-//import Confirmacion from './Confirmacion.vue'
-import { leerDatos, ejecutarSP } from "./llamadaAPI";
-import botonTooltip from "./botonTooltip.vue";
+import { TooltipButton } from "@/shared/components";
 import { getFechaDMY, getVto, getTipoDescripcion } from "@/utils/formatos";
 import CargosListFilter from "./CargosListFilter.vue";
 import CargosVista from "./CargosVista.vue";
 import CargosConceptosList from "./CargosConceptosList.vue";
-
-import { usePersonasStore } from "@/stores/personasStore";
+import { useDataTable } from "@/composables/useDataTable";
+import { useSpGrabar } from "@/composables/useSpGrabar";
+import { useAgentesFilterStore } from "@/stores/agentesFilterStore";
+import { buildQuery, parseQueryString } from "@/utils/query";
 import { estadosCargo, getName } from "@/utils/tipos";
 
-const usoStore = usePersonasStore();
-console.log(usoStore.getProvincias);
-
-const props = defineProps(["setPersonaEdicion", "filtros"]);
-
-const filtros = props.filtros;
+const filterStore = useAgentesFilterStore();
 
 const hojasHeaders = [
   { title: "", key: "ACCIONES" },
@@ -48,15 +43,31 @@ const itemMostrar = ref({
   Id: 0,
 });
 
-let muestraRegistro = ref(false);
-let muestraListaConceptos = ref(false);
-let cargoSoloLectura = ref(true);
+const muestraRegistro = ref(false);
+const muestraListaConceptos = ref(false);
+const cargoSoloLectura = ref(true);
+
+const {
+  data,
+  isPending,
+  error,
+  lecturaOk,
+  load,
+} = useDataTable({
+  buildUrl: (filtro) => {
+    const params = {
+      ...parseQueryString(filtro),
+      sort: JSON.stringify({ ReparticionId: "asc", Orden: "asc" }),
+    };
+    return `en/cargo?${buildQuery(params)}`;
+  },
+});
 
 function handleModif(itemid) {
   mostrarAlert.value = false;
   let item = null;
   if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
-    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+    item = data.value.find((e) => e?.ID == itemid || e?.Id == itemid);
   }
   cargoSoloLectura.value = false;
   abrirModal(item);
@@ -66,7 +77,7 @@ function handleVerCargo(itemid) {
   mostrarAlert.value = false;
   let item = null;
   if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
-    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+    item = data.value.find((e) => e?.ID == itemid || e?.Id == itemid);
   }
   cargoSoloLectura.value = true;
   abrirModal(item);
@@ -76,7 +87,7 @@ function handleListaConceptos(itemid) {
   mostrarAlert.value = false;
   let item = null;
   if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
-    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+    item = data.value.find((e) => e?.ID == itemid || e?.Id == itemid);
   }
   itemMostrar.value = item;
   muestraListaConceptos.value = true;
@@ -94,79 +105,23 @@ function cierraListaConceptos() {
   muestraListaConceptos.value = false;
 }
 
-// llamadas a API de grabación y eliminación
+const { grabar: grabarSP } = useSpGrabar({
+  urlUpd: "sp/CargoUpd",
+  urlIns: null,
+  mensajeSinInsercion:
+    "Por el momento no se pueden agregar cargos por este medio",
+  refresh: () => load(filterStore.cargosFiltro),
+  onSuccess: () => {
+    alertMensaje.value = "Se grabó el cargo";
+    alertTipo.value = "success";
+    mostrarAlert.value = true;
+  },
+});
 
-// lectura de registros
-let isPending = ref(false);
-const data = ref(null);
-const error = null;
-
-const lecturaRegistros = ref(true);
-
-async function leerRegistros(filtro = null) {
-  let url = "en/cargo";
-  if (filtro !== null)
-    url = url + "?" + filtro + '&sort={"ReparticionId":"asc", "Orden":"asc"}';
-  else url = url + '?sort={"ReparticionId":"asc", "Orden":"asc"}';
-
-  isPending.value = true;
-  const { datos, operacionOk } = await leerDatos(url);
-  data.value = datos;
-  lecturaRegistros.value = operacionOk;
-  isPending.value = false;
-}
-
-async function grabarSP(item, id) {
-  let url = "";
-
-  if (id == 0) {
-    //url = 'sp/CargosIns'
-    return "Por el momento no se pueden agregar cargos por este medio";
-  } else {
-    url = "sp/CargoUpd";
-  }
-
-  try {
-    const { operacionOk, valorError, errorMsg, datos, out } = await ejecutarSP(url, item);
-    const errCode = valorError !== undefined && valorError !== -1
-      ? valorError
-      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
-
-    if (operacionOk && errCode == 0) {
-      Promise.resolve(leerRegistros()).catch((e) => {
-        console.warn("Error refrescando registros de cargos:", e);
-      });
-      alertMensaje.value = "Se grabó el cargo";
-      alertTipo.value = "success";
-      mostrarAlert.value = true;
-      return null;
-    }
-    return errorMsg || out?.vErrorMsg || "No se pudo grabar el cargo";
-  } catch (err) {
-    console.error("Error en grabarSP Cargos:", err);
-    return err.message || "Error al grabar cargo";
-  }
-}
-
-let camposFiltros = props.filtros.getFiltroCampos();
-
-if (camposFiltros == null) {
-  let campos = {
-    DNI: null,
-    Apellido: null,
-    IdRep: null,
-    Orden: null,
-    liqSelected: { value: 1, name: "MENSUAL" },
-    estCargoSelected: { value: 1, name: "ACTIVO" },
-  };
-  let expresion = `TipoLiquidacionId=1&EstadoCargoId=1`;
-  props.filtros.setFiltrosCampos(expresion, campos);
-}
-
-leerRegistros(filtros.getFiltroString());
+load(filterStore.cargosFiltro);
 </script>
 
-<style>
+<style scoped>
 .sticky {
   position: sticky !important;
   left: 0 !important;
@@ -181,24 +136,26 @@ leerRegistros(filtros.getFiltroString());
   </v-container>
   <v-container>
     <v-row>
-      <CargosListFilter
-        :filtrar="leerRegistros"
-        :filtros="filtros"
-      ></CargosListFilter>
+      <CargosListFilter :filtrar="load"></CargosListFilter>
     </v-row>
+
+    <v-alert
+      v-model="mostrarAlert"
+      border="start"
+      close-label="Close Alert"
+      :color="alertTipo"
+      :icon="'$' + alertTipo"
+      closable
+      class="my-3"
+    >
+      {{ alertMensaje }}
+    </v-alert>
+
     <div v-if="isPending">loading...</div>
-    <div v-else-if="!lecturaRegistros">Error al intentar recibir los datos</div>
+    <div v-else-if="!lecturaOk" class="text-error">
+      {{ error || "No se puede obtener los datos solicitados." }}
+    </div>
     <div v-else-if="data">
-      <v-alert
-        v-model="mostrarAlert"
-        border="start"
-        close-label="Close Alert"
-        :color="alertTipo"
-        :icon="'$' + alertTipo"
-        closable
-      >
-        {{ alertMensaje }}
-      </v-alert>
       <v-data-table
         class="text-caption"
         hover
@@ -209,24 +166,24 @@ leerRegistros(filtros.getFiltroString());
         <template v-slot:item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center m-0 p-0 sticky">
-              <botonTooltip
+              <TooltipButton
                 :icono="'mdi-pencil'"
                 :toolMsg="'Editar Cargo'"
                 :funcion="handleModif"
                 :itemid="item.ID"
-              ></botonTooltip>
-              <botonTooltip
+              ></TooltipButton>
+              <TooltipButton
                 :icono="'mdi-dots-horizontal-circle'"
                 :toolMsg="'Ver detalle del Cargo'"
                 :funcion="handleVerCargo"
                 :itemid="item.ID"
-              ></botonTooltip>
-              <botonTooltip
+              ></TooltipButton>
+              <TooltipButton
                 :icono="'mdi-list-box-outline'"
                 :toolMsg="'Ver Conceptos asociados'"
                 :funcion="handleListaConceptos"
                 :itemid="item.ID"
-              ></botonTooltip>
+              ></TooltipButton>
             </td>
 
             <td class="text-right m-0 p-0">{{ item.PERSONADOCUMENTO }}</td>
@@ -284,9 +241,8 @@ leerRegistros(filtros.getFiltroString());
       </v-data-table>
     </div>
     <div v-else>Sin datos para mostrar</div>
-    <div v-if="error">No se puede obtener los datos solicitados.</div>
   </v-container>
-  <v-dialog v-model="muestraRegistro" max-width="80%" persistent="">
+  <v-dialog v-model="muestraRegistro" max-width="80%" :persistent="true">
     <CargosVista
       v-if="muestraRegistro"
       :Registro="itemMostrar"
@@ -296,7 +252,7 @@ leerRegistros(filtros.getFiltroString());
       :soloLectura="cargoSoloLectura"
     ></CargosVista>
   </v-dialog>
-  <v-dialog v-model="muestraListaConceptos" max-width="80%" persistent="">
+  <v-dialog v-model="muestraListaConceptos" max-width="80%" :persistent="true">
     <CargosConceptosList
       v-if="muestraListaConceptos"
       :cerrar="cierraListaConceptos"

@@ -10,6 +10,5 @@ export async function leerPaises() {
       return { value: item.ID, name: item.DESCRIPCION };
     });
   }
-  console.log(listaPaises);
   return listaPaises;
 }

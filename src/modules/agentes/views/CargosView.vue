@@ -1,19 +1,8 @@
 <script setup>
-import CargosList from "../components/CargosList.vue";
 import { ref } from "vue";
+import CargosList from "../components/CargosList.vue";
 
 const titulo = ref("Listado de Cargos");
-
-let filtroString = null;
-let filtroCampos = null;
-let filtros = {
-  setFiltrosCampos: (pFiltroString, pFiltroCampos) => {
-    filtroString = pFiltroString;
-    filtroCampos = pFiltroCampos;
-  },
-  getFiltroString: () => filtroString,
-  getFiltroCampos: () => filtroCampos,
-};
 </script>
 
 <template>
@@ -22,7 +11,7 @@ let filtros = {
       <h3>{{ titulo }}</h3>
     </v-row>
     <v-row>
-      <CargosList :filtros="filtros"></CargosList>
+      <CargosList></CargosList>
     </v-row>
   </v-container>
 </template>

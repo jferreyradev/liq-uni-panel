@@ -1,15 +1,19 @@
 <script setup>
 import { ref, computed } from "vue";
-import Confirmacion from "./Confirmacion.vue";
-import { leerDatos, ejecutarSP } from "./llamadaAPI";
-import botonTooltip from "./botonTooltip.vue";
+import { ConfirmacionDialog, TooltipButton } from "@/shared/components";
 import { getFechaDMY, getTipoDescripcion } from "@/utils/formatos";
 import CargaFamiliarVista from "./CargaFamiliarVista.vue";
 import { utils, writeFileXLSX } from "xlsx";
 import { agregaTitulosExcel } from "@/utils/reportes.js";
 import CargaFamiliarCargos from "./CargaFamiliarCargos.vue";
+import { useDataTable } from "@/composables/useDataTable";
+import { useSpGrabar } from "@/composables/useSpGrabar";
 
-const props = defineProps(["setPersonaEdicion", "personaEditar"]);
+const props = defineProps({
+  setPersonaEdicion: { type: Function, required: true },
+  personaEditar: { type: Object, default: null },
+});
+
 const personaEditar = props.personaEditar;
 
 // cerrar editar registros de Hoja
@@ -20,7 +24,7 @@ function handleCerrarEdicion() {
 const listaHeaders = [
   { title: "", key: "" },
   { title: "DNI", key: "DOCUMENTO" },
-  { title: "Ape. y Nom.", key: "APELLIDOYNOMBRE" },
+  { title: "Ape. y Nom.", key: "APELLIDOYOMBRE" },
   { title: "Relacion", key: "TIPORELACIONDESCRIPCION" },
   { title: "Fec. Nac.", key: "FECHANACIMIENTO" },
   { title: "Escolaridad", key: "TIPOESCOLARIDADDESCRIPCION" },
@@ -28,101 +32,98 @@ const listaHeaders = [
   { title: "Discapacitado", key: "DISCAPACITADO" },
 ];
 
-// lectura de registros
-let isPending = ref(false);
-const data = ref(null);
-const error = null;
-
-const lecturaListaRegs = ref(true);
-
 const personaId = computed(
-  () => props.personaEditar?.PERSONAID || props.personaEditar?.ID || props.personaEditar?.Id || 0,
+  () =>
+    props.personaEditar?.PERSONAID ||
+    props.personaEditar?.ID ||
+    props.personaEditar?.Id ||
+    0,
 );
 
-async function leerListaRegs() {
-  const pId = personaId.value;
-  if (!pId) return;
-  isPending.value = true;
-  try {
-    const { datos, operacionOk } = await leerDatos(
-      "en/cargaFamiliar?PersonaId=" + pId + "&_t=" + Date.now(),
-    );
-    data.value = Array.isArray(datos) ? datos : datos ? [datos] : [];
-    lecturaListaRegs.value = operacionOk;
-  } catch (err) {
-    console.error("Error en leerListaRegs:", err);
-    lecturaListaRegs.value = false;
-  }
-  isPending.value = false;
-}
-
-// lectura de cargo asociado
-const cargoAsociado = ref({
-  cargoId: 0,
-  descripcion: "",
+// lectura de registros
+const {
+  data,
+  isPending,
+  lecturaOk,
+  load: loadLista,
+} = useDataTable({
+  buildUrl: (pId) => `en/cargaFamiliar?PersonaId=${pId}&_t=${Date.now()}`,
 });
 
-async function leerCargoAsoc() {
-  const pId = personaId.value;
-  if (!pId) return;
-  let resultado = {
-    cargoId: 0,
-    descripcion: "No se pudieron establecer obtener datos del cargo",
-  };
-  try {
-    const { datos, operacionOk } = await leerDatos(
-      "en/cargo?PersonaId=" + pId + "&Salario=1&_t=" + Date.now(),
-    );
-    if (operacionOk === true) {
-      const cargoAsoc = Array.isArray(datos) && datos.length > 0 ? datos[0] : null;
-      if (!cargoAsoc) {
-        resultado.descripcion = "No hay cargo asociado aún para el salario";
-      } else {
-        resultado.cargoId = cargoAsoc.ID || cargoAsoc.Id || 0;
-        resultado.descripcion =
-          "Rep.: " +
-          (cargoAsoc.REPARTICIONID || "") +
-          " - Orden: " +
-          (cargoAsoc.ORDEN || "") +
-          " - Tipo: " +
-          getTipoDescripcion(
-            cargoAsoc.TIPOEMPLEOID,
-            cargoAsoc.TIPOEMPLEODESCRIPCION,
-          );
-      }
-    }
-  } catch (err) {
-    console.error("Error en leerCargoAsoc:", err);
-  }
-  cargoAsociado.value = resultado;
-}
+// lectura de cargo asociado
+const { data: cargoData, load: loadCargo } = useDataTable({
+  buildUrl: (pId) => `en/cargo?PersonaId=${pId}&Salario=1&_t=${Date.now()}`,
+});
 
-leerListaRegs();
-leerCargoAsoc();
+const cargoAsociado = computed(() => {
+  if (!personaId.value) {
+    return { cargoId: 0, descripcion: "No hay cargo asociado aún para el salario" };
+  }
+
+  if (!cargoData.value) {
+    return {
+      cargoId: 0,
+      descripcion: "No se pudieron establecer obtener datos del cargo",
+    };
+  }
+
+  const cargo = cargoData.value[0];
+  if (!cargo) {
+    return { cargoId: 0, descripcion: "No hay cargo asociado aún para el salario" };
+  }
+
+  return {
+    cargoId: cargo.ID || cargo.Id || 0,
+    descripcion:
+      "Rep.: " +
+      (cargo.REPARTICIONID || "") +
+      " - Orden: " +
+      (cargo.ORDEN || "") +
+      " - Tipo: " +
+      getTipoDescripcion(cargo.TIPOEMPLEOID, cargo.TIPOEMPLEODESCRIPCION),
+  };
+});
 
 // alerta de grabación o error
 const mostrarAlert = ref(false);
 const alertMensaje = ref(null);
 const alertTipo = ref(null);
 
-// manejadores de altas, bajas y modificaciones
+function mostrarMensaje(mensaje, tipo = "error") {
+  alertMensaje.value = mensaje;
+  alertTipo.value = tipo;
+  mostrarAlert.value = true;
+}
 
+async function cargarDatos() {
+  const pId = personaId.value;
+  if (!pId) return;
+  await Promise.allSettled([loadLista(pId), loadCargo(pId)]);
+}
+
+/**
+ * La grilla se dibuja siempre (aunque esté vacía); `data` es null cuando
+ * la respuesta no trajo registros.
+ */
+const listaRegistros = computed(() => (Array.isArray(data.value) ? data.value : []));
+
+// manejadores de altas, bajas y modificaciones
 const itemMostrar = ref(null);
 
 function handleModif(itemid) {
   mostrarAlert.value = false;
   let item = null;
   if (itemid != null && itemid !== 0 && Array.isArray(data.value)) {
-    item = data.value.find((e) => (e?.ID == itemid || e?.Id == itemid));
+    item = data.value.find((e) => e?.ID == itemid || e?.Id == itemid);
   }
   abrirModal(item);
 }
 
 //  confirmaciones
 const itemEliminar = ref(0);
-let muestraConfirmacion = ref(false);
+const muestraConfirmacion = ref(false);
 const itemDesasociar = ref(0);
-let muestraConfAsociar = ref(false);
+const muestraConfAsociar = ref(false);
 
 function cierraConfirmacion() {
   muestraConfirmacion.value = false;
@@ -144,8 +145,8 @@ function handleDesasociar(itemid) {
 }
 
 // apertura y cierre del formulario modal
-let muestraRegistro = ref(false);
-let muestraListaCargos = ref(false);
+const muestraRegistro = ref(false);
+const muestraListaCargos = ref(false);
 
 function abrirModal(item) {
   itemMostrar.value = item;
@@ -165,108 +166,61 @@ function cierraFormCargos() {
 }
 
 // funciones de agregado, modificación y eliminación
-async function grabarSP(item, id) {
-  let mensajeError = "No se pudieron grabar los datos";
-  let url = "";
-  if (id == 0) {
-    url = "sp/CargaFamIns";
-  } else {
-    url = "sp/CargaFamUpd";
-  }
+const { grabar: grabarSP } = useSpGrabar({
+  urlIns: "sp/CargaFamIns",
+  urlUpd: "sp/CargaFamUpd",
+  refresh: () => cargarDatos(),
+  onSuccess: (item, id) => {
+    mostrarMensaje(
+      id === 0
+        ? "Familiar agregado correctamente"
+        : "Familiar modificado correctamente",
+      "success",
+    );
+  },
+});
 
-  try {
-    const { operacionOk, valorError, errorMsg, datos, out } = await ejecutarSP(url, item);
-    const errCode = valorError !== undefined && valorError !== -1
-      ? valorError
-      : (out?.vError ?? out?.ValorError ?? datos?.out?.vError ?? datos?.out?.ValorError ?? (operacionOk ? 0 : -1));
+const { grabar: eliminarSP } = useSpGrabar({
+  urlUpd: "sp/CargaFamDel",
+  refresh: () => cargarDatos(),
+  onSuccess: () => {
+    mostrarMensaje("Se eliminó el registro", "success");
+  },
+});
 
-    if (operacionOk && errCode == 0) {
-      await Promise.allSettled([leerListaRegs(), leerCargoAsoc()]);
-      alertMensaje.value = id == 0 ? "Familiar agregado correctamente" : "Familiar modificado correctamente";
-      alertTipo.value = "success";
-      mostrarAlert.value = true;
-      return null;
-    }
-    mensajeError = errorMsg || out?.vErrorMsg || out?.vErrorMsj || datos?.out?.vErrorMsg || "No se pudieron grabar los datos";
-  } catch (err) {
-    console.error("Error en grabarSP:", err);
-    mensajeError = err.message || "Error al intentar grabar los datos";
-  }
-
-  return mensajeError;
-}
+const { grabar: grabarSPCargos } = useSpGrabar({
+  urlIns: "sp/AsignaSalario",
+  urlUpd: "sp/AsignaSalario",
+  refresh: () => loadCargo(personaId.value),
+  onSuccess: () => {
+    mostrarMensaje("Se actualizó la asignación de cargo", "success");
+  },
+});
 
 async function eliminar(id) {
   muestraConfirmacion.value = false;
-  let item = {
-    vIDCARFAM: id,
-  };
-  let url = "sp/CargaFamDel";
-  console.log(item);
-  try {
-    const { operacionOk, valorError, errorMsg, datos, out } = await ejecutarSP(url, item);
-    const errCode = valorError !== undefined && valorError !== -1
-      ? valorError
-      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
+  const mensaje = await eliminarSP({ vIDCARFAM: id }, 1);
 
-    if (operacionOk && errCode == 0) {
-      await leerListaRegs();
-      alertMensaje.value = "Se eliminó el registro";
-      alertTipo.value = "success";
-      mostrarAlert.value = true;
-      return true;
-    }
-    alertMensaje.value = errorMsg || "No se pudo eliminar el registro";
-  } catch (err) {
-    console.error("Error en eliminar:", err);
-    alertMensaje.value = err.message || "No se pudo eliminar el registro";
+  if (mensaje) {
+    mostrarMensaje(mensaje, "error");
+    return false;
   }
 
-  alertTipo.value = "error";
-  mostrarAlert.value = true;
-  return false;
-}
-
-// funciones de agregado, modificación y eliminación
-async function grabarSPCargos(item) {
-  let mensajeError = "No se pudieron grabar los datos";
-  let url = "sp/AsignaSalario";
-
-  try {
-    const { operacionOk, valorError, errorMsg, datos, out } = await ejecutarSP(url, item);
-    const errCode = valorError !== undefined && valorError !== -1
-      ? valorError
-      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
-
-    if (operacionOk && errCode == 0) {
-      await leerCargoAsoc();
-      alertMensaje.value = "Se actualizó la asignación de cargo";
-      alertTipo.value = "success";
-      mostrarAlert.value = true;
-      return null;
-    }
-    mensajeError = errorMsg || out?.vErrorMsg || datos?.out?.vErrorMsg || "No se pudieron grabar los datos";
-  } catch (err) {
-    console.error("Error en grabarSPCargos:", err);
-    mensajeError = err.message || "No se pudieron grabar los datos";
-  }
-
-  return mensajeError;
+  return true;
 }
 
 async function desasociarCargo(idCargo) {
   muestraConfAsociar.value = false;
-  let registroGrabar = {
-    vIDCARGO: idCargo,
-    vASIGNA: 0,
-  };
+  const mensaje = await grabarSPCargos(
+    {
+      vIDCARGO: idCargo,
+      vASIGNA: 0,
+    },
+    1,
+  );
 
-  let resultado = await grabarSPCargos(registroGrabar);
-
-  if (resultado !== null) {
-    alertMensaje.value = "No se pudo actualizar la asignación de cargo ";
-    alertTipo.value = "error";
-    mostrarAlert.value = true;
+  if (mensaje !== null) {
+    mostrarMensaje("No se pudo actualizar la asignación de cargo ", "error");
   }
 }
 
@@ -274,15 +228,14 @@ async function desasociarCargo(idCargo) {
 // funciones de exportación a archivo excel
 
 function handleDownload() {
-  console.log("download");
   exportFile();
 }
 
 function exportFile() {
-  const map1 = data.value.map((x) => {
+  const map1 = listaRegistros.value.map((x) => {
     return [
       x.DOCUMENTO,
-      x.APELLIDOYNOMBRE,
+      x.APELLIDOYOMBRE,
       x.TIPORELACIONDESCRIPCION,
       getFechaDMY(x.FECHANACIMIENTO),
       x.TIPOESCOLARIDADDESCRIPCION,
@@ -302,15 +255,14 @@ function exportFile() {
   ];
   const filtros = "";
   const doc = personaEditar?.DOCUMENTO || personaEditar?.DNI || "";
-  const apeNom = (personaEditar?.APELLIDO && personaEditar?.NOMBRE)
-    ? `${personaEditar.APELLIDO}, ${personaEditar.NOMBRE}`
-    : (personaEditar?.APELLIDOYNOMBRE || "");
+  const apeNom =
+    personaEditar?.APELLIDO && personaEditar?.NOMBRE
+      ? `${personaEditar.APELLIDO}, ${personaEditar.NOMBRE}`
+      : personaEditar?.APELLIDOYOMBRE || "";
   const persId = personaEditar?.PERSONAID || personaEditar?.ID || "";
 
   const tituloReporte =
-    "Cargas de Familia: " +
-    doc +
-    (apeNom ? " - " + apeNom : "");
+    "Cargas de Familia: " + doc + (apeNom ? " - " + apeNom : "");
   agregaTitulosExcel(map1, tituloReporte, filtros, titulosTabla);
   const ws = utils.aoa_to_sheet(map1);
 
@@ -334,9 +286,11 @@ function exportFile() {
 }
 
 // --- fin de funciones de exportacion
+
+cargarDatos();
 </script>
 
-<style>
+<style scoped>
 .sticky {
   position: sticky !important;
   left: 0 !important;
@@ -401,34 +355,34 @@ function exportFile() {
     </v-alert>
 
     <div v-if="isPending && (!data || data.length === 0)">loading...</div>
-    <div v-else-if="!lecturaListaRegs">Sin datos para mostrar</div>
-    <div v-else-if="data">
+    <div v-else-if="!lecturaOk">Sin datos para mostrar</div>
+    <div v-else>
       <v-data-table
         class="text-caption"
         hover
         density="compact"
-        :items="data"
+        :items="listaRegistros"
         :headers="listaHeaders"
         :loading="isPending"
       >
         <template v-slot:item="{ item }">
           <tr class="pa-0 ma-0">
             <td class="text-center m-0 p-0 sticky">
-              <botonTooltip
+              <TooltipButton
                 :icono="'mdi-pencil'"
                 :toolMsg="'Editar'"
                 :funcion="handleModif"
                 :itemid="item.ID"
-              ></botonTooltip>
-              <botonTooltip
+              ></TooltipButton>
+              <TooltipButton
                 :icono="'mdi-delete'"
                 :toolMsg="'Eliminar'"
                 :funcion="handleEliminar"
                 :itemid="item.ID"
-              ></botonTooltip>
+              ></TooltipButton>
             </td>
             <td class="text-right m-0 p-0">{{ item.DOCUMENTO }}</td>
-            <td class="text-left m-0 p-0">{{ item.APELLIDOYNOMBRE }}</td>
+            <td class="text-left m-0 p-0">{{ item.APELLIDOYOMBRE }}</td>
             <td class="text-left m-0 p-0">
               {{ item.TIPORELACIONDESCRIPCION }}
             </td>
@@ -460,10 +414,9 @@ function exportFile() {
         </template>
       </v-data-table>
     </div>
-    <div v-else-if="error">No se puede obtener los datos solicitados.</div>
   </v-container>
 
-  <v-dialog v-model="muestraRegistro" max-width="80%" persistent="">
+  <v-dialog v-model="muestraRegistro" max-width="80%" :persistent="true">
     <CargaFamiliarVista
       v-if="muestraRegistro"
       :Registro="itemMostrar"
@@ -473,27 +426,27 @@ function exportFile() {
     ></CargaFamiliarVista>
   </v-dialog>
 
-  <v-dialog v-model="muestraConfirmacion" max-width="80%" persistent="">
-    <confirmacion
+  <v-dialog v-model="muestraConfirmacion" max-width="80%" :persistent="true">
+    <ConfirmacionDialog
       :titulo="'Eliminar registro'"
       :mensaje="'Seguro que desea eliminar el registro?'"
       :cerrar="cierraConfirmacion"
       :aceptar="eliminar"
       :parametro="itemEliminar"
-    ></confirmacion>
+    ></ConfirmacionDialog>
   </v-dialog>
 
-  <v-dialog v-model="muestraConfAsociar" max-width="80%" persistent="">
-    <confirmacion
+  <v-dialog v-model="muestraConfAsociar" max-width="80%" :persistent="true">
+    <ConfirmacionDialog
       :titulo="'Desasociar cargo'"
       :mensaje="'Seguro que desea desasociar el cargo de salario?'"
       :cerrar="cierraConfAsociar"
       :aceptar="desasociarCargo"
       :parametro="itemDesasociar"
-    ></confirmacion>
+    ></ConfirmacionDialog>
   </v-dialog>
 
-  <v-dialog v-model="muestraListaCargos" max-width="80%" persistent="">
+  <v-dialog v-model="muestraListaCargos" max-width="80%" :persistent="true">
     <CargaFamiliarCargos
       v-if="muestraListaCargos"
       :cerrar="cierraFormCargos"
