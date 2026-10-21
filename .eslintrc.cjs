@@ -40,9 +40,31 @@ module.exports = {
     'vue/require-default-prop': 'off',
     // Reglas de formato: las maneja el formateador, no ESLint
     'vue/max-attributes-per-line': 'off',
-    'vue/singleline-html-element-content-newline': 'off'
+    'vue/singleline-html-element-content-newline': 'off',
+
+    // --- Reglas desactivadas a propósito -------------------------------
+    // Los props se declaran como array sin tipo en todo el proyecto. Tiparlos
+    // uno por uno es un cambio invasivo y con riesgo de advertencias de Vue
+    // cuando el valor real no coincide con el tipo declarado.
+    'vue/require-prop-types': 'off',
+    // Los props con mayúscula inicial (`Registro`, `Hoja`) forman parte del
+    // contrato con los componentes padre. Vue 3 resuelve los props con
+    // `camelize(key)`, así que renombrar la declaración a `registro` haría que
+    // `:Registro` dejara de coincidir y el binding se pierde.
+    'vue/prop-name-casing': 'off',
+    // Por la misma razón no se kebab-casean los atributos: `:Registro` debe
+    // seguir exactamente como lo declara el hijo.
+    'vue/attribute-hyphenation': 'off'
   },
   overrides: [
+    {
+      // La capa de diagnostico existe para imprimir en la consola:
+      // es parte de su contrato, no un descuido.
+      files: ['src/utils/httpLogger.js', 'src/stores/logStore.js'],
+      rules: {
+        'no-console': 'off'
+      }
+    },
     {
       files: ['**/__tests__/**/*.{js,spec.js}', '**/*.spec.js'],
       env: { node: true },
