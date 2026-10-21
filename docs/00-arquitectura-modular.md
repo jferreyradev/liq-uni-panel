@@ -35,6 +35,7 @@ src/
 │   ├── agentes/                # Gestión de personal, cargos y legajos
 │   │   ├── components/         # PersonasList, CargosList, CargaFamiliarList, etc.
 │   │   ├── views/              # AgentesView.vue, CargosView.vue
+│   │   ├── __tests__/          # Pruebas de vistas y filtros del módulo
 │   │   └── routes.js           # Rutas: /agentes, /cargos
 │   │
 │   ├── auth/                   # Seguridad, inicio de sesión y claves
@@ -75,8 +76,12 @@ src/
 ├── config/                     # Catálogo de municipios y configuración global
 ├── router/
 │   └── index.js                # Ensamblado de rutas modular y guards de autenticación
-├── stores/                     # Stores globales (userStore, tenantStore, logStore, filterStore)
-└── utils/                      # Utilidades puras (formatos, validaciones, logs)
+├── composables/                # Lógica transversal reutilizable
+│   ├── useDataTable.js         # Carga de listados con cancelación y descarte de respuestas obsoletas
+│   ├── useSpGrabar.js          # Escritura contra Stored Procedures con interpretación centralizada
+│   └── useEndPoints.js         # Endpoints y headers por municipio/entorno
+├── stores/                     # Stores globales (userStore, tenantStore, logStore, filterStore, agentesFilterStore)
+└── utils/                      # Utilidades puras (formatos, validaciones, query, spRespuesta, logs)
 ```
 
 ---
@@ -176,6 +181,12 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
 3. **Componentes UI Comunes:**
    * Diálogo modal de confirmación: `<ConfirmacionDialog :titulo="..." :mensaje="..." :aceptar="..." :cerrar="..." />`
    * Botón con tooltip: `<TooltipButton :icono="'mdi-pencil'" :toolMsg="'Editar'" :funcion="..." :itemid="..." />`
-4. **Preservar la salud del repositorio:**
+   * No crear wrappers locales de estos componentes: importarlos desde `@/shared/components`.
+4. **Listados y query strings (patrones transversales):**
+   * Para cargar una grilla usar `useDataTable` de `@/composables/useDataTable.js`. Cancela la petición en vuelo y descarta respuestas obsoletas, evitando que una búsqueda lenta pise el resultado de una más reciente.
+   * Para escribir contra un Stored Procedure usar `useSpGrabar` de `@/composables/useSpGrabar.js`. La interpretación del código de error (`vError`, `valorError`, `out.vError`, ...) está centralizada en `@/utils/spRespuesta.js`.
+   * Para armar query strings usar `buildQuery` / `buildSearchValue` de `@/utils/query.js`. Codifica los valores y evita que un dato del usuario inyecte parámetros extra en la URL.
+   * El estado de los filtros de una pantalla va en un store de Pinia (ej. `@/stores/agentesFilterStore.js`), nunca en closures improvisadas creadas dentro de la vista.
+5. **Preservar la salud del repositorio:**
    * Siempre ejecutar `npm run test:unit` antes de hacer un commit o push.
    * Ejecutar `npm run build` para asegurar que las importaciones dinámicas y los chunks de Vite se resuelvan correctamente.

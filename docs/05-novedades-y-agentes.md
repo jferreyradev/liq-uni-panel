@@ -8,11 +8,13 @@ Administración de legajos de empleados municipales (personas, cargas familiares
 ## 2. Archivos Involucrados
 
 ### A. Módulo Agentes y Cargos:
-- [`src/views/AgentesView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/views/AgentesView.vue): Vista de búsqueda y gestión de agentes.
-- [`src/views/CargosView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/views/CargosView.vue): Vista de cargos y conceptos asignados.
-- [`src/components/Agentes/PersonasList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/Agentes/PersonasList.vue): Listado y edición de datos personales.
-- [`src/components/Agentes/CargaFamiliarList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/Agentes/CargaFamiliarList.vue): Familiares a cargo (asignaciones).
-- [`src/components/Agentes/CargosList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/Agentes/CargosList.vue): Asignación de cargos por escalafón.
+- [`src/modules/agentes/views/AgentesView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/agentes/views/AgentesView.vue): Vista de búsqueda y gestión de agentes.
+- [`src/modules/agentes/views/CargosView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/agentes/views/CargosView.vue): Vista de cargos y conceptos asignados.
+- [`src/modules/agentes/components/PersonasList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/agentes/components/PersonasList.vue): Listado y edición de datos personales.
+- [`src/modules/agentes/components/CargaFamiliarList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/agentes/components/CargaFamiliarList.vue): Familiares a cargo (asignaciones).
+- [`src/modules/agentes/components/CargosList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/agentes/components/CargosList.vue): Asignación de cargos por escalafón.
+- [`src/modules/agentes/components/PersonasListFilter.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/agentes/components/PersonasListFilter.vue) / `CargosListFilter.vue`: Filtros de búsqueda; arman el query string con `buildQuery` y persisten en el store.
+- [`src/stores/agentesFilterStore.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/stores/agentesFilterStore.js): Estado de los filtros de personas y cargos (sobrevive a la navegación entre rutas).
 
 ### B. Módulo Hojas y Novedades:
 - [`src/views/HojasView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/views/HojasView.vue): Vista principal de hojas de novedades.
@@ -46,5 +48,10 @@ Las funciones de formato se encuentran centralizadas en [`src/utils/formatos.js`
 
 ## 5. Pruebas Unitarias Asociadas
 ```bash
-npx vitest run src/utils/__tests__/formatos.spec.js
+# Módulo de agentes (vistas, filtros, composables y store)
+npx vitest run src/modules/agentes src/stores/__tests__/agentesFilterStore.spec.js
+
+# Patrones transversales reutilizables
+npx vitest run src/utils/__tests__/query.spec.js src/utils/__tests__/spRespuesta.spec.js
+npx vitest run src/composables/__tests__/useDataTable.spec.js src/composables/__tests__/useSpGrabar.spec.js
 ```
