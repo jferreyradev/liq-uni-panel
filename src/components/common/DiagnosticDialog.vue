@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useLogStore } from '@/stores/logStore'
 import { useEndPoints } from '@/composables/useEndPoints'
+import { testConnection } from '@/shared/services/httpClient'
 import { useTenantStore } from '@/stores/tenantStore'
 import { useFilterStore } from '@/stores/filterStore'
 
@@ -15,8 +16,7 @@ const {
   apiSp,
   setDesaOverrides,
   resetDesaOverrides,
-  getDesaOverrides,
-  testConnection
+  getDesaOverrides
 } = useEndPoints()
 const tenantStore = useTenantStore()
 

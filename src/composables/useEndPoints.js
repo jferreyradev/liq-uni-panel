@@ -217,47 +217,6 @@ export function useEndPoints() {
     setStoredValue(STORAGE_DESA_PORT_HEADER, '')
   }
 
-  async function testConnection(url, extraHeaders = {}) {
-    const start = Date.now()
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 6000)
-
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildApiHeaders(extraHeaders),
-        signal: controller.signal
-      })
-      clearTimeout(timeout)
-      const durationMs = Date.now() - start
-      let text = ''
-      try {
-        text = await response.text()
-      } catch {
-        text = ''
-      }
-      return {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        durationMs,
-        body: text,
-        error: response.ok ? null : `HTTP ${response.status}: ${response.statusText}`
-      }
-    } catch (err) {
-      clearTimeout(timeout)
-      const durationMs = Date.now() - start
-      return {
-        ok: false,
-        status: 0,
-        statusText: err.name === 'AbortError' ? 'Timeout (6s)' : 'Error de Conexión',
-        durationMs,
-        body: null,
-        error: err.name === 'AbortError' ? 'La solicitud excedió el tiempo límite (6s)' : err.message
-      }
-    }
-  }
-
   const isDesa = computed(() => env.value === 'Desa' || getTenantStoreSafe()?.activeTenantId === 'desarrollo')
   const isProd = computed(() => env.value === 'Prod' && getTenantStoreSafe()?.activeTenantId !== 'desarrollo')
 
@@ -277,7 +236,6 @@ export function useEndPoints() {
     getBoletasRequestOptions,
     getDesaOverrides,
     setDesaOverrides,
-    resetDesaOverrides,
-    testConnection
+    resetDesaOverrides
   }
 }
