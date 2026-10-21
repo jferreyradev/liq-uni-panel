@@ -85,3 +85,5 @@ npm run test:unit
 # Lint (solo errores reales; no reformatea el código):
 npm run lint
 ```
+
+> Nota: las reglas de props (`vue/prop-name-casing`, `vue/attribute-hyphenation`, `vue/require-prop-types`) están desactivadas a propósito. Los props con mayúscula inicial (`Registro`, `Hoja`) son parte del contrato con los componentes padre y renombrarlos rompe el binding. Ver [`docs/00-arquitectura-modular.md`](docs/00-arquitectura-modular.md).
