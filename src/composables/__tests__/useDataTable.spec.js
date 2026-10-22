@@ -21,7 +21,7 @@ describe('useDataTable', () => {
     })
 
     const { data, isPending, lecturaOk, load } = useDataTable({
-      buildUrl: (filtro) => `en/persona${filtro ? `?${filtro}` : ''}`
+      buildUrl: (filtro) => `view/personaLista${filtro ? `?${filtro}` : ''}`
     })
 
     expect(isPending.value).toBe(false)
@@ -29,7 +29,7 @@ describe('useDataTable', () => {
     await load('Documento=1')
 
     expect(leerDatos).toHaveBeenCalledTimes(1)
-    expect(leerDatos.mock.calls[0][0]).toBe('en/persona?Documento=1')
+    expect(leerDatos.mock.calls[0][0]).toBe('view/personaLista?Documento=1')
     expect(data.value).toEqual([{ DOCUMENTO: '1' }])
     expect(lecturaOk.value).toBe(true)
     expect(isPending.value).toBe(false)
@@ -43,7 +43,7 @@ describe('useDataTable', () => {
       notFound: false
     })
 
-    const { load } = useDataTable({ buildUrl: () => 'en/persona' })
+    const { load } = useDataTable({ buildUrl: () => 'view/personaLista' })
 
     await load()
 
@@ -62,7 +62,7 @@ describe('useDataTable', () => {
         })
     )
 
-    const { data, load } = useDataTable({ buildUrl: (f) => `en/persona?${f}` })
+    const { data, load } = useDataTable({ buildUrl: (f) => `view/personaLista?${f}` })
 
     const primera = load('Documento=1')
     const segunda = load('Documento=2')
@@ -98,7 +98,7 @@ describe('useDataTable', () => {
     })
 
     const { data, error, lecturaOk, load } = useDataTable({
-      buildUrl: () => 'en/persona'
+      buildUrl: () => 'view/personaLista'
     })
 
     await load()
@@ -112,7 +112,7 @@ describe('useDataTable', () => {
     leerDatos.mockRejectedValue(new Error('Error en la Red'))
 
     const { data, error, lecturaOk, load } = useDataTable({
-      buildUrl: () => 'en/persona'
+      buildUrl: () => 'view/personaLista'
     })
 
     await load()
@@ -127,7 +127,7 @@ describe('useDataTable', () => {
     abortError.name = 'AbortError'
     leerDatos.mockRejectedValue(abortError)
 
-    const { error, load } = useDataTable({ buildUrl: () => 'en/persona' })
+    const { error, load } = useDataTable({ buildUrl: () => 'view/personaLista' })
 
     await expect(load()).resolves.toBe(false)
     expect(error.value).toBeNull()
@@ -142,13 +142,13 @@ describe('useDataTable', () => {
     })
 
     const { load, reload } = useDataTable({
-      buildUrl: (f) => `en/persona?${f}`
+      buildUrl: (f) => `view/personaLista?${f}`
     })
 
     await load('Documento=1')
     await reload()
 
     expect(leerDatos).toHaveBeenCalledTimes(2)
-    expect(leerDatos.mock.calls[1][0]).toBe('en/persona?Documento=1')
+    expect(leerDatos.mock.calls[1][0]).toBe('view/personaLista?Documento=1')
   })
 })

@@ -22,12 +22,12 @@ describe('useFetch', () => {
   it('carga el listado y expone los datos', async () => {
     leerDatos.mockResolvedValue(respuestaOk([{ id: 1 }]))
 
-    const { data, error, isPending } = useFetch(() => 'https://api.test/api/en/cargo')
+    const { data, error, isPending } = useFetch(() => 'https://api.test/api/view/cargo')
 
     await flushPromises()
 
     expect(leerDatos).toHaveBeenCalledTimes(1)
-    expect(leerDatos.mock.calls[0][0]).toBe('https://api.test/api/en/cargo')
+    expect(leerDatos.mock.calls[0][0]).toBe('https://api.test/api/view/cargo')
     expect(data.value).toEqual([{ id: 1 }])
     expect(error.value).toBe(null)
     expect(isPending.value).toBe(false)
@@ -42,7 +42,7 @@ describe('useFetch', () => {
       estado: 404,
     })
 
-    const { data, error, isPending } = useFetch(() => 'https://api.test/api/en/cargo')
+    const { data, error, isPending } = useFetch(() => 'https://api.test/api/view/cargo')
 
     await flushPromises()
 
@@ -60,7 +60,7 @@ describe('useFetch', () => {
       estado: 500,
     })
 
-    const { data, error, isPending } = useFetch(() => 'https://api.test/api/en/cargo')
+    const { data, error, isPending } = useFetch(() => 'https://api.test/api/view/cargo')
 
     await flushPromises()
 
@@ -73,7 +73,7 @@ describe('useFetch', () => {
   it('detecta el contrato de error que viene dentro de un 200', async () => {
     leerDatos.mockResolvedValue(respuestaOk({ error: 'No se pudo leer el listado' }))
 
-    const { data, error } = useFetch(() => 'https://api.test/api/en/cargo')
+    const { data, error } = useFetch(() => 'https://api.test/api/view/cargo')
 
     await flushPromises()
 
@@ -86,7 +86,7 @@ describe('useFetch', () => {
     leerDatos.mockResolvedValue(respuestaOk([]))
 
     useFetch(
-      () => 'https://api.test/api/en/cargo',
+      () => 'https://api.test/api/view/cargo',
       () => ({ headers: { 'x-extra': '1' } })
     )
 
@@ -100,7 +100,7 @@ describe('useFetch', () => {
     leerDatos.mockResolvedValue(respuestaOk([]))
 
     const scope = effectScope()
-    scope.run(() => useFetch(() => `https://api.test/api/en/cargo?f=${filtro.value}`))
+    scope.run(() => useFetch(() => `https://api.test/api/view/cargo?f=${filtro.value}`))
 
     await flushPromises()
     expect(leerDatos).toHaveBeenCalledTimes(1)
@@ -110,7 +110,7 @@ describe('useFetch', () => {
     await flushPromises()
 
     expect(leerDatos).toHaveBeenCalledTimes(2)
-    expect(leerDatos.mock.calls[1][0]).toBe('https://api.test/api/en/cargo?f=B')
+    expect(leerDatos.mock.calls[1][0]).toBe('https://api.test/api/view/cargo?f=B')
     scope.stop()
   })
 
@@ -129,7 +129,7 @@ describe('useFetch', () => {
 
     const scope = effectScope()
     const { data } = scope.run(() =>
-      useFetch(() => `https://api.test/api/en/cargo?f=${filtro.value}`)
+      useFetch(() => `https://api.test/api/view/cargo?f=${filtro.value}`)
     )
 
     await flushPromises()
@@ -151,7 +151,7 @@ describe('useFetch', () => {
   it('propaga el AbortSignal para poder cancelar la petición', async () => {
     leerDatos.mockResolvedValue(respuestaOk([]))
 
-    useFetch(() => 'https://api.test/api/en/cargo')
+    useFetch(() => 'https://api.test/api/view/cargo')
 
     await flushPromises()
 
@@ -162,7 +162,7 @@ describe('useFetch', () => {
   it('no deja el estado en pending si la petición se cancela', async () => {
     leerDatos.mockRejectedValue(Object.assign(new Error('Aborted'), { name: 'AbortError' }))
 
-    const { error, isPending } = useFetch(() => 'https://api.test/api/en/cargo')
+    const { error, isPending } = useFetch(() => 'https://api.test/api/view/cargo')
 
     await flushPromises()
 

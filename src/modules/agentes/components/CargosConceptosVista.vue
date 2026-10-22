@@ -10,10 +10,10 @@ import { rules } from "@/utils/reglasValidacion";
 import { financial } from "@/utils/reportes";
 
 async function obtieneVtoActual() {
-  const url = "en/periodo?Activo=1";
-
   try {
-    const { datos, operacionOk } = await leerDatos(url);
+    const { datos, operacionOk } = await leerDatos("view/periodo", {
+      query: { Activo: 1 },
+    });
 
     if (!operacionOk || !Array.isArray(datos) || datos.length === 0) {
       console.warn(

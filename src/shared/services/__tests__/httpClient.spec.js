@@ -51,7 +51,7 @@ describe('httpClient', () => {
 
   describe('resolveServiceUrl', () => {
     it('resuelve el servicio base con el prefijo /api/', () => {
-      expect(resolveServiceUrl('base', 'en/cargo')).toBe('https://api.test/api/en/cargo')
+      expect(resolveServiceUrl('base', 'view/cargo')).toBe('https://api.test/api/view/cargo')
     })
 
     it('resuelve el servicio sp sin prefijo', () => {
@@ -63,7 +63,7 @@ describe('httpClient', () => {
     })
 
     it('no duplica las barras iniciales', () => {
-      expect(resolveServiceUrl('base', '/en/cargo')).toBe('https://api.test/api/en/cargo')
+      expect(resolveServiceUrl('base', '/view/cargo')).toBe('https://api.test/api/view/cargo')
     })
   })
 
@@ -88,7 +88,7 @@ describe('httpClient', () => {
   describe('isAbsoluteUrl', () => {
     it('detecta las URLs absolutas', () => {
       expect(isAbsoluteUrl('https://api.test/api/x')).toBe(true)
-      expect(isAbsoluteUrl('en/cargo')).toBe(false)
+      expect(isAbsoluteUrl('view/cargo')).toBe(false)
       expect(isAbsoluteUrl('')).toBe(false)
     })
   })
@@ -117,11 +117,11 @@ describe('httpClient', () => {
     it('arma la URL, aplica los headers del proyecto y devuelve los datos', async () => {
       global.fetch.mockResolvedValue(respuestaJson([{ id: 1 }]))
 
-      const res = await request({ service: 'base', path: 'en/cargo' })
+      const res = await request({ service: 'base', path: 'view/cargo' })
 
       expect(global.fetch).toHaveBeenCalledTimes(1)
       const [url, init] = global.fetch.mock.calls[0]
-      expect(url).toBe('https://api.test/api/en/cargo')
+      expect(url).toBe('https://api.test/api/view/cargo')
       expect(init.headers['x-project-key']).toBe('demo')
       expect(init.signal).toBeDefined()
       expect(res.operacionOk).toBe(true)
@@ -140,9 +140,9 @@ describe('httpClient', () => {
     it('agrega el query a la URL', async () => {
       global.fetch.mockResolvedValue(respuestaJson([]))
 
-      await request({ service: 'base', path: 'en/cargo', query: { Documento: '12' } })
+      await request({ service: 'base', path: 'view/cargo', query: { Documento: '12' } })
 
-      expect(global.fetch.mock.calls[0][0]).toBe('https://api.test/api/en/cargo?Documento=12')
+      expect(global.fetch.mock.calls[0][0]).toBe('https://api.test/api/view/cargo?Documento=12')
     })
 
     it('serializa el body como JSON', async () => {
@@ -165,7 +165,7 @@ describe('httpClient', () => {
     it('marca notFound en un 404 sin considerarlo error de transporte', async () => {
       global.fetch.mockResolvedValue(respuestaJson('[]', { status: 404 }))
 
-      const res = await request({ service: 'base', path: 'en/cargo' })
+      const res = await request({ service: 'base', path: 'view/cargo' })
 
       expect(res.notFound).toBe(true)
       expect(res.estado).toBe(404)
@@ -175,7 +175,7 @@ describe('httpClient', () => {
     it('reporta el error del servidor con el código HTTP', async () => {
       global.fetch.mockResolvedValue(respuestaJson('', { status: 500 }))
 
-      const res = await request({ service: 'base', path: 'en/cargo' })
+      const res = await request({ service: 'base', path: 'view/cargo' })
 
       expect(res.operacionOk).toBe(false)
       expect(res.estado).toBe(500)
@@ -185,7 +185,7 @@ describe('httpClient', () => {
     it('detecta un cuerpo que no es JSON en una respuesta OK', async () => {
       global.fetch.mockResolvedValue(respuestaJson('<html>ok</html>'))
 
-      const res = await request({ service: 'base', path: 'en/cargo' })
+      const res = await request({ service: 'base', path: 'view/cargo' })
 
       expect(res.operacionOk).toBe(false)
       expect(res.errmsg).toContain('formato válido')
@@ -270,7 +270,7 @@ describe('httpClient', () => {
     it('devuelve los datos cuando la operación es exitosa', async () => {
       global.fetch.mockResolvedValue(respuestaJson([{ id: 1 }]))
 
-      const datos = await requestOrThrow({ service: 'base', path: 'en/cargo' })
+      const datos = await requestOrThrow({ service: 'base', path: 'view/cargo' })
 
       expect(datos).toEqual([{ id: 1 }])
     })
@@ -278,7 +278,7 @@ describe('httpClient', () => {
     it('lanza una excepción con el estado cuando la operación falla', async () => {
       global.fetch.mockResolvedValue(respuestaJson('', { status: 503 }))
 
-      await expect(requestOrThrow({ service: 'base', path: 'en/cargo' })).rejects.toThrow(/503/)
+      await expect(requestOrThrow({ service: 'base', path: 'view/cargo' })).rejects.toThrow(/503/)
     })
   })
 })

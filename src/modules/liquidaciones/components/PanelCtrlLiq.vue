@@ -43,10 +43,11 @@ async function obtieneApellidoYNombre() {
   dni_old.value = dni.value;
   personaId.value = 0;
   apeynom.value = "El DNI ingresado no corresponde a un agente";
-  const url = "en/persona?Documento=" + dni.value;
 
   try {
-    const { datos, operacionOk } = await leerDatos(url);
+    const { datos, operacionOk } = await leerDatos("view/personaLista", {
+      query: { DNI: dni.value },
+    });
 
     if (!operacionOk || !Array.isArray(datos) || datos.length === 0) {
       personaId.value = 0;
@@ -55,8 +56,11 @@ async function obtieneApellidoYNombre() {
     }
 
     let persona = datos[0];
-    personaId.value = persona?.ID ?? persona?.Id ?? 0;
-    apeynom.value = persona?.APELLIDO || persona?.APELLIDOYNOMBRE || "";
+    // `view/personaLista` identifica a la persona con PERSONAID.
+    personaId.value = persona?.PERSONAID ?? persona?.ID ?? persona?.Id ?? 0;
+    apeynom.value =
+      persona?.APELLIDOYNOMBRE ||
+      [persona?.APELLIDO, persona?.NOMBRE].filter(Boolean).join(", ");
     return;
   } catch (error) {
     personaId.value = 0;
@@ -93,10 +97,10 @@ async function obtieneReparticiones() {
   }
 }
 async function obtieneVtoActual() {
-  const url = "en/periodo?Activo=1";
-
   try {
-    const { datos, operacionOk } = await leerDatos(url);
+    const { datos, operacionOk } = await leerDatos("view/periodo", {
+      query: { Activo: 1 },
+    });
 
     if (!operacionOk || !Array.isArray(datos) || datos.length === 0) {
       console.warn(
