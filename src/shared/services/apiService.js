@@ -10,10 +10,17 @@ import {
  *
  * Mantiene los nombres y las formas de retorno que usa la app:
  *   leerDatos / grabarRegistro / eliminarRegistro / ejecutarSP / ejecutarSPStream
- *   ejecutarSP_SinEspera / descargaTXT
+ *   ejecutarSP_SinEspera / descargaTXT / descargaArchivo / descargaBuffer
  *
  * La política de negocio (por ejemplo, que un 404 en un listado no es un
  * error fatal) vive acá; el transporte vive en httpClient.
+ *
+ * Esta es la superficie pública de la capa HTTP: los módulos hablan con esta
+ * fachada y nunca con el transporte crudo (lo verifica el guard arquitectónico).
+ * No todas las funciones tienen un consumidor hoy (`eliminarRegistro` y
+ * `ejecutarSPStream` completan el par CRUD y la variante en streaming), pero
+ * son parte del contrato de la capa: si una función nueva no entra acá, no
+ * entra.
  */
 
 /**
