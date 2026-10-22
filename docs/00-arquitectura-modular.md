@@ -149,7 +149,7 @@ src/
    ```javascript
    import { leerDatos, ejecutarSP } from '@/shared/services/apiService'
 
-   const res = await leerDatos('en/cargo', { query: { Documento: '123' } })
+   const res = await leerDatos('view/cargo', { query: { Documento: '123' } })
    if (res.operacionOk) {
      // res.datos
    }
@@ -274,6 +274,7 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
    * El `AbortError` del llamador se propaga (es una cancelación); el timeout se traduce a error 408. Un 404 en un listado no es un error fatal: `leerDatos` lo marca con `operacionOk = true` y `notFound = true`.
    * Para descargar binarios usar la fachada: `descargaArchivo` (archivos que se descargan al usuario) o `descargaBuffer` (imágenes crudas). Detalle en [`docs/07-capa-http-unica.md`](docs/07-capa-http-unica.md).
    * Para consumir un listado dentro de un componente usar `useFetch` (`@/composables/useFetch.js`), que ya está construido sobre `apiService` y cancela la petición anterior al cambiar el filtro.
+   * **Contrato de datos:** las **consultas** van por vistas (`view/*`) y las **escrituras** por Stored Procedures (`sp/*`). Las entidades `/en/*` son CRUD genérico (permiten escrituras que se saltan la lógica de negocio) y no se usan desde el panel. El guard arquitectónico lo verifica; la deuda pendiente está declarada endpoint por endpoint en el test.
 3. **Componentes UI Comunes:**
    * Diálogo modal de confirmación: `<ConfirmacionDialog :titulo="..." :mensaje="..." :aceptar="..." :cerrar="..." />`
    * Botón con tooltip: `<TooltipButton :icono="'mdi-pencil'" :toolMsg="'Editar'" :funcion="..." :itemid="..." />`
@@ -299,7 +300,7 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
    * Ejecutar `npm run lint` para detectar errores reales (variables sin usar, referencias inexistentes, sintaxis inválida). No reformatea el código: el formato del proyecto no es el de Prettier por defecto, así que la regla `prettier/prettier` está desactivada. Para aplicar correcciones automáticas de estilo usar `npm run lint:fix`.
    * Las reglas `vue/prop-name-casing`, `vue/attribute-hyphenation` y `vue/require-prop-types` están desactivadas a propósito. Los props con mayúscula inicial (`Registro`, `Hoja`) son parte del contrato con los componentes padre: Vue 3 los resuelve con `camelize(key)`, así que renombrarlos o kebab-casearlos rompe el binding. No reactivarlas sin corregir antes el contrato completo.
 8. **Guard arquitectónico (`src/shared/__tests__/reglasOro.spec.js`):**
-   Las reglas anteriores no dependen de la buena voluntad: el build las verifica. Hoy controla 14 cosas:
+   Las reglas anteriores no dependen de la buena voluntad: el build las verifica. Hoy controla 15 cosas:
 
    | Regla | Qué impide |
    |---|---|
@@ -317,6 +318,7 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
    | Paginación hardcodeada | `items-per-page` en un componente |
    | `search` hardcodeado | Armar el parámetro a mano en un componente |
    | Tests fuera de su zona | Un test en `shared/` que prueba un módulo (o al revés) |
+   | Contrato de datos (vistas y SPs) | Que vuelvan las consultas por entidad `/en` o las escrituras REST por entidad |
 
    La regla de código muerto recorre el grafo de imports de cada módulo desde
    sus rutas y descarta lo que nadie alcanza. Por eso, un componente que

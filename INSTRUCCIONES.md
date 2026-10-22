@@ -113,7 +113,7 @@ npx vitest run src/modules/agentes/__tests__/
 # Pruebas de boletas y formateo:
 npx vitest run src/utils/__tests__/boletas.spec.js
 
-# Suite completa de todo el sistema (265 tests):
+# Suite completa de todo el sistema (266 tests):
 npm run test:unit
 
 # Lint (solo errores reales; no reformatea el código):

@@ -57,8 +57,8 @@ Nunca concatenar la URL a mano ni importar `useEndPoints` en cada archivo. Se us
 ```javascript
 import { leerDatos } from '@/shared/services/apiService'
 
-const res = await leerDatos('en/cargo', { query: { Documento: '123' } })
-// GET {apiBase}/api/en/cargo?Documento=123
+const res = await leerDatos('view/cargo', { query: { Documento: '123' } })
+// GET {apiBase}/api/view/cargo?Documento=123
 ```
 
 `leerDatos` también acepta una URL absoluta, que es lo que necesitan los componentes que

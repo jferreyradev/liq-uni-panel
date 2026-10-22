@@ -474,6 +474,76 @@ describe('Reglas de Oro de arquitectura', () => {
     })
   })
 
+  describe('contrato de datos (vistas y SPs)', () => {
+    it('se consulta con vistas y se escribe con SPs, nunca por entidad', () => {
+      // Las entidades `/en` son endpoints genericos de CRUD: aceptan
+      // escrituras que se saltan la logica de negocio y obligan al frontend
+      // a depender de la forma de la tabla. El contrato del panel es otro:
+      // consultar con `view/*` y escribir con `sp/*`.
+      //
+      // La deuda de la Tanda B (endpoints que todavia no tienen vista) se
+      // declara aca archivo por archivo. Es una lista que solo puede bajar:
+      // si una entrada deja de aparecer en su archivo, el test obliga a
+      // borrarla, asi no queda como permiso permanente.
+      const PENDIENTES_TANDA_B = {
+        'src/modules/agentes/views/AgentesView.vue': ['en/persona'],
+        'src/modules/agentes/components/PersonasList.vue': ['en/persona'],
+        'src/modules/agentes/components/CargosList.vue': ['en/cargo'],
+        'src/modules/agentes/components/CargaFamiliarList.vue': ['en/cargaFamiliar', 'en/cargo'],
+        'src/modules/agentes/components/CargosConceptosList.vue': ['en/conceptoLiq'],
+        'src/modules/agentes/components/LocalidadesList.vue': ['en/localidad'],
+        'src/modules/liquidaciones/components/PanelCtrlLiq.vue': ['en/reparticion'],
+        'src/modules/previsional/components/DDJJResumenDJ.vue': ['en/djPrevResumenDJ'],
+        'src/stores/personasStore.js': ['en/provincias'],
+      }
+
+      /** Codigo sin comentarios (una URL de ejemplo no es una dependencia). */
+      function sinComentarios(contenido) {
+        return contenido
+          .split('\n')
+          .filter((linea) => {
+            const limpia = linea.trim()
+            return limpia && !limpia.startsWith('//') && !limpia.startsWith('*') && !limpia.startsWith('/*')
+          })
+          .join('\n')
+      }
+
+      const ofensores = []
+      const escriturasPorEntidad = []
+
+      for (const [ruta, contenido] of Object.entries(fuentes)) {
+        if (!esCodigoDeProduccion(ruta)) continue
+        if (!/^src\/(modules|stores)\//.test(ruta)) continue
+
+        const codigo = sinComentarios(contenido)
+        const permitidas = PENDIENTES_TANDA_B[ruta] || []
+
+        for (const coincidencia of codigo.matchAll(/['"`](en\/[A-Za-z0-9_]+)/g)) {
+          const endpoint = coincidencia[1]
+          if (!permitidas.includes(endpoint)) ofensores.push(`${ruta} -> ${endpoint}`)
+        }
+
+        // `grabarRegistro`/`eliminarRegistro` escriben por REST de entidad.
+        // Los modulos y stores escriben por SP (`ejecutarSP`/`useSpGrabar`).
+        if (/\b(grabarRegistro|eliminarRegistro)\s*\(/.test(codigo)) {
+          escriturasPorEntidad.push(ruta)
+        }
+      }
+
+      const deudaVencida = []
+      for (const [ruta, endpoints] of Object.entries(PENDIENTES_TANDA_B)) {
+        const contenido = fuentes[ruta] || ''
+        for (const endpoint of endpoints) {
+          if (!contenido.includes(endpoint)) deudaVencida.push(`${ruta} -> ${endpoint}`)
+        }
+      }
+
+      expect(ofensores).toEqual([])
+      expect(escriturasPorEntidad).toEqual([])
+      expect(deudaVencida).toEqual([])
+    })
+  })
+
   describe('organizacion de tests', () => {
     it('un test vive junto al componente que prueba', () => {
       // Un test en src/shared/ que importa un componente de

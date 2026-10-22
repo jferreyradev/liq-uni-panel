@@ -26,11 +26,22 @@ Administración de legajos de empleados municipales (personas, cargas familiares
 ---
 
 ## 3. Endpoints Principales
-- **Agentes**: `${apiBase}/api/agentes?${filtro}`
-- **Cargas familiares**: `${apiBase}/api/cargasFamiliares?IdPersona=${id}`
-- **Cargos de agente**: `${apiBase}/api/cargos?IdPersona=${id}`
-- **Hojas de novedades**: `${apiBase}/api/hojas?${filterString}`
-- **Novedades de la hoja**: `${apiBase}/api/novedades?IdHoja=${idHoja}`
+El módulo sigue el contrato general: **consultas con vistas (`view/*`), escrituras con SPs (`sp/*`)**. No se usan entidades `/en` ni escrituras REST por entidad (lo verifica el guard arquitectónico).
+
+### Consultas
+- **Personas**: `view/personaLista?{filtro}` (parámetros `DNI`, `Apellido`, `Nombre`).
+- **Cargos de agente**: `view/cargo?PersonaId=...`. El listado general y la carga familiar todavía usan `en/cargo` (deuda de la Tanda B: falta soportar `Salario=1` y las columnas ricas de la grilla).
+- **Cargas familiares**: `en/cargaFamiliar?PersonaId=...` (pendiente: `view/cargaFamiliar`).
+- **Conceptos del cargo**: `en/conceptoLiq?CargoId=...` (pendiente: `view/conceptoLiq`).
+- **Novedades de la hoja**: `view/novAltas?HojaId=...`, `view/novHaberes?HojaId=...`, `view/novVarias?HojaId=...`.
+
+### Escrituras (SPs)
+- **Personas**: `sp/persUpd`.
+- **Cargos**: `sp/CargoUpd`.
+- **Cargas familiares**: `sp/CargaFamIns`, `sp/CargaFamUpd`, `sp/CargaFamDel`, `sp/AsignaSalario`.
+- **Conceptos de liquidación**: `sp/ConceptoLiqIns`, `sp/ConceptoLiqUpd`, `sp/ConceptoLiqDel`.
+- **Haberes variables**: `sp/NovHaberesIns`, `sp/NovHaberesUpd`, `sp/NovHaberesDel` (la baja envía `{ vIDNOVHABER: id }`).
+- **Altas y varias**: `sp/NovAltasIns/Upd/Del` y `sp/NovVariasIns/Upd/Del`.
 
 ---
 
@@ -38,7 +49,8 @@ Administración de legajos de empleados municipales (personas, cargas familiares
 
 ### A. Para modificar campos de edición en la grilla de novedades:
 Abrir el componente de novedad correspondiente (`NovHaberesList.vue`, `NovVariasList.vue`, `NovAltasList.vue`).
-- Cada fila emite `save` o `update` y el guardado va por la fachada de dominio (`grabarRegistro` / `ejecutarSP` de `@/shared/services/apiService`), nunca con `fetch()` directo.
+- La lectura de la grilla va por `view/*` y el guardado por `sp/*`, a través de la fachada de dominio (`ejecutarSP` / `useSpGrabar` de `@/shared/services/apiService`), nunca con `fetch()` directo ni por un endpoint REST de entidad.
+- `NovHaberesList.vue` usa `useSpGrabar` para alta, modificación y baja (`sp/NovHaberesIns/Upd/Del`). La baja existía en el template pero no tenía función asociada: quedó resuelta con el SP de borrado.
 
 ### B. Para ajustar validaciones de DNI o Cuil:
 Las funciones de formato se encuentran centralizadas en [`src/utils/formatos.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/utils/formatos.js) (`formatoDNI`, `formatoPeriodo`, `financial`).

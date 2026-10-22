@@ -41,7 +41,7 @@ Haz clic en la ficha correspondiente a la tarea que vas a realizar:
 # Servidor de desarrollo local
 npm run dev
 
-# Ejecutar todas las pruebas unitarias (265 tests)
+# Ejecutar todas las pruebas unitarias (266 tests)
 npm run test:unit
 
 # Lint (solo errores reales; no reformatea el código)

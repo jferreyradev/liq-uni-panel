@@ -152,13 +152,13 @@ npx vitest run
 ```
 
 ### Resultados de la Validación:
-- **265 pruebas unitarias ejecutadas**: 265 aprobadas (100%), en 33 archivos.
+- **266 pruebas unitarias ejecutadas**: 266 aprobadas (100%), en 33 archivos.
   - `src/stores/__tests__/tenantStore.spec.js`: Valida inicialización de tenant, cambio de municipio, actualización de keys/puertos y reactividad de encabezados HTTP.
   - `src/utils/__tests__/boletas.spec.js`: Valida normalización de caracteres, tildes, códigos de liquidación (MEN, ADI, SAC) y formateo de períodos.
   - `src/utils/__tests__/formatos.spec.js`: Valida generación de nombres de PDF y normalización de textos.
   - `src/composables/__tests__/useBoletaFileName.spec.js`: Valida extracción y generación de nombres de boletas.
   - `src/modules/ipsst/__tests__/ResumenIPSST.spec.js`: Valida llamadas seguras y paso de encabezados en componentes.
-  - `src/shared/__tests__/reglasOro.spec.js`: Guard arquitectónico (14 reglas: sin duplicación, sin wrappers, barrel único, configuración centralizada, sin código muerto, módulos hablando con la fachada).
+  - `src/shared/__tests__/reglasOro.spec.js`: Guard arquitectónico (15 reglas: sin duplicación, sin wrappers, barrel único, configuración centralizada, sin código muerto, módulos hablando con la fachada).
   - `src/shared/services/__tests__/capaHttpUnica.spec.js`: Verifica que no exista un segundo cliente HTTP.
 
 ### Compilación para Producción:
