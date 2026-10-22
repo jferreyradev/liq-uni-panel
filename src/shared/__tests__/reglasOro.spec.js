@@ -16,6 +16,11 @@ import { describe, it, expect } from 'vitest'
 const BARREL = 'src/shared/components/index.js'
 const DIR_COMPARTIDOS = 'src/shared/components'
 
+/** Ultimo segmento de una ruta. */
+function basename(ruta) {
+  return ruta.split('/').pop()
+}
+
 // Se leen los fuentes crudos de todo el proyecto.
 const fuentesCrudos = import.meta.glob('/src/**/*.{js,vue}', {
   eager: true,
@@ -129,6 +134,24 @@ function extraerImports(contenido) {
 }
 
 /**
+ * Extrae las rutas de los import dinamicos: `import('./views/X.vue')`.
+ * Las rutas de los modulos se cargan asi, asi que son parte del grafo.
+ *
+ * @returns {string[]}
+ */
+function extraerImportsDinamicos(contenido) {
+  const specs = []
+  const regex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
+  let match
+
+  while ((match = regex.exec(contenido)) !== null) {
+    specs.push(match[1])
+  }
+
+  return specs
+}
+
+/**
  * Indica si un archivo .vue es un wrapper pasacables de un componente
  * compartido: re-renderiza el componente compartido y no tiene logica propia.
  *
@@ -236,15 +259,14 @@ describe('Reglas de Oro de arquitectura', () => {
       // `src/views/` y `src/components/` fueron carpetas de transito: cada
       // modulo trae sus propias vistas y los componentes transversales estan
       // en `src/shared/components`. Lo unico fuera de un modulo es el shell
-      // de la app (App.vue) y los layouts.
-      const ubicacionesPermitidas = [/^src\/App\.vue$/, /^src\/layouts\//]
+      // de la app (App.vue).
       const ofensores = []
 
       for (const ruta of Object.keys(fuentes)) {
         if (!ruta.endsWith('.vue')) continue
         if (ruta.startsWith('src/modules/')) continue
         if (ruta.startsWith('src/shared/')) continue
-        if (ubicacionesPermitidas.some((patron) => patron.test(ruta))) continue
+        if (ruta === 'src/App.vue') continue
         ofensores.push(ruta)
       }
 
@@ -271,6 +293,77 @@ describe('Reglas de Oro de arquitectura', () => {
         if (nombres.length === 0) continue
 
         if (esWrapperDeCompartido(contenido, nombres)) ofensores.push(ruta)
+      }
+
+      expect(ofensores).toEqual([])
+    })
+
+    it('no hay codigo muerto dentro de los modulos', () => {
+      // Se recorre el grafo de imports de cada modulo desde sus rutas (su
+      // puerta de entrada) y se sigue hasta las vistas y los componentes.
+      // Un archivo que nadie alcanza es codigo muerto: no lo usa ni la app
+      // ni el router, y por lo tanto nadie lo mantiene.
+      const ofensores = []
+
+      const modulos = new Set()
+      for (const ruta of Object.keys(fuentes)) {
+        const coincidencia = /^src\/modules\/([^/]+)\//.exec(ruta)
+        if (coincidencia) modulos.add(coincidencia[1])
+      }
+
+      for (const modulo of modulos) {
+        const prefijo = `src/modules/${modulo}/`
+        const delModulo = Object.keys(fuentes).filter((ruta) => ruta.startsWith(prefijo))
+
+        // Raices: las rutas del modulo (declaradas por el router) y sus tests.
+        const raices = delModulo.filter(
+          (ruta) => ruta.endsWith('/routes.js') || ruta.includes('__tests__')
+        )
+
+        const alcanzables = new Set()
+        const pila = [...raices]
+
+        while (pila.length > 0) {
+          const actual = pila.pop()
+          if (alcanzables.has(actual)) continue
+          alcanzables.add(actual)
+
+          const contenido = fuentes[actual]
+          if (!contenido) continue
+
+          const specs = [
+            ...extraerImports(contenido).map((i) => i.spec),
+            ...extraerImportsDinamicos(contenido),
+          ]
+
+          for (const spec of specs) {
+            const destino = resolverRuta(actual, spec)
+            if (!destino || !destino.startsWith(prefijo)) continue
+            if (!fuentes[destino]) continue
+            pila.push(destino)
+          }
+        }
+
+        for (const ruta of delModulo) {
+          if (ruta.includes('__tests__')) continue
+          if (alcanzables.has(ruta)) continue
+          ofensores.push(ruta)
+        }
+      }
+
+      expect(ofensores).toEqual([])
+    })
+
+    it('todo componente compartido esta exportado por el barrel', () => {
+      // Si un componente compartido no sale por el barrel, nadie lo importa
+      // (el barrel es la unica puerta): queda huerfano.
+      const barrel = fuentes[BARREL]
+      const ofensores = []
+
+      for (const ruta of Object.keys(fuentes)) {
+        if (!ruta.startsWith(`${DIR_COMPARTIDOS}/`)) continue
+        if (!ruta.endsWith('.vue')) continue
+        if (!barrel.includes(basename(ruta))) ofensores.push(ruta)
       }
 
       expect(ofensores).toEqual([])

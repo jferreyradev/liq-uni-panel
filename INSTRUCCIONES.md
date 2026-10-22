@@ -71,7 +71,6 @@ src/
 ├── stores/                        # Pinia: user, tenant, filter, agentes, ...
 ├── plugins/vuetify.js             # Config de Vuetify compartida entre app y tests
 ├── router/index.js                # Ensamblado de rutas modulares + guard de auth
-├── layouts/                       # AppLayout, SidebarLayout
 ├── utils/                         # query, permisos, formatos, spRespuesta, ...
 └── test/setup.js                  # Setup global de Vitest
 ```
@@ -114,7 +113,7 @@ npx vitest run src/modules/agentes/__tests__/
 # Pruebas de boletas y formateo:
 npx vitest run src/utils/__tests__/boletas.spec.js
 
-# Suite completa de todo el sistema (248 tests):
+# Suite completa de todo el sistema (250 tests):
 npm run test:unit
 
 # Lint (solo errores reales; no reformatea el código):

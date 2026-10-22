@@ -107,10 +107,10 @@ flowchart TD
 | :--- | :--- | :--- |
 | **Inicio** | `HomeView.vue` | Dashboard con tarjeta del municipio activo, estado de conexión, chips de período/ambiente y accesos directos. |
 | **Agentes** | `AgentesView.vue`, `CargosView.vue`, `PersonasList.vue`, `CargaFamiliarList.vue`, `CargosList.vue` | Administración de legajos, datos familiares, cargos y conceptos asignados. |
-| **Novedades** | `HojasView.vue`, `HojasList.vue`, `NovAltasList.vue`, `NovHaberesList.vue`, `NovVariasList.vue`, `TablaEditable.vue` | Carga masiva de novedades mensuales por hoja con soporte de edición en línea. |
+| **Novedades** | `HojasView.vue`, `HojasList.vue`, `NovAltasList.vue`, `NovHaberesList.vue`, `NovVariasList.vue` | Carga masiva de novedades mensuales por hoja con soporte de edición en línea. |
 | **Liquidaciones** | `PanelView.vue`, `ProcesosView.vue`, `PanelCtrlLiq.vue`, `LiquidacionTable.vue`, `LiquidacionItemTable.vue` | Panel de control de liquidación mensual, desglose de ítems liquidados y ejecución de procesos. |
 | **Boletas** | `BoletasView.vue`, `LiqBoletas.vue`, `boletaStore.js` | Descarga de boletas en PDF con spinner individual, generación local mediante `pdf-lib` con escudo del municipio, y nomenclatura estándar: `MMYYYY_TIPO_APELLIDO_NOMBRE.pdf`. |
-| **Acreditaciones** | `AcreditacionView.vue`, `AbreditacionBase.vue`, `AcreditacionTXT.vue`, `ResumenAcred.vue`, `ResumenAcredDetalle.vue` | Interfaz dual con pestañas: generación y exportación formal de archivos bancarios TXT + control y resumen de cuentas de acreditación. |
+| **Acreditaciones** | `AcreditacionView.vue`, `ArchAcred.vue`, `ResumenAcred.vue`, `ResumenAcredDetalle.vue` | Exportación formal de archivos bancarios TXT + control y resumen de cuentas de acreditación. |
 | **Previsional** | `PrevisionalView.vue`, `ArchivosView.vue`, `DDJJMarco.vue`, `ParametrosDDJJ_List.vue`, `ArchIPSST.vue`, `ResumenIPSST.vue` | Generación de Declaraciones Juradas previsionales, parámetros y archivos magnéticos para el IPSST. |
 | **Reportes** | `RepoView.vue` + 14 componentes `Repo*.vue` | Colección completa de planillas oficiales con catálogo reactivo por municipio (`allowedReports` en `tenants.js`: Trancas con [1, 2, 4, 5], Concepción/Burruyacú/Tafí con [4, 6..15]) y switch para "Mostrar todos los reportes" (detalle en [REPORTES.md](REPORTES.md)). |
 | **Seguridad** | `LoginView.vue`, `UsersPanelView.vue`, `ChangePassword.vue`, `PanelUsers.vue` | Control de acceso por roles, recuperación y cambio de clave, y administración de usuarios. |
@@ -152,13 +152,13 @@ npx vitest run
 ```
 
 ### Resultados de la Validación:
-- **248 pruebas unitarias ejecutadas**: 248 aprobadas (100%), en 31 archivos.
+- **250 pruebas unitarias ejecutadas**: 250 aprobadas (100%), en 31 archivos.
   - `src/stores/__tests__/tenantStore.spec.js`: Valida inicialización de tenant, cambio de municipio, actualización de keys/puertos y reactividad de encabezados HTTP.
   - `src/utils/__tests__/boletas.spec.js`: Valida normalización de caracteres, tildes, códigos de liquidación (MEN, ADI, SAC) y formateo de períodos.
   - `src/utils/__tests__/formatos.spec.js`: Valida generación de nombres de PDF y normalización de textos.
   - `src/composables/__tests__/useBoletaFileName.spec.js`: Valida extracción y generación de nombres de boletas.
   - `src/modules/ipsst/__tests__/ResumenIPSST.spec.js`: Valida llamadas seguras y paso de encabezados en componentes.
-  - `src/shared/__tests__/reglasOro.spec.js`: Guard arquitectónico (11 reglas: sin duplicación, sin wrappers, barrel único, configuración centralizada).
+  - `src/shared/__tests__/reglasOro.spec.js`: Guard arquitectónico (13 reglas: sin duplicación, sin wrappers, barrel único, configuración centralizada, sin código muerto).
   - `src/shared/services/__tests__/capaHttpUnica.spec.js`: Verifica que no exista un segundo cliente HTTP.
 
 ### Compilación para Producción:

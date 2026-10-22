@@ -79,7 +79,6 @@ src/
 ├── composables/        # useFetch, useDataTable, usePII, useSpGrabar, useEndPoints, ...
 ├── config/             # tenants, permisos, busqueda y paginacion (config transversal)
 ├── plugins/            # vuetify.js (config compartida entre app y tests)
-├── layouts/            # AppLayout y SidebarLayout
 ├── router/             # Vue Router: ensambla las rutas de cada módulo + guards
 ├── stores/             # Pinia: tenantStore, userStore, filterStore, agentesStore, ...
 ├── utils/              # query, permisos, boletas, formatos, reportes, spRespuesta

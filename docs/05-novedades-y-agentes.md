@@ -22,7 +22,6 @@ Administración de legajos de empleados municipales (personas, cargas familiares
 - [`src/modules/novedades/components/NovAltasList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/components/NovAltasList.vue): Novedades de altas y designaciones.
 - [`src/modules/novedades/components/NovHaberesList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/components/NovHaberesList.vue): Haberes variables (horas extras, adicionales).
 - [`src/modules/novedades/components/NovVariasList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/components/NovVariasList.vue): Descuentos y novedades varias.
-- [`src/modules/novedades/components/TablaEditable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/components/TablaEditable.vue): Grilla en línea para edición rápida.
 
 ---
 
@@ -38,7 +37,7 @@ Administración de legajos de empleados municipales (personas, cargas familiares
 ## 4. Recetas de Modificación
 
 ### A. Para modificar campos de edición en la grilla de novedades:
-Abrir [`src/modules/novedades/components/TablaEditable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/components/TablaEditable.vue) o el componente de novedad correspondiente (`NovHaberesList.vue`, `NovVariasList.vue`).
+Abrir el componente de novedad correspondiente (`NovHaberesList.vue`, `NovVariasList.vue`, `NovAltasList.vue`).
 - Cada fila emite `save` o `update` y el guardado va por la fachada de dominio (`grabarRegistro` / `ejecutarSP` de `@/shared/services/apiService`), nunca con `fetch()` directo.
 
 ### B. Para ajustar validaciones de DNI o Cuil:

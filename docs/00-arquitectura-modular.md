@@ -8,7 +8,7 @@ La aplicación `liq-panel` implementa una arquitectura **Modular basada en Domin
 * **Alta Cohesión y Bajo Acoplamiento:** Todo lo que pertenece a un mismo concepto de negocio (pantallas, diálogos, llamadas a la API y subrutas) vive en la misma carpeta de módulo.
 * **Cero Código Duplicado:** Los componentes UI transversales (confirmaciones, tooltips, selectores de períodos) y el cliente HTTP residen en `@/shared`. No hay proxies ni wrappers: un componente compartido se importa **una sola vez**, desde su barrel.
 * **Rutas Descentralizadas:** Cada módulo define sus propias rutas (`routes.js`). El router central (`src/router/index.js`) solo las agrega.
-* **Una sola puerta de entrada por dominio:** No existen carpetas de vistas o componentes sueltas (`src/views/`, `src/components/`). Todo el código vive **en un módulo** o **en la capa compartida**; lo único fuera de un módulo es el shell de la app (`src/App.vue`, `src/layouts/`).
+* **Una sola puerta de entrada por dominio:** No existen carpetas de vistas o componentes sueltas (`src/views/`, `src/components/`). Todo el código vive **en un módulo** o **en la capa compartida**; lo único fuera de un módulo es el shell de la app (`src/App.vue`).
 * **Las Reglas de Oro se verifican con tests:** `src/shared/__tests__/reglasOro.spec.js` falla el build si alguien reintroduce duplicación, hardcodea configuración transversal o ubica mal un archivo.
 
 ---
@@ -120,8 +120,6 @@ src/
 │
 ├── router/
 │   └── index.js                   # Ensamblado de rutas modulares + guard de auth
-│
-├── layouts/                       # Shell: AppLayout.vue, SidebarLayout.vue
 │
 ├── utils/                         # Utilidades puras
 │   ├── query.js                   # buildQuery / buildSearchValue / parseQueryString
@@ -264,7 +262,7 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
 1. **¿Qué va en `src/shared/` vs en un módulo?**
    * **En `src/shared/`:** Componentes o utilidades agnósticas utilizadas por dos o más módulos que no dependen de la lógica de negocio de uno solo (ej. `TooltipButton`, `TenantSelector`, formateadores de moneda, selectores genéricos).
    * **En `src/modules/<modulo>/`:** Componentes, diálogos, vistas y helpers que resuelven una necesidad particular de ese dominio.
-   * **Fuera de un módulo:** solo `src/App.vue` (shell) y `src/layouts/`.
+   * **Fuera de un módulo:** solo `src/App.vue` (el shell de la app).
 2. **Cliente HTTP (capa única):**
    * Todo el tráfico HTTP sale por **un único punto**: `@/shared/services/httpClient.js`. Es el único archivo del proyecto que llama a `fetch()`. El test-guard `src/shared/services/__tests__/capaHttpUnica.spec.js` falla si alguien vuelve a llamar a `fetch()` desde otro lado.
    * `@/shared/services/apiService.js` es la **fachada de dominio** sobre ese cliente (`leerDatos`, `grabarRegistro`, `eliminarRegistro`, `ejecutarSP`, `ejecutarSP_SinEspera`, `ejecutarSPStream`, `descargaTXT`). La política de negocio vive ahí; el transporte, en el cliente.
@@ -299,7 +297,7 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
    * Ejecutar `npm run lint` para detectar errores reales (variables sin usar, referencias inexistentes, sintaxis inválida). No reformatea el código: el formato del proyecto no es el de Prettier por defecto, así que la regla `prettier/prettier` está desactivada. Para aplicar correcciones automáticas de estilo usar `npm run lint:fix`.
    * Las reglas `vue/prop-name-casing`, `vue/attribute-hyphenation` y `vue/require-prop-types` están desactivadas a propósito. Los props con mayúscula inicial (`Registro`, `Hoja`) son parte del contrato con los componentes padre: Vue 3 los resuelve con `camelize(key)`, así que renombrarlos o kebab-casearlos rompe el binding. No reactivarlas sin corregir antes el contrato completo.
 8. **Guard arquitectónico (`src/shared/__tests__/reglasOro.spec.js`):**
-   Las reglas anteriores no dependen de la buena voluntad: el build las verifica. Hoy controla 11 cosas:
+   Las reglas anteriores no dependen de la buena voluntad: el build las verifica. Hoy controla 13 cosas:
 
    | Regla | Qué impide |
    |---|---|
@@ -307,12 +305,19 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
    | Importación por ruta directa del barrel | `@/shared/components/X.vue` en lugar de `@/shared/components` |
    | Alias local de componente compartido | `import boton from ".../TooltipButton.vue"` |
    | Barrel sin duplicados | Exportar dos veces el mismo componente |
+   | Componente compartido fuera del barrel | Un `.vue` en `src/shared/components/` que nadie puede importar |
    | Vistas en carpetas sueltas | Que vuelvan `src/views/` o `src/components/` |
    | Vistas que solo re-renderizan | Un proxy de la vista de un módulo |
+   | Código muerto en los módulos | Componentes que nadie alcanza desde las rutas del módulo |
    | Alias de la fachada de API | Un `llamadaAPI.js` que re-exporta `apiService` |
    | Archivos que solo re-exportan | Aliases muertos tipo `stores/user.js` |
    | Paginación hardcodeada | `items-per-page` en un componente |
    | `search` hardcodeado | Armar el parámetro a mano en un componente |
    | Tests fuera de su zona | Un test en `shared/` que prueba un módulo (o al revés) |
+
+   La regla de código muerto recorre el grafo de imports de cada módulo desde
+   sus rutas y descarta lo que nadie alcanza. Por eso, un componente que
+   queda huérfano (porque su consumidor se borró) no puede sobrevivir: el
+   build avisa.
 
    Si una regla nueva hace falta, se agrega como un `it(...)` más en ese archivo, con su comentario explicando **por qué** (el porqué es lo que la mantiene viva).
