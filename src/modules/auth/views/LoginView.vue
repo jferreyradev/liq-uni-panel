@@ -6,7 +6,7 @@ import { useFilterStore } from "@/stores/filterStore";
 import { useItemsMenu } from "@/composables/useItemsMenu";
 import { useTenantStore } from "@/stores/tenantStore";
 import { useLogStore } from "@/stores/logStore";
-import DiagnosticDialog from "@/components/common/DiagnosticDialog.vue";
+import { DiagnosticDialog } from "@/shared/components";
 
 const { setItemsMenu } = useItemsMenu();
 const tenantStore = useTenantStore();

@@ -10,3 +10,5 @@ export { default as ConfirmacionDialog } from "./ConfirmacionDialog.vue";
 export { default as TooltipButton } from "./TooltipButton.vue";
 export { default as RepoHeader } from "./RepoHeader.vue";
 export { default as LiqInputPanel } from "./LiqInputPanel.vue";
+export { default as TenantSelector } from "./TenantSelector.vue";
+export { default as DiagnosticDialog } from "./DiagnosticDialog.vue";

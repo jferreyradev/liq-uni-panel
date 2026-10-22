@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
-import HomeView from "../views/HomeView.vue";
 import { useUserStore } from "@/stores/userStore";
 
+import { inicioRoutes } from "@/modules/inicio/routes";
 import { authRoutes } from "@/modules/auth/routes";
 import { usuariosRoutes } from "@/modules/usuarios/routes";
 import { agentesRoutes } from "@/modules/agentes/routes";
@@ -12,23 +12,10 @@ import { ipsstRoutes } from "@/modules/ipsst/routes";
 import { reportesRoutes } from "@/modules/reportes/routes";
 import { acreditacionesRoutes } from "@/modules/acreditaciones/routes";
 
-const baseRoutes = [
-  {
-    path: "/",
-    name: "home",
-    component: HomeView,
-  },
-  {
-    path: "/about",
-    name: "about",
-    component: () => import("../views/AboutView.vue"),
-  },
-];
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    ...baseRoutes,
+    ...inicioRoutes,
     ...authRoutes,
     ...usuariosRoutes,
     ...agentesRoutes,

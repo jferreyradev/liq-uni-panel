@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { nextTick } from 'vue'
-import RepoView from '../RepoView.vue'
+import RepoView from '../views/RepoView.vue'
 import { useTenantStore } from '@/stores/tenantStore'
 
 describe('RepoView - Disponibilidad y filtrado de reportes por municipio', () => {

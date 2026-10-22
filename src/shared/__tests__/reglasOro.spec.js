@@ -71,7 +71,7 @@ function esComponenteCompartido(rutaResuelta) {
  *
  *   src/modules/reportes/__tests__/x.spec.js -> src/modules/reportes
  *   src/modules/reportes/components/R.vue    -> src/modules/reportes
- *   src/components/TenantSelector.vue        -> src/components
+ *   src/shared/components/__tests__/x.spec.js -> src/shared
  *   src/shared/components/RepoHeader.vue     -> src/shared
  */
 function zonaDe(ruta) {
@@ -146,6 +146,11 @@ function esWrapperDeCompartido(contenido, nombresCompartidos) {
 
   // Sin logica propia: nada de funciones, refs, watchers ni promesas.
   return !/(function\s+\w+|=>|\bref\(|\bcomputed\(|\bwatch\(|\bawait\b)/.test(contenido)
+}
+
+/** ¿La ruta resuelta apunta a la vista de un modulo? */
+function esVistaDeModulo(rutaResuelta) {
+  return /^src\/modules\/[^/]+\/views\//.test(rutaResuelta)
 }
 
 describe('Reglas de Oro de arquitectura', () => {
@@ -226,6 +231,52 @@ describe('Reglas de Oro de arquitectura', () => {
     })
   })
 
+  describe('ubicacion de las vistas', () => {
+    it('las vistas viven en un modulo, no en carpetas sueltas', () => {
+      // `src/views/` y `src/components/` fueron carpetas de transito: cada
+      // modulo trae sus propias vistas y los componentes transversales estan
+      // en `src/shared/components`. Lo unico fuera de un modulo es el shell
+      // de la app (App.vue) y los layouts.
+      const ubicacionesPermitidas = [/^src\/App\.vue$/, /^src\/layouts\//]
+      const ofensores = []
+
+      for (const ruta of Object.keys(fuentes)) {
+        if (!ruta.endsWith('.vue')) continue
+        if (ruta.startsWith('src/modules/')) continue
+        if (ruta.startsWith('src/shared/')) continue
+        if (ubicacionesPermitidas.some((patron) => patron.test(ruta))) continue
+        ofensores.push(ruta)
+      }
+
+      expect(ofensores).toEqual([])
+    })
+
+    it('ninguna vista se limita a re-renderizar la vista de un modulo', () => {
+      // Un proxy de vista no aporta nada: la vista real ya se importa
+      // directo desde el modulo que la expone. Solo multiplica rutas y
+      // deja que dos vistas parezcan distintas cuando son la misma.
+      const ofensores = []
+
+      for (const [ruta, contenido] of Object.entries(fuentes)) {
+        if (!esCodigoDeProduccion(ruta)) continue
+        if (!ruta.endsWith('.vue')) continue
+
+        const importadas = extraerImports(contenido)
+          .map((i) => ({ ...i, destino: resolverRuta(ruta, i.spec) }))
+          .filter((i) => i.destino && esVistaDeModulo(i.destino))
+
+        if (importadas.length === 0) continue
+
+        const nombres = importadas.map((i) => i.nombre).filter(Boolean)
+        if (nombres.length === 0) continue
+
+        if (esWrapperDeCompartido(contenido, nombres)) ofensores.push(ruta)
+      }
+
+      expect(ofensores).toEqual([])
+    })
+  })
+
   describe('capa de servicios', () => {
     it('no existen alias de la fachada de API en los modulos', () => {
       // Un `llamadaAPI.js` que re-exporta `apiService` es una indireccion
@@ -281,7 +332,7 @@ describe('Reglas de Oro de arquitectura', () => {
 
   describe('organizacion de tests', () => {
     it('un test vive junto al componente que prueba', () => {
-      // Un test en src/components/ que importa un componente de
+      // Un test en src/shared/ que importa un componente de
       // src/modules/<modulo>/ hace que el modulo parezca cubierto cuando no
       // lo esta: el test pasa mientras el componente real queda sin probar.
       const ofensores = []

@@ -7,8 +7,7 @@ import { useItemsMenu } from '@/composables/useItemsMenu'
 import { useFilterStore } from '@/stores/filterStore'
 import { useTenantStore } from '@/stores/tenantStore'
 import { useLogStore } from '@/stores/logStore'
-import TenantSelector from '@/components/TenantSelector.vue'
-import DiagnosticDialog from '@/components/common/DiagnosticDialog.vue'
+import { TenantSelector, DiagnosticDialog } from '@/shared/components'
 
 const storeFilter = useFilterStore()
 const tenantStore = useTenantStore()
