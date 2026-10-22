@@ -60,12 +60,12 @@ flowchart TD
 
     subgraph API ["Capa de Comunicación HTTP"]
         EP["useEndPoints (Resuelve URLs y encabezados x-project-key / port)"]
-        AC["useApiClient (get, post, del centralizados)"]
-        LAPI["llamadaAPI.js (Getters dinámicos por módulo)"]
-        
+        HC["httpClient.js (ÚNICO fetch() del proyecto)"]
+        AS["apiService.js (fachada de dominio)"]
+
         TS -->|Reactividad| EP
-        EP --> AC
-        EP --> LAPI
+        EP --> HC
+        HC --> AS
     end
 
     subgraph Backend ["Servicios Backend / Proxy"]
@@ -74,9 +74,8 @@ flowchart TD
         B2["Backend Burruyacú (:3003)"]
         B3["Backend Tafí Viejo (:3007)"]
         B4["Backend Trancas (:3005)"]
-        
-        AC -->|HTTP Request con Headers Dinámicos| Proxy
-        LAPI -->|HTTP Request con Headers Dinámicos| Proxy
+
+        AS -->|HTTP Request con Headers Dinámicos| Proxy
         Proxy --> B1
         Proxy --> B2
         Proxy --> B3
@@ -91,15 +90,16 @@ flowchart TD
 ### 4.1. Configuración Multi-Tenant
 - **`src/config/tenants.js`**: Define el catálogo de municipios, sus claves (`projectKey`), puertos (`projectPort`), colores temáticos, logotipos y endpoints para `Prod` y `Desa`.
 - **`src/stores/tenantStore.js`**: Almacena el municipio activo, sincronizado con `localStorage` (`liq_tenant_id`). Provee getters como `tenantKey`, `tenantPort`, `tenantName`, `tenantLogo` y `boletaLogo`.
-- **`src/components/TenantSelector.vue`**: Selector desplegable con avatares y metadatos de cada municipio ubicado en la barra de navegación principal.
+- **`src/shared/components/TenantSelector.vue`**: Selector desplegable con avatares y metadatos de cada municipio ubicado en la barra de navegación principal.
 
 ### 4.2. Clientes HTTP y Endpoints Reactivos
 - **`src/composables/useEndPoints.js`**:
   - `buildApiHeaders()` y `getBoletasHeaders()` obtienen en tiempo real la clave y el puerto del municipio activo.
   - Soporte para alternar entornos `Prod` y `Desa`.
   - Protección con `getActivePinia()` para prevenir errores de ciclo de vida si es importado antes del montaje de Pinia.
-- **`src/composables/useApiClient.js`**: Adaptador centralizado para consultas `GET`, `POST` y `DELETE` con soporte para respuestas JSON, blobs (descarga de archivos) y FormData.
-- **Archivos `llamadaAPI.js`**: Los archivos de llamadas API en cada módulo (`Agentes`, `Novedades`, `EjecProcesos`, `Previsional`, `Acreditacion`) fueron refactorizados para usar getters funcionales (`getUrlApi()`, `getUrlApiSp()`, `getHeaders()`) en lugar de constantes estáticas a nivel de módulo.
+- **`src/shared/services/httpClient.js`**: Cliente HTTP **único** del proyecto. Es el único archivo que llama a `fetch()`, resuelve timeouts (30 s), normaliza la respuesta y traduce los errores. Detalle en [`docs/07-capa-http-unica.md`](docs/07-capa-http-unica.md).
+- **`src/shared/services/apiService.js`**: Fachada de dominio sobre el cliente (`leerDatos`, `grabarRegistro`, `eliminarRegistro`, `ejecutarSP`, `descargaTXT`). Todos los módulos hablan con esta capa, no con `fetch()`.
+- ~~`useApiClient.js`~~ y ~~`llamadaAPI.js`~~: eliminados. Eran clientes duplicados por módulo, cada uno con su propio manejo de URLs, headers y logging. Hoy no hay un solo `fetch()` fuera de `httpClient.js`, y un test-guard lo verifica.
 
 ### 4.3. Módulos Funcionales (Superset)
 
@@ -119,7 +119,7 @@ flowchart TD
 
 ## 5. Tabla de Equivalencias de Rutas
 
-Todas las rutas anteriores fueron consolidadas en [src/router/index.js](file:///Users/jferreyradev/projects/ag/liq-panel/src/router/index.js):
+Todas las rutas anteriores fueron consolidadas en [src/router/index.js](file:///Users/jferreyradev/projects/ag/liq-panel/src/router/index.js), que solo **agrega** las rutas declaradas por cada módulo en su `routes.js`:
 
 | Ruta | Nombre | Componente | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -127,13 +127,15 @@ Todas las rutas anteriores fueron consolidadas en [src/router/index.js](file:///
 | `/panel` | `panel` | `PanelView.vue` | Consulta de liquidaciones e ítems |
 | `/boletas` | `boletas` | `BoletasView.vue` | Recibos de sueldo y descargas PDF |
 | `/agentes` | `agentes` | `AgentesView.vue` | Personal y cargas familiares |
+| `/agentes/cargaf/:personaId` | `agentes-cargaf` | `AgentesView.vue` | Carga familiar de una persona (la URL la describe) |
 | `/cargos` | `cargos` | `CargosView.vue` | Cargos y conceptos |
 | `/hojas` | `hojas` | `HojasView.vue` | Gestión de hojas y novedades |
 | `/procesos` | `procesos` | `ProcesosView.vue` | Panel de control de procesos |
 | `/acredit` | `acredit` | `AcreditacionView.vue` | Acreditaciones bancarias (TXT y resumen) |
-| `/acred` | — | Redirección a `/acredit` | Compatibilidad con rutas anteriores |
+| `/acred` | `acreditaciones` | `AcreditacionView.vue` | Alias de `/acredit` |
 | `/prevision`| `prevision`| `PrevisionalView.vue` | DDJJ y parámetros previsionales |
-| `/archivos` | `archivos` | `ArchivosView.vue` | Archivos magnéticos IPSST |
+| `/ipsst` | `ipsst` | `IPSSTView.vue` | Resumen y archivos magnéticos IPSST |
+| `/archivos` | `archivos` | `IPSSTView.vue` | Archivos magnéticos IPSST |
 | `/repo` | `reportes` | `RepoView.vue` | 14 planillas y reportes oficiales |
 | `/users` | `users` | `UsersPanelView.vue` | Administración de usuarios |
 | `/passchange`| `passchange`| `ChangePassword.vue` | Cambio de contraseña |
@@ -150,18 +152,20 @@ npx vitest run
 ```
 
 ### Resultados de la Validación:
-- **47 pruebas unitarias ejecutadas**: 47 aprobadas (100%).
+- **248 pruebas unitarias ejecutadas**: 248 aprobadas (100%), en 31 archivos.
   - `src/stores/__tests__/tenantStore.spec.js`: Valida inicialización de tenant, cambio de municipio, actualización de keys/puertos y reactividad de encabezados HTTP.
   - `src/utils/__tests__/boletas.spec.js`: Valida normalización de caracteres, tildes, códigos de liquidación (MEN, ADI, SAC) y formateo de períodos.
   - `src/utils/__tests__/formatos.spec.js`: Valida generación de nombres de PDF y normalización de textos.
   - `src/composables/__tests__/useBoletaFileName.spec.js`: Valida extracción y generación de nombres de boletas.
-  - `src/components/__tests__/ResumenIPSST.spec.js`: Valida llamadas seguras y paso de encabezados en componentes.
+  - `src/modules/ipsst/__tests__/ResumenIPSST.spec.js`: Valida llamadas seguras y paso de encabezados en componentes.
+  - `src/shared/__tests__/reglasOro.spec.js`: Guard arquitectónico (11 reglas: sin duplicación, sin wrappers, barrel único, configuración centralizada).
+  - `src/shared/services/__tests__/capaHttpUnica.spec.js`: Verifica que no exista un segundo cliente HTTP.
 
 ### Compilación para Producción:
 ```bash
 npm run build
 ```
-- Compilación limpia con Vite en **2.3s**, transformando 816 módulos y generando los bundles optimizados en `dist/`.
+- Compilación limpia con Vite en **~2.7s**. El bundle se parte por librería (`manualChunks`): el chunk de la app queda en ~65 kB y ninguno supera el aviso de 500 kB.
 
 ---
 

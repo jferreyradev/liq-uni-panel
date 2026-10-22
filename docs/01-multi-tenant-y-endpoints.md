@@ -8,9 +8,10 @@ Gestiona la identidad del municipio activo, las cabeceras HTTP (`x-project-key`,
 ## 2. Archivos Involucrados
 - [`src/config/tenants.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/config/tenants.js): Catálogo maestro de municipios, claves, puertos y endpoints.
 - [`src/stores/tenantStore.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/stores/tenantStore.js): Store Pinia reactivo persistido en `localStorage` (`liq_tenant_id`).
-- [`src/components/TenantSelector.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/TenantSelector.vue): Menú desplegable en el Navbar.
+- [`src/shared/components/TenantSelector.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/shared/components/TenantSelector.vue): Menú desplegable en el Navbar.
 - [`src/composables/useEndPoints.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/composables/useEndPoints.js): Generador reactivo de URLs y headers.
-- [`src/composables/useApiClient.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/composables/useApiClient.js): Cliente HTTP Axios/Fetch genérico con inyección de headers.
+- [`src/shared/services/httpClient.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/shared/services/httpClient.js): Cliente HTTP único del proyecto, con inyección de headers.
+- [`src/shared/services/apiService.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/shared/services/apiService.js): Fachada de dominio sobre el cliente.
 
 ---
 
@@ -85,10 +86,10 @@ Para evitar cruces de credenciales o tokens inválidos entre distintas bases de 
 
 El sistema incluye un módulo de observabilidad y diagnóstico integral:
 - **Store de Logs ([`src/stores/logStore.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/stores/logStore.js)):**
-  - Intercepta todas las llamadas HTTP de `userStore` y `useApiClient`.
+  - Intercepta todas las llamadas HTTP del sistema: el cliente único (`httpClient.js`) y el store de sesión (`userStore`) reportan al `logStore`.
   - Emite logs agrupados en consola (`console.group`) con URL, método, headers `x-project-key` / `x-project-port`, status y payload.
   - Guarda un historial de las últimas 100 peticiones en memoria.
-- **Consola Visual ([`src/components/common/DiagnosticDialog.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/common/DiagnosticDialog.vue)):**
+- **Consola Visual ([`src/shared/components/DiagnosticDialog.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/shared/components/DiagnosticDialog.vue)):**
   - Accesible desde el Navbar (`mdi-bug-outline`) y desde la pantalla de login.
   - **Pestaña de Logs:** Filtro por errores, detalle técnico expandible y exportación al portapapeles.
   - **Pestaña de Endpoints:** Permite configurar URLs personalizadas de Desarrollo (persistidas en `localStorage`: `liq_desa_base`, `liq_desa_boletas`, `liq_desa_sp`) con presets rápidos (*Proxy Deno*, *Localhost:3005*, *Localhost:8000*).
@@ -102,7 +103,7 @@ El sistema incluye un módulo de observabilidad y diagnóstico integral:
 npx vitest run src/stores/__tests__/tenantStore.spec.js
 
 # Tests del componente TenantSelector y cierre de sesión
-npx vitest run src/components/__tests__/TenantSelector.spec.js
+npx vitest run src/shared/components/__tests__/TenantSelector.spec.js
 
 # Tests de LogStore y overrides de endpoints
 npx vitest run src/stores/__tests__/logStore.spec.js

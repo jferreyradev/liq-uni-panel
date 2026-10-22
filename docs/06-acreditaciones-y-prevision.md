@@ -54,11 +54,11 @@ En la arquitectura modular, estas responsabilidades están desacopladas en tres 
 ## 4. Pruebas Unitarias Asociadas
 ```bash
 # Probar componente de archivo IPSST
-npx vitest run src/components/__tests__/ArchIPSST.spec.js
+npx vitest run src/modules/ipsst/__tests__/ArchIPSST.spec.js
 
 # Probar componente de archivo Acreditaciones con filtro Ley
-npx vitest run src/components/__tests__/ArchAcred.spec.js
+npx vitest run src/modules/acreditaciones/__tests__/ArchAcred.spec.js
 
 # Probar resumen IPSST
-npx vitest run src/components/__tests__/ResumenIPSST.spec.js
+npx vitest run src/modules/ipsst/__tests__/ResumenIPSST.spec.js
 ```

@@ -28,10 +28,10 @@ Haz clic en la ficha correspondiente a la tarea que vas a realizar:
 
 1. **Nunca usar `useTenantStore()` ni `useEndPoints()` a nivel raíz del archivo JS**:
    Siempre deben invocarse dentro de funciones (`getUrlApi()`, `getHeaders()`) o en el `setup()` de componentes Vue para evitar errores de inicialización de Pinia.
-2. **Las llamadas API son reactivas**:
-   Todas las peticiones deben pasar por `useEndPoints()` (`apiBase`, `getBoletasHeaders()`) o `useApiClient()` para inyectar automáticamente el `x-project-key` y `x-project-port` del municipio activo.
+2. **Las llamadas API son reactivas y pasan por un único cliente**:
+   Todas las peticiones salen por `@/shared/services/httpClient.js` (el único archivo con `fetch()`), a través de la fachada `@/shared/services/apiService.js`, que usa `useEndPoints()` (`apiBase`, `getBoletasHeaders()`) para inyectar automáticamente el `x-project-key` y `x-project-port` del municipio activo. Nunca llamar a `fetch()` directamente.
 3. **Validación rápida post-cambio**:
-   Al realizar un ajuste, ejecuta solo el test del archivo afectado (ej. `npx vitest run src/views/__tests__/RepoView.spec.js`), o la suite completa con `npm run test:unit`.
+   Al realizar un ajuste, ejecuta solo el test del archivo afectado (ej. `npx vitest run src/modules/reportes/__tests__/RepoView.spec.js`), o la suite completa con `npm run test:unit`.
 
 ---
 
@@ -41,8 +41,11 @@ Haz clic en la ficha correspondiente a la tarea que vas a realizar:
 # Servidor de desarrollo local
 npm run dev
 
-# Ejecutar todas las pruebas unitarias (93 tests)
+# Ejecutar todas las pruebas unitarias (248 tests)
 npm run test:unit
+
+# Lint (solo errores reales; no reformatea el código)
+npm run lint
 
 # Compilar para producción (validación de build y assets)
 npm run build

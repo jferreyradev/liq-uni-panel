@@ -6,8 +6,8 @@ Generación, consulta y descarga masiva o individual de recibos de sueldo en PDF
 ---
 
 ## 2. Archivos Involucrados
-- [`src/views/BoletasView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/views/BoletasView.vue): Vista contenedora con filtros de liquidación.
-- [`src/components/LiqBoletas.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/LiqBoletas.vue): Tabla de agentes, visor de estado, botón de descarga por fila con `loadingBoletas` reactivo.
+- [`src/modules/liquidaciones/views/BoletasView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/liquidaciones/views/BoletasView.vue): Vista contenedora con filtros de liquidación.
+- [`src/modules/liquidaciones/components/LiqBoletas.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/liquidaciones/components/LiqBoletas.vue): Tabla de agentes, visor de estado, botón de descarga por fila con `loadingBoletas` reactivo.
 - [`src/stores/boletaStore.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/stores/boletaStore.js): Store que administra el estado de generación y descarga.
 - [`src/utils/boletas.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/utils/boletas.js): Motor de generación de PDF local mediante `pdf-lib` con estampado de logotipo dinámico.
 - [`src/composables/useBoletaFileName.spec.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/composables/__tests__/useBoletaFileName.spec.js) y [`src/utils/__tests__/boletas.spec.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/utils/__tests__/boletas.spec.js): Lógica de formateo de nombres.

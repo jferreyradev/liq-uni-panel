@@ -2,7 +2,7 @@
 
 Este documento describe la disponibilidad, propósito, estructura de datos y endpoints de los reportes del sistema unificado **`liq-panel`**.
 
-Debido a los requerimientos operacionales y a la estructura histórica de las bases de datos de cada municipio, el selector de reportes en la vista [`RepoView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/views/RepoView.vue) es **reactivo al municipio seleccionado**, mostrando únicamente las opciones habilitadas para cada comuna, con posibilidad de desbloquear el catálogo completo mediante un switch global.
+Debido a los requerimientos operacionales y a la estructura histórica de las bases de datos de cada municipio, el selector de reportes en la vista [`RepoView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/views/RepoView.vue) es **reactivo al municipio seleccionado**, mostrando únicamente las opciones habilitadas para cada comuna, con posibilidad de desbloquear el catálogo completo mediante un switch global.
 
 ---
 
@@ -33,7 +33,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ## 2. Descripción Detallada de cada Reporte
 
 ### Reporte 1: Resumen Liquidacion
-- **Componente**: [`src/components/RepoResumenLiq.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoResumenLiq.vue)
+- **Componente**: [`src/modules/reportes/components/RepoResumenLiq.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoResumenLiq.vue)
 - **Municipio nativo**: Trancas
 - **Propósito**: Planilla general de haberes discriminando montos sujetos a aportes, exentos, descuentos de ley y varios, y salario neto a percibir.
 - **Campos principales**: `IDREP`, `ORDEN`, `DNI`, `Apellido`, `Nombre`, `Sujeto a aporte`, `Exento de aporte`, `Descuentos de ley`, `Descuentos varios`, `Neto`.
@@ -42,7 +42,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 2: Detalle por concepto (153)
-- **Componente**: [`src/components/RepoCod153.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoCod153.vue)
+- **Componente**: [`src/modules/reportes/components/RepoCod153.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoCod153.vue)
 - **Municipio nativo**: Trancas
 - **Propósito**: Emisión focalizada del concepto salarial `153` (adicional específico de personal municipal), individualizando empleados y montos liquidados.
 - **Campos principales**: `IDREP`, `DNI`, `Apellido`, `Nombre`, `Concepto 153`, `Importe`.
@@ -51,7 +51,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 4: Resumen de liquidación por códigos
-- **Componente**: [`src/components/RepoResumenCod.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoResumenCod.vue)
+- **Componente**: [`src/modules/reportes/components/RepoResumenCod.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoResumenCod.vue)
 - **Municipios nativos**: Concepción, Burruyacú, Tafí Viejo, Trancas (Común a todos)
 - **Propósito**: Consolidado cuantitativo y monetario de todos los códigos de haberes y descuentos devengados en el período.
 - **Campos principales**: `Codigo`, `Descripcion`, `Cantidad de casos`, `Total Importe`.
@@ -60,7 +60,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 5: Resumen pedido FDO
-- **Componente**: [`src/components/RepoResumenLiqFdo.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoResumenLiqFdo.vue)
+- **Componente**: [`src/modules/reportes/components/RepoResumenLiqFdo.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoResumenLiqFdo.vue)
 - **Municipio nativo**: Trancas
 - **Propósito**: Cuadro de solicitud y afectación de fondos presupuestarios para pago de sueldos clasificado por repartición y fuentes financieras.
 - **Campos principales**: `Repartición`, `Orden`, `Denominación`, `Monto solicitado`, `Aporte patronal`, `Total partida`.
@@ -69,7 +69,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 6: Resumen Aportes Patronales
-- **Componente**: [`src/components/RepoApoPatronales.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoApoPatronales.vue)
+- **Componente**: [`src/modules/reportes/components/RepoApoPatronales.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoApoPatronales.vue)
 - **Municipios nativos**: Concepción, Burruyacú, Tafí Viejo
 - **Propósito**: Determinación de las obligaciones previsionales y de seguridad social patronales (Jubilación Municipal, Obra Social IPSST patronal, Seguros y ART).
 - **Campos principales**: `Repartición`, `Base Imponible`, `Jubilación Patronal (%)`, `IPSST Patronal (%)`, `Fondo Solidario`, `Subtotal Contribuciones`.
@@ -78,7 +78,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 7: Planilla de Detalle de Liquidación (Det. Liq.)
-- **Componente**: [`src/components/RepoPlanillaDetLiq.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoPlanillaDetLiq.vue)
+- **Componente**: [`src/modules/reportes/components/RepoPlanillaDetLiq.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoPlanillaDetLiq.vue)
 - **Municipios nativos**: Concepción, Burruyacú, Tafí Viejo
 - **Propósito**: Libro y planilla oficial analítica de sueldos donde se detalla cada renglón liquidado por agente (ordenado por Repartición, Orden, Fecha de devengado y Código).
 - **Campos principales**: `Repartición`, `Orden`, `Agente`, `Categoría`, `Código`, `Descripción Concepto`, `Haberes c/Aporte`, `Haberes s/Aporte`, `Descuentos`, `Neto`.
@@ -87,7 +87,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 8: Planilla de Retenciones
-- **Componente**: [`src/components/RepoPlanillaRet.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoPlanillaRet.vue)
+- **Componente**: [`src/modules/reportes/components/RepoPlanillaRet.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoPlanillaRet.vue)
 - **Municipios nativos**: Concepción, Burruyacú, Tafí Viejo
 - **Propósito**: Detalle de descuentos de terceros practicados sobre el sueldo de los agentes (sindicatos, mutuales, cuotas judiciales/embargos, seguros).
 - **Campos principales**: `Código Retención`, `Entidad Beneficiaria`, `DNI`, `Agente`, `Número de cuota`, `Monto Descontado`.
@@ -96,7 +96,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 9: Planilla de Ley
-- **Componente**: [`src/components/RepoPlanillaLey.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoPlanillaLey.vue)
+- **Componente**: [`src/modules/reportes/components/RepoPlanillaLey.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoPlanillaLey.vue)
 - **Municipios nativos**: Concepción, Burruyacú, Tafí Viejo
 - **Propósito**: Rendición y detalle nominal de los descuentos obligatorios fijados por legislación provincial y nacional (Jubilación personal, Ley 4044/IPSST, Seguro de vida obligatorio).
 - **Campos principales**: `Repartición`, `DNI`, `Agente`, `Aporte Jubilatorio (11%/14%)`, `Obra Social IPSST (4.5%)`, `Total Descuentos de Ley`.
@@ -105,7 +105,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 10: Resumen de Sueldos
-- **Componente**: [`src/components/RepoPlanillaResSueldo.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoPlanillaResSueldo.vue)
+- **Componente**: [`src/modules/reportes/components/RepoPlanillaResSueldo.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoPlanillaResSueldo.vue)
 - **Municipios nativos**: Concepción, Burruyacú, Tafí Viejo
 - **Propósito**: Totales acumulados por repartición administrativa o centro de costo para control contable y presupuestario.
 - **Campos principales**: `Repartición`, `Cantidad de Agentes`, `Sueldo Básico`, `Bonificaciones`, `Asignaciones Familiares`, `Bruto Total`, `Retenciones`, `Neto a Pagar`.
@@ -114,7 +114,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 11: Retenciones de CPA (Caja Popular de Ahorros)
-- **Componente**: [`src/components/RepoPlanillaRetencionesCPA.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoPlanillaRetencionesCPA.vue)
+- **Componente**: [`src/modules/reportes/components/RepoPlanillaRetencionesCPA.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoPlanillaRetencionesCPA.vue)
 - **Municipios nativos**: Concepción, Burruyacú, Tafí Viejo
 - **Propósito**: Planilla de retenciones comerciales, préstamos personales y seguros de la Caja Popular de Ahorros de la Provincia de Tucumán para conciliación bancaria.
 - **Campos principales**: `Sucursal`, `Préstamo / Cuenta`, `DNI`, `Apellido y Nombre`, `Cuota`, `Importe Retenido`.
@@ -123,7 +123,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 12: Retenciones de Cargo
-- **Componente**: [`src/components/RepoPlanillaRetCargo.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoPlanillaRetCargo.vue)
+- **Componente**: [`src/modules/reportes/components/RepoPlanillaRetCargo.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoPlanillaRetCargo.vue)
 - **Municipios nativos**: Concepción, Burruyacú, Tafí Viejo
 - **Propósito**: Retenciones imputadas directamente al cargo o categoría presupuestaria del empleado.
 - **Campos principales**: `Cargo / Función`, `Planta (Permanente / Transitoria)`, `Código Retención`, `Total Retenido`.
@@ -132,7 +132,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 13: Bajas de Ley
-- **Componente**: [`src/components/RepoBajasLey.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoBajasLey.vue)
+- **Componente**: [`src/modules/reportes/components/RepoBajasLey.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoBajasLey.vue)
 - **Municipios nativos**: Concepción, Burruyacú, Tafí Viejo
 - **Propósito**: Registro de agentes desvinculados, cesantías, jubilaciones o bajas del período con el cómputo de sus liquidaciones finales y desgravaciones de ley.
 - **Campos principales**: `DNI`, `Agente`, `Fecha de Baja`, `Motivo de Baja`, `Ajuste Jubilatorio`, `Ajuste Obra Social`.
@@ -141,7 +141,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 14: Res. de Sue. - Inas. - Ley (Resumen Integral)
-- **Componente**: [`src/components/RepoPlanillaResSueldoComp.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoPlanillaResSueldoComp.vue)
+- **Componente**: [`src/modules/reportes/components/RepoPlanillaResSueldoComp.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoPlanillaResSueldoComp.vue)
 - **Municipios nativos**: Concepción, Burruyacú, Tafí Viejo
 - **Propósito**: Planilla maestra integral que cruza los haberes brutos, los descuentos por inasistencias o sanciones disciplinarias, y los descuentos legales netos.
 - **Campos principales**: `Repartición`, `Agente`, `Haberes Devengados`, `Días/Horas Inasistencia`, `Descuento Inasistencias`, `Aportes Ley`, `Líquido Final`.
@@ -150,7 +150,7 @@ Debido a los requerimientos operacionales y a la estructura histórica de las ba
 ---
 
 ### Reporte 15: Resumen Cargos
-- **Componente**: [`src/components/RepoPlanillaResumenCargos.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoPlanillaResumenCargos.vue)
+- **Componente**: [`src/modules/reportes/components/RepoPlanillaResumenCargos.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/components/RepoPlanillaResumenCargos.vue)
 - **Municipios nativos**: Concepción, Burruyacú, Tafí Viejo
 - **Propósito**: Análisis estadístico y presupuestario del escalafón municipal (cantidad de cargos ocupados por categoría, funcionarios, personal de planta y contratados).
 - **Campos principales**: `Nivel Escalafonario`, `Denominación del Cargo`, `Cantidad de Agentes`, `Costo Salarial Total`.
@@ -193,7 +193,7 @@ export const TENANTS = [
 ]
 ```
 
-### 3.2. Lógica en la vista (`src/views/RepoView.vue`)
+### 3.2. Lógica en la vista (`src/modules/reportes/views/RepoView.vue`)
 - **Reactividad**: Utiliza `tenantStore.activeTenant.allowedReports` a través de un `computed()`.
 - **Reseteo seguro**: Si el usuario está visualizando un reporte (ej. `1: Resumen Liquidacion`) y cambia en el Navbar a *Concepción*, el watcher detecta que el reporte `1` no pertenece a Concepción y resetea automáticamente la selección a `null`, evitando errores en los llamados API.
 - **Switch global**: Mediante el toggle `v-switch v-model="showAllReports"` se desactiva el filtro por municipio y se despliegan los 14 reportes simultáneamente para auditoría cruzada o pruebas avanzadas.

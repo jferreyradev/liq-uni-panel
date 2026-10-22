@@ -65,21 +65,25 @@ npm run build
 
 ## 📂 Estructura del Proyecto
 
+Todo el código vive en **un módulo** (`src/modules/<dominio>/`) o en la **capa compartida** (`src/shared/`).
+
 ```
 src/
+├── App.vue / main.js  # Shell de la app y arranque
 ├── assets/             # Estilos CSS, logos generales y por municipio (tenants/)
-├── components/         # Componentes organizados por dominio
-│   ├── Acreditacion/   # TXT bancario y generaciones
-│   ├── Agentes/        # Personas, cargos, familiares
-│   ├── EjecProcesos/   # Panel de control de liquidación
-│   ├── Novedades/      # Hojas y novedades
-│   ├── Previsional/    # DDJJ e IPSST
-│   └── TenantSelector.vue # Conmutador multi-tenant
-├── composables/        # useApiClient, useEndPoints, useFetch, useItemsMenu
-├── config/             # tenants.js (definición de municipios y endpoints)
+├── shared/             # Transversal: componentes (con barrel) + capa HTTP
+│   ├── components/     # ConfirmacionDialog, TooltipButton, RepoHeader, TenantSelector, ...
+│   └── services/       # httpClient.js (único fetch) + apiService.js (fachada)
+├── modules/            # Dominios: inicio, agentes, auth, liquidaciones, novedades,
+│                       #   reportes, previsional, ipsst, acreditaciones, usuarios
+├── composables/        # useFetch, useDataTable, usePII, useSpGrabar, useEndPoints, ...
+├── config/             # tenants, permisos, busqueda y paginacion (config transversal)
+├── plugins/            # vuetify.js (config compartida entre app y tests)
 ├── layouts/            # AppLayout y SidebarLayout
-├── router/             # Vue Router con guards de autenticación
-├── stores/             # Pinia: tenantStore, userStore, filterStore, liqStore, etc.
-├── utils/              # Boletas, formatos, validaciones, reportes
-└── views/              # Vistas principales del sistema
+├── router/             # Vue Router: ensambla las rutas de cada módulo + guards
+├── stores/             # Pinia: tenantStore, userStore, filterStore, agentesStore, ...
+├── utils/              # query, permisos, boletas, formatos, reportes, spRespuesta
+└── test/               # Setup global de Vitest
 ```
+
+> No existen `src/views/` ni `src/components/`: cada módulo trae sus propias vistas y componentes, y los transversales se importan desde `@/shared/components`. Un guard arquitectónico (`src/shared/__tests__/reglasOro.spec.js`) verifica esta y otras reglas en cada build. Detalle en [`docs/00-arquitectura-modular.md`](docs/00-arquitectura-modular.md).

@@ -294,6 +294,35 @@ describe('Reglas de Oro de arquitectura', () => {
 
       expect(ofensores).toEqual([])
     })
+
+    it('no existen archivos que solo re-exportan otro archivo del proyecto', () => {
+      // Un archivo que unicamente re-exporta otro es una indireccion: obliga
+      // a resolver dos rutas para llegar al codigo real y multiplica las
+      // APIs posibles. El unico barrel permitido es el de componentes
+      // compartidos.
+      const ofensores = []
+
+      for (const [ruta, contenido] of Object.entries(fuentes)) {
+        if (!esCodigoDeProduccion(ruta)) continue
+        if (!ruta.endsWith('.js')) continue
+        if (ruta === BARREL) continue
+
+        // Se ignoran comentarios y lineas en blanco.
+        const codigo = contenido
+          .split('\n')
+          .map((linea) => linea.trim())
+          .filter((linea) => linea && !linea.startsWith('//') && !linea.startsWith('*') && !linea.startsWith('/*'))
+          .join('\n')
+
+        const soloReExporta =
+          /^export\s+.*\s+from\s+['"][^'"]+['"];?$/.test(codigo) ||
+          /^export\s+\*\s+from\s+['"][^'"]+['"];?$/.test(codigo)
+
+        if (soloReExporta) ofensores.push(ruta)
+      }
+
+      expect(ofensores).toEqual([])
+    })
   })
 
   describe('configuracion central', () => {

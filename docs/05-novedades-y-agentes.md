@@ -17,12 +17,12 @@ Administración de legajos de empleados municipales (personas, cargas familiares
 - [`src/stores/agentesFilterStore.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/stores/agentesFilterStore.js): Estado de los filtros de personas y cargos (sobrevive a la navegación entre rutas).
 
 ### B. Módulo Hojas y Novedades:
-- [`src/views/HojasView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/views/HojasView.vue): Vista principal de hojas de novedades.
-- [`src/components/Novedades/HojasList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/Novedades/HojasList.vue): Selector de hoja del período.
-- [`src/components/Novedades/NovAltasList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/Novedades/NovAltasList.vue): Novedades de altas y designaciones.
-- [`src/components/Novedades/NovHaberesList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/Novedades/NovHaberesList.vue): Haberes variables (horas extras, adicionales).
-- [`src/components/Novedades/NovVariasList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/Novedades/NovVariasList.vue): Descuentos y novedades varias.
-- [`src/components/Novedades/TablaEditable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/Novedades/TablaEditable.vue): Grilla en línea para edición rápida.
+- [`src/modules/novedades/views/HojasView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/views/HojasView.vue): Vista principal de hojas de novedades.
+- [`src/modules/novedades/components/HojasList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/components/HojasList.vue): Selector de hoja del período.
+- [`src/modules/novedades/components/NovAltasList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/components/NovAltasList.vue): Novedades de altas y designaciones.
+- [`src/modules/novedades/components/NovHaberesList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/components/NovHaberesList.vue): Haberes variables (horas extras, adicionales).
+- [`src/modules/novedades/components/NovVariasList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/components/NovVariasList.vue): Descuentos y novedades varias.
+- [`src/modules/novedades/components/TablaEditable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/components/TablaEditable.vue): Grilla en línea para edición rápida.
 
 ---
 
@@ -38,8 +38,8 @@ Administración de legajos de empleados municipales (personas, cargas familiares
 ## 4. Recetas de Modificación
 
 ### A. Para modificar campos de edición en la grilla de novedades:
-Abrir [`src/components/Novedades/TablaEditable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/Novedades/TablaEditable.vue) o el componente de novedad correspondiente (`NovHaberesList.vue`, `NovVariasList.vue`).
-- Cada fila emite `save` o `update` mediante el cliente HTTP de `llamadaAPI.js`.
+Abrir [`src/modules/novedades/components/TablaEditable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/novedades/components/TablaEditable.vue) o el componente de novedad correspondiente (`NovHaberesList.vue`, `NovVariasList.vue`).
+- Cada fila emite `save` o `update` y el guardado va por la fachada de dominio (`grabarRegistro` / `ejecutarSP` de `@/shared/services/apiService`), nunca con `fetch()` directo.
 
 ### B. Para ajustar validaciones de DNI o Cuil:
 Las funciones de formato se encuentran centralizadas en [`src/utils/formatos.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/utils/formatos.js) (`formatoDNI`, `formatoPeriodo`, `financial`).

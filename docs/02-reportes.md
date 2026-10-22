@@ -6,9 +6,9 @@ Visualización y exportación a Excel (.xlsx) de los 14 reportes oficiales de li
 ---
 
 ## 2. Archivos Involucrados
-- [`src/views/RepoView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/views/RepoView.vue): Vista principal, selector desplegable reactivo y switch `showAllReports`.
-- `src/components/Repo*.vue`: 14 componentes individuales (uno por cada reporte).
-- [`src/components/RepoHeader.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/RepoHeader.vue): Encabezado unificado con títulos y botón de descarga.
+- [`src/modules/reportes/views/RepoView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/views/RepoView.vue): Vista principal, selector desplegable reactivo y switch `showAllReports`.
+- `src/modules/reportes/components/Repo*.vue`: 14 componentes individuales (uno por cada reporte).
+- [`src/shared/components/RepoHeader.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/shared/components/RepoHeader.vue): Encabezado unificado con títulos y botón de descarga.
 - [`src/utils/reportes.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/utils/reportes.js): Helpers para exportación a Excel con estilos (`agregaTitulosExcel`).
 - [`REPORTES.md`](file:///Users/jferreyradev/projects/ag/liq-panel/REPORTES.md): Catálogo y matriz completa de compatibilidad.
 
@@ -48,13 +48,13 @@ Editar la propiedad `allowedReports` en [`src/config/tenants.js`](file:///Users/
 ```
 
 ### B. Para modificar columnas o diseño de un reporte existente:
-Abrir el archivo específico `src/components/Repo<Nombre>.vue`:
+Abrir el archivo específico `src/modules/reportes/components/Repo<Nombre>.vue`:
 - `headers`: Array que define las columnas de `<v-data-table>`.
 - `exportFile()`: Mapeo de datos que se escribe en el archivo `.xlsx`.
 
 ### C. Para agregar un nuevo reporte:
-1. Crear `src/components/RepoNuevo.vue` con `useFetch` y `exportFile()`.
-2. Registrarlo en `ALL_REPORTES` dentro de [`src/views/RepoView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/views/RepoView.vue).
+1. Crear `src/modules/reportes/components/RepoNuevo.vue` con `useFetch` y `exportFile()`.
+2. Registrarlo en `ALL_REPORTES` dentro de [`src/modules/reportes/views/RepoView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/reportes/views/RepoView.vue).
 3. Añadir el componente en el template: `<RepoNuevo v-if="repo === <nuevoId>" />`.
 4. Añadir el `<nuevoId>` en los `allowedReports` de los municipios que corresponda en `tenants.js`.
 
@@ -62,6 +62,6 @@ Abrir el archivo específico `src/components/Repo<Nombre>.vue`:
 
 ## 5. Pruebas Unitarias Asociadas
 ```bash
-npx vitest run src/views/__tests__/RepoView.spec.js
-npx vitest run src/components/__tests__/ReportesEndpoints.spec.js
+npx vitest run src/modules/reportes/__tests__/RepoView.spec.js
+npx vitest run src/modules/reportes/__tests__/reportesEndpoints.spec.js
 ```

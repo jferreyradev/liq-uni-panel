@@ -6,13 +6,14 @@ Control central del ciclo de liquidación de haberes: selección de período, ti
 ---
 
 ## 2. Archivos Involucrados
-- [`src/views/PanelView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/views/PanelView.vue): Vista principal de control de liquidación.
-- [`src/views/ProcesosView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/views/ProcesosView.vue): Vista de procesos batch y cierres mensuales.
-- [`src/components/EjecProcesos/PanelCtrlLiq.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/EjecProcesos/PanelCtrlLiq.vue): Barra de filtros (Período, Tipo Liq, Adicional, Repartición) con selector de estado.
-- [`src/components/EjecProcesos/LiquidacionTable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/EjecProcesos/LiquidacionTable.vue): Tabla resumen de agentes liquidados (bruto, descuentos, neto).
-- [`src/components/EjecProcesos/LiquidacionItemTable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/EjecProcesos/LiquidacionItemTable.vue): Desglose renglón por renglón de conceptos de un agente seleccionado.
-- [`src/components/EjecProcesos/ProcesosList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/EjecProcesos/ProcesosList.vue): Lista de stored procedures y tareas ejecutables.
-- [`src/components/EjecProcesos/llamadaAPI.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/EjecProcesos/llamadaAPI.js): Funciones de llamada al backend para ejecución de SPs (`ejecutarSP`, `ejecutaSP`).
+- [`src/modules/liquidaciones/views/PanelView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/liquidaciones/views/PanelView.vue): Vista principal de control de liquidación.
+- [`src/modules/liquidaciones/views/ProcesosView.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/liquidaciones/views/ProcesosView.vue): Vista de procesos batch y cierres mensuales.
+- [`src/modules/liquidaciones/components/PanelCtrlLiq.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/liquidaciones/components/PanelCtrlLiq.vue): Barra de filtros (Período, Tipo Liq, Adicional, Repartición) con selector de estado.
+- [`src/modules/liquidaciones/components/LiquidacionTable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/liquidaciones/components/LiquidacionTable.vue): Tabla resumen de agentes liquidados (bruto, descuentos, neto).
+- [`src/modules/liquidaciones/components/LiquidacionItemTable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/liquidaciones/components/LiquidacionItemTable.vue): Desglose renglón por renglón de conceptos de un agente seleccionado.
+- [`src/modules/liquidaciones/components/ProcesosList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/liquidaciones/components/ProcesosList.vue): Lista de stored procedures y tareas ejecutables.
+- [`src/composables/useSpGrabar.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/composables/useSpGrabar.js): Escritura contra Stored Procedures con interpretación centralizada del resultado (`ejecutarSP`).
+- [`src/shared/services/apiService.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/shared/services/apiService.js): Fachada de dominio (`leerDatos`, `ejecutarSP`) usada por el módulo.
 - [`src/stores/filterStore.js`](file:///Users/jferreyradev/projects/ag/liq-panel/src/stores/filterStore.js): Store global de los filtros de período/tipo/adicional.
 
 ---
@@ -28,7 +29,7 @@ Control central del ciclo de liquidación de haberes: selección de período, ti
 ## 4. Recetas de Modificación
 
 ### A. Para modificar las columnas de la tabla de liquidación:
-Editar `headers` en [`src/components/EjecProcesos/LiquidacionTable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/EjecProcesos/LiquidacionTable.vue):
+Editar `headers` en [`src/modules/liquidaciones/components/LiquidacionTable.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/liquidaciones/components/LiquidacionTable.vue):
 - `IDREP`: Repartición
 - `ORDEN`: Orden del agente
 - `PERSONADOCUMENTO`: DNI
@@ -38,9 +39,9 @@ Editar `headers` en [`src/components/EjecProcesos/LiquidacionTable.vue`](file://
 - `TOTALNETO`: Salario neto a cobrar
 
 ### B. Para añadir o cambiar un Stored Procedure ejecutable:
-1. Abrir [`src/components/EjecProcesos/ProcesosList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/components/EjecProcesos/ProcesosList.vue).
+1. Abrir [`src/modules/liquidaciones/components/ProcesosList.vue`](file:///Users/jferreyradev/projects/ag/liq-panel/src/modules/liquidaciones/components/ProcesosList.vue).
 2. Localizar el array de procesos y agregar la definición del SP con sus parámetros (período, tipo, etc.).
-3. Las llamadas utilizan la función exportada `ejecutarSP` de `llamadaAPI.js`.
+3. Las llamadas usan `ejecutarSP` de `@/shared/services/apiService` (o el composable `useSpGrabar`, que interpreta el código de error y recarga la grilla).
 
 ---
 
