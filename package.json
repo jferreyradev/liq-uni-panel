@@ -14,10 +14,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@vueuse/core": "^10.9.0",
     "downloadjs": "^1.4.7",
-    "jspdf": "^4.2.0",
-    "jspdf-autotable": "^5.0.7",
     "pdf-lib": "^1.17.1",
     "pinia": "^2.1.7",
     "vue": "^3.4.15",
