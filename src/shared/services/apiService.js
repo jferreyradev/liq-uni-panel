@@ -1,4 +1,9 @@
-import { request, isAbsoluteUrl, RESPONSE_BLOB } from "@/shared/services/httpClient";
+import {
+  request,
+  isAbsoluteUrl,
+  RESPONSE_BLOB,
+  RESPONSE_ARRAYBUFFER,
+} from "@/shared/services/httpClient";
 
 /**
  * Fachada de dominio sobre el cliente HTTP único (@/shared/services/httpClient).
@@ -282,4 +287,85 @@ export async function descargaTXT(url) {
   if (!res.operacionOk || !res.datos) return null;
 
   return window.URL.createObjectURL(res.datos);
+}
+
+/**
+ * Descarga un archivo binario y devuelve una URL de objeto lista para el
+ * `download` de un <a> o para abrirlo en una pestaña.
+ *
+ * Acepta tanto una ruta relativa a /api/ ("txt/archivoIPSST") como una URL
+ * absoluta, que es lo que necesitan los archivos que ya traen su URL armada.
+ *
+ * @param {string} url ruta relativa a /api/ o URL absoluta
+ * @param {{service?: string, method?: string, query?: Object, headers?: Object, signal?: AbortSignal, timeout?: number}} [options]
+ * @returns {Promise<{operacionOk: boolean, estado: number, errmsg: string, url: string|null, blob: Blob|null}>}
+ */
+export async function descargaArchivo(url = "", options = {}) {
+  const res = await request({
+    url: isAbsoluteUrl(url) ? url : "",
+    service: options.service || "base",
+    path: url,
+    method: options.method || "GET",
+    query: options.query,
+    headers: options.headers,
+    signal: options.signal,
+    timeout: options.timeout,
+    responseType: RESPONSE_BLOB,
+  });
+
+  if (!res.operacionOk || !res.datos) {
+    return {
+      operacionOk: false,
+      estado: res.estado,
+      errmsg: res.errmsg || "No se pudo descargar el archivo",
+      url: null,
+      blob: null,
+    };
+  }
+
+  return {
+    operacionOk: true,
+    estado: res.estado,
+    errmsg: "",
+    url: window.URL.createObjectURL(res.datos),
+    blob: res.datos,
+  };
+}
+
+/**
+ * Descarga un recurso binario crudo (arraybuffer). Lo usan las imágenes, como
+ * el logo del municipio que se estampa en la boleta.
+ *
+ * @param {string} url ruta relativa a /api/ o URL absoluta
+ * @param {{service?: string, method?: string, query?: Object, headers?: Object, signal?: AbortSignal, timeout?: number}} [options]
+ * @returns {Promise<{operacionOk: boolean, estado: number, errmsg: string, datos: ArrayBuffer|null}>}
+ */
+export async function descargaBuffer(url = "", options = {}) {
+  const res = await request({
+    url: isAbsoluteUrl(url) ? url : "",
+    service: options.service || "base",
+    path: url,
+    method: options.method || "GET",
+    query: options.query,
+    headers: options.headers,
+    signal: options.signal,
+    timeout: options.timeout,
+    responseType: RESPONSE_ARRAYBUFFER,
+  });
+
+  if (!res.operacionOk || !res.datos) {
+    return {
+      operacionOk: false,
+      estado: res.estado,
+      errmsg: res.errmsg || "No se pudo descargar el recurso",
+      datos: null,
+    };
+  }
+
+  return {
+    operacionOk: true,
+    estado: res.estado,
+    errmsg: "",
+    datos: res.datos,
+  };
 }

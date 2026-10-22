@@ -4,7 +4,8 @@ import { RepoHeader } from "@/shared/components";
 import { useFilterStore } from "@/stores/filterStore";
 import { useEndPoints } from "@/composables/useEndPoints";
 import { useFetch } from "@/composables/useFetch";
-import { request } from "@/shared/services/httpClient";
+import { descargaArchivo } from "@/shared/services/apiService";
+import { descargarDesdeBlob, descargarDesdeUrl } from "@/utils/descargas";
 
 const preview = ref(false);
 const { apiBase, getBoletasHeaders, buildApiHeaders } = useEndPoints();
@@ -16,20 +17,16 @@ function printData() {
 
 const getTxtFromAPI = async (url) => {
   const headersFn = buildApiHeaders || getBoletasHeaders || (() => ({}));
-  const res = await request({
-    url,
+  const res = await descargaArchivo(url, {
     headers: {
       ...headersFn(),
       "Content-Type": "text/plain",
     },
-    responseType: "blob",
   });
   if (!res.operacionOk) {
     return null;
   }
-  const datos = res.datos;
-  const urlSalida = window.URL.createObjectURL(datos);
-  return urlSalida;
+  return res.url;
 };
 
 const getPeriodo = (per) => {
@@ -43,6 +40,7 @@ const getPeriodo = (per) => {
 async function downloadAcred() {
   const url = `${apiBase.value}/api/txt/archivoAcred?${store.filterStringLey}`;
   const urlDescarga = await getTxtFromAPI(url);
+  const nombre = `Acreditaciones_${getPeriodo(store.periodoString) || store.liqCompactString}.txt`;
 
   if (urlDescarga == null) {
     if (data.value && data.value.length > 0) {
@@ -52,25 +50,12 @@ async function downloadAcred() {
         largeString += (element.CADENA || element.cadena || "") + "\r\n";
       }
       const archivo = new Blob([largeString], { type: "text/plain;charset=utf-8" });
-      const urlSalida = URL.createObjectURL(archivo);
-      const a = document.createElement("a");
-      a.href = urlSalida;
-      a.download = `Acreditaciones_${getPeriodo(store.periodoString) || store.liqCompactString}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(urlSalida);
+      descargarDesdeBlob(archivo, nombre);
     }
     return;
   }
 
-  const a = document.createElement("a");
-  a.href = urlDescarga;
-  a.download = `Acreditaciones_${getPeriodo(store.periodoString) || store.liqCompactString}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(urlDescarga);
+  descargarDesdeUrl(urlDescarga, nombre);
 }
 
 function useResumenAcred(getId) {

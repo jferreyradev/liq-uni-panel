@@ -371,6 +371,28 @@ describe('Reglas de Oro de arquitectura', () => {
   })
 
   describe('capa de servicios', () => {
+    it('los modulos hablan con la fachada, no con el transporte crudo', () => {
+      // `httpClient.js` es el transporte (unico lugar con fetch()). Los
+      // modulos deben pasar por `apiService.js`, que es donde vive la
+      // politica de dominio. Importar el transporte crudo desde un modulo
+      // permite saltarse esa politica sin que nadie lo note.
+      const ofensores = []
+
+      for (const [ruta, contenido] of Object.entries(fuentes)) {
+        if (!esCodigoDeProduccion(ruta)) continue
+        if (!ruta.startsWith('src/modules/')) continue
+
+        for (const imp of extraerImports(contenido)) {
+          const destino = resolverRuta(ruta, imp.spec)
+          if (!destino) continue
+          if (destino !== 'src/shared/services/httpClient') continue
+          ofensores.push(`${ruta} -> ${imp.spec}`)
+        }
+      }
+
+      expect(ofensores).toEqual([])
+    })
+
     it('no existen alias de la fachada de API en los modulos', () => {
       // Un `llamadaAPI.js` que re-exporta `apiService` es una indireccion
       // que esconde de que capa depende el modulo.

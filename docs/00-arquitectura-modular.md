@@ -126,6 +126,7 @@ src/
 │   ├── permisos.js                # Reglas de enmascarado de PII
 │   ├── formatos.js / boletas.js / reportes.js / tipos.js
 │   ├── spRespuesta.js             # Interpretación de la respuesta de un SP
+│   ├── descargas.js               # Descarga de archivos al navegador (ancla + object URL)
 │   ├── reglasValidacion.js
 │   └── httpLogger.js              # Log global de fetch (no duplicar logging)
 │
@@ -265,12 +266,13 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
    * **Fuera de un módulo:** solo `src/App.vue` (el shell de la app).
 2. **Cliente HTTP (capa única):**
    * Todo el tráfico HTTP sale por **un único punto**: `@/shared/services/httpClient.js`. Es el único archivo del proyecto que llama a `fetch()`. El test-guard `src/shared/services/__tests__/capaHttpUnica.spec.js` falla si alguien vuelve a llamar a `fetch()` desde otro lado.
-   * `@/shared/services/apiService.js` es la **fachada de dominio** sobre ese cliente (`leerDatos`, `grabarRegistro`, `eliminarRegistro`, `ejecutarSP`, `ejecutarSP_SinEspera`, `ejecutarSPStream`, `descargaTXT`). La política de negocio vive ahí; el transporte, en el cliente.
+   * `@/shared/services/apiService.js` es la **fachada de dominio** sobre ese cliente (`leerDatos`, `grabarRegistro`, `eliminarRegistro`, `ejecutarSP`, `ejecutarSP_SinEspera`, `ejecutarSPStream`, `descargaTXT`, `descargaArchivo`, `descargaBuffer`). La política de negocio vive ahí; el transporte, en el cliente.
+   * Los **módulos nunca importan `httpClient`**: hablan con la fachada. El guard arquitectónico lo verifica.
    * No importar `useEndPoints` ni concatenar strings de URL manualmente en cada archivo. Resolver URLs con `service` + `path`:
      * `base` → `{apiBase}/api/{path}` · `sp` → `{apiSp}/{path}` · `boletas` → `{apiBoletas}/{path}` (sin `/api/`).
    * Todo request tiene **timeout por defecto de 30 s** y devuelve una respuesta normalizada: `{ estado, operacionOk, errmsg, datos, notFound, rawText, response }`.
    * El `AbortError` del llamador se propaga (es una cancelación); el timeout se traduce a error 408. Un 404 en un listado no es un error fatal: `leerDatos` lo marca con `operacionOk = true` y `notFound = true`.
-   * Para descargar binarios usar `responseType`: `'blob'`, `'arraybuffer'` o `'text'`.
+   * Para descargar binarios usar la fachada: `descargaArchivo` (archivos que se descargan al usuario) o `descargaBuffer` (imágenes crudas). Detalle en [`docs/07-capa-http-unica.md`](docs/07-capa-http-unica.md).
    * Para consumir un listado dentro de un componente usar `useFetch` (`@/composables/useFetch.js`), que ya está construido sobre `apiService` y cancela la petición anterior al cambiar el filtro.
 3. **Componentes UI Comunes:**
    * Diálogo modal de confirmación: `<ConfirmacionDialog :titulo="..." :mensaje="..." :aceptar="..." :cerrar="..." />`
@@ -297,7 +299,7 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
    * Ejecutar `npm run lint` para detectar errores reales (variables sin usar, referencias inexistentes, sintaxis inválida). No reformatea el código: el formato del proyecto no es el de Prettier por defecto, así que la regla `prettier/prettier` está desactivada. Para aplicar correcciones automáticas de estilo usar `npm run lint:fix`.
    * Las reglas `vue/prop-name-casing`, `vue/attribute-hyphenation` y `vue/require-prop-types` están desactivadas a propósito. Los props con mayúscula inicial (`Registro`, `Hoja`) son parte del contrato con los componentes padre: Vue 3 los resuelve con `camelize(key)`, así que renombrarlos o kebab-casearlos rompe el binding. No reactivarlas sin corregir antes el contrato completo.
 8. **Guard arquitectónico (`src/shared/__tests__/reglasOro.spec.js`):**
-   Las reglas anteriores no dependen de la buena voluntad: el build las verifica. Hoy controla 13 cosas:
+   Las reglas anteriores no dependen de la buena voluntad: el build las verifica. Hoy controla 14 cosas:
 
    | Regla | Qué impide |
    |---|---|
@@ -309,6 +311,7 @@ Editar [`src/composables/useItemsMenu.js`](file:///Users/jferreyradev/projects/a
    | Vistas en carpetas sueltas | Que vuelvan `src/views/` o `src/components/` |
    | Vistas que solo re-renderizan | Un proxy de la vista de un módulo |
    | Código muerto en los módulos | Componentes que nadie alcanza desde las rutas del módulo |
+   | Módulos hablando con el transporte crudo | Un módulo que importe `httpClient` en vez de la fachada |
    | Alias de la fachada de API | Un `llamadaAPI.js` que re-exporta `apiService` |
    | Archivos que solo re-exportan | Aliases muertos tipo `stores/user.js` |
    | Paginación hardcodeada | `items-per-page` en un componente |

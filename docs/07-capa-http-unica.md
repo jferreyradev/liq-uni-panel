@@ -39,8 +39,9 @@ componentes / stores / composables
   aplica headers, impone timeout, parsea el cuerpo e interpreta el error.
 - **`apiService.js`** — la fachada de dominio. Mantiene los nombres y las formas de
   retorno que ya usa la app (`leerDatos`, `grabarRegistro`, `eliminarRegistro`,
-  `ejecutarSP`, `ejecutarSP_SinEspera`, `ejecutarSPStream`, `descargaTXT`) y la política
-  de negocio (por ejemplo, que un 404 en un listado no es un error fatal).
+  `ejecutarSP`, `ejecutarSP_SinEspera`, `ejecutarSPStream`, `descargaTXT`,
+  `descargaArchivo`, `descargaBuffer`) y la política de negocio (por ejemplo, que un 404
+  en un listado no es un error fatal).
 
 ## 3. Resolver URLs
 
@@ -93,6 +94,51 @@ Reglas:
 
 ## 5. Descargas y binarios
 
+### Desde los módulos: la fachada
+
+Los módulos **no hablan con el transporte crudo**: usan las funciones de descarga de
+`apiService`, que ya resuelven la URL, aplican los headers del municipio activo y
+normalizan el error.
+
+```javascript
+import { descargaArchivo } from '@/shared/services/apiService'
+
+const res = await descargaArchivo('txt/archivoIPSST', {
+  query: store.filterPeriodoString,
+  headers: { 'Content-Type': 'text/plain' }
+})
+
+if (!res.operacionOk) throw new Error(res.errmsg)
+
+// `url` es una object URL lista para el `download` de un <a>.
+// `blob` es el binario crudo, por si hay que medirlo o procesarlo.
+const link = document.createElement('a')
+link.href = res.url
+link.download = 'archivo.txt'
+link.click()
+window.URL.revokeObjectURL(res.url)
+```
+
+| Función | Devuelve | Para qué |
+|---|---|---|
+| `descargaArchivo(url, options)` | `{ operacionOk, estado, errmsg, url, blob }` | Archivos que se descargan al usuario (TXT, boletas, planillas) |
+| `descargaBuffer(url, options)` | `{ operacionOk, estado, errmsg, datos }` | Imágenes crudas (por ejemplo, el logo que se estampa en la boleta) |
+| `descargaTXT(url)` | `object URL` o `null` | Atajo para el caso simple de un TXT |
+
+Las dos primeras aceptan tanto una ruta relativa a `/api/` (`txt/archivoIPSST`) como
+una URL absoluta, que es lo que necesitan los archivos que ya traen su URL armada.
+No lanzan ante un error HTTP: devuelven `operacionOk: false` con el `estado` y el
+`errmsg`, igual que el resto de la fachada.
+
+Una vez descargado, el trigger del navegador (crear un `<a>`, clickearlo y liberar la
+object URL) está centralizado en `src/utils/descargas.js`
+(`descargarDesdeUrl` / `descargarDesdeBlob`), para que la object URL se libere con
+un retardo y la descarga no se cancele a mitad de camino.
+
+### Desde la capa compartida: el transporte
+
+Dentro de `src/shared/` se puede usar el transporte directamente:
+
 ```javascript
 import { request } from '@/shared/services/httpClient'
 
@@ -105,6 +151,10 @@ const res = await request({
 ```
 
 `responseType` acepta `json` (por defecto), `text`, `blob`, `arraybuffer` y `raw`.
+
+> El guard arquitectónico (`src/shared/__tests__/reglasOro.spec.js`) verifica que
+> ningún módulo importe `httpClient` directamente: si un módulo necesita una forma
+> nueva de pedir datos, se agrega a la fachada.
 
 ## 6. Componentes: `useFetch`
 
@@ -127,7 +177,7 @@ const { data, error, isPending } = useFetch(() => `${apiBase.value}/api/view/liq
    El test `src/shared/services/__tests__/capaHttpUnica.spec.js` falla si alguien lo hace.
 2. **No reimplementar el parseo de la respuesta.** Usar la respuesta normalizada.
 3. **No inventar una cuarta capa.** Si hace falta un endpoint nuevo, se agrega a
-   `apiService` (si es de dominio) o se usa `httpClient.request` con `service` + `path`.
+   `apiService`. Los módulos nunca importan `httpClient`: el guard lo verifica.
 4. **No duplicar el logging.** `src/utils/httpLogger.js` intercepta `fetch` globalmente y
    ya deja la traza en la consola y en el `logStore`.
 5. **Si una pantalla necesita cancelar**, pasar un `AbortSignal` (`useFetch` y

@@ -5,7 +5,8 @@ import { useFetch } from "@/composables/useFetch";
 import { RepoHeader } from "@/shared/components";
 import { useLiqStore } from "@/stores/liqStore.js";
 import { useEndPoints } from "@/composables/useEndPoints";
-import { request } from "@/shared/services/httpClient";
+import { descargaArchivo } from "@/shared/services/apiService";
+import { descargarDesdeUrl } from "@/utils/descargas";
 import { generarNombreBoleta } from "@/utils/boletas.js";
 import { useBoletatxt } from "@/stores/boletaStore";
 
@@ -60,27 +61,13 @@ async function handleDownload(item) {
   );
 
   try {
-    const res = await request({
-      service: "base",
-      path: "boleta",
-      query: { IdLiq: idliq },
-      responseType: "blob",
-    });
+    const res = await descargaArchivo("boleta", { query: { IdLiq: idliq } });
 
-    if (!res.operacionOk) {
-      throw new Error(`Servidor devolvió código ${res.estado}`);
+    if (!res.operacionOk || !res.url) {
+      throw new Error(res.errmsg || "No se pudo descargar la boleta");
     }
 
-    const blob = res.datos;
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = nombreArchivo;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    descargarDesdeUrl(res.url, nombreArchivo);
   } catch (err) {
     console.warn("Descarga remota falló, generando boleta en cliente:", err);
     try {

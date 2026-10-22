@@ -4,7 +4,8 @@ import { RepoHeader } from "@/shared/components";
 import { useFilterStore } from '@/stores/filterStore'
 import { useEndPoints } from '@/composables/useEndPoints'
 import { useFetch } from '@/composables/useFetch'
-import { request } from '@/shared/services/httpClient'
+import { descargaArchivo } from '@/shared/services/apiService'
+import { descargarDesdeBlob, descargarDesdeUrl } from '@/utils/descargas'
 
 const { apiBase, getBoletasHeaders, buildApiHeaders } = useEndPoints()
 const store = useFilterStore()
@@ -41,35 +42,25 @@ async function downloadIpsst() {
 
   try {
     const headersFn = buildApiHeaders || getBoletasHeaders || (() => ({}))
-    const res = await request({
-      service: 'base',
-      path: 'txt/archivoIPSST',
+    const res = await descargaArchivo('txt/archivoIPSST', {
       query: store.filterPeriodoString,
       headers: {
         'Content-Type': 'text/plain',
         ...headersFn()
-      },
-      responseType: 'blob'
+      }
     })
 
-    if (!res.operacionOk) {
+    if (!res.operacionOk || !res.url) {
       throw new Error(`HTTP ${res.estado}`)
     }
 
-    const blob = res.datos
     // Si la respuesta vino vacía pero tenemos registros en memoria, activar fallback
-    if (blob.size === 0 && data.value && data.value.length > 0) {
+    if (res.blob && res.blob.size === 0 && data.value && data.value.length > 0) {
       throw new Error('Respuesta vacía del servidor, generando archivo desde los registros en pantalla')
     }
 
-    const urlSalida = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = urlSalida
-    a.download = nombreArchivo.value
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    window.URL.revokeObjectURL(urlSalida)
+    const urlSalida = res.url
+    descargarDesdeUrl(urlSalida, nombreArchivo.value)
   } catch (err) {
     // Si la descarga directa falla, armar el blob desde los datos ya cargados
     if (data.value && data.value.length > 0) {
@@ -80,14 +71,7 @@ async function downloadIpsst() {
         largeString += linea + '\n'
       }
       const archivo = new Blob([largeString], { type: 'text/plain;charset=utf-8' })
-      const urlSalida = URL.createObjectURL(archivo)
-      const a = document.createElement('a')
-      a.href = urlSalida
-      a.download = nombreArchivo.value
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      URL.revokeObjectURL(urlSalida)
+      descargarDesdeBlob(archivo, nombreArchivo.value)
     } else {
       console.error('Error al descargar archivo IPSST:', err)
     }
