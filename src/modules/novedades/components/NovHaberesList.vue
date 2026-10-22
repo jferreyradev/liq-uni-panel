@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
-import { leerDatos, grabarRegistro } from "@/shared/services/apiService";
+import { leerDatos } from "@/shared/services/apiService";
+import { useSpGrabar } from "@/composables/useSpGrabar";
 import { TooltipButton } from "@/shared/components";
 import { getVto, getFechaDMY, financial } from "@/utils/formatos";
 import NovHaberesVista from "./NovHaberesVista.vue";
@@ -101,22 +102,49 @@ function cierraForm() {
 }
 
 // funciones de agregado, modificación y eliminación
+const { grabar: grabarSP } = useSpGrabar({
+  urlIns: "sp/NovHaberesIns",
+  urlUpd: "sp/NovHaberesUpd",
+  refresh: () => leerListaRegs(),
+});
+
+const { grabar: eliminarSP } = useSpGrabar({
+  urlUpd: "sp/NovHaberesDel",
+  refresh: () => leerListaRegs(),
+});
+
 async function grabar(item) {
-  let resultado = false;
-  const itemId = item?.ID ?? item?.Id ?? 0;
-  if (itemId == 0) {
-    resultado = await grabarRegistro("novhaberes", item, "POST");
-  } else {
-    resultado = await grabarRegistro("novhaberes?Id=" + itemId, item, "PUT");
-  }
-  if (resultado.operacionOk) {
-    await leerListaRegs();
-    alertMensaje.value = "Los datos se grabaron satisfactoriamente";
-    alertTipo.value = "success";
+  const itemId = item?.Id ?? item?.ID ?? 0;
+  const mensaje = await grabarSP(item, itemId);
+
+  if (mensaje) {
+    alertMensaje.value = mensaje;
+    alertTipo.value = "error";
     mostrarAlert.value = true;
-    return true;
+    return false;
   }
-  return false;
+
+  alertMensaje.value = "Los datos se grabaron satisfactoriamente";
+  alertTipo.value = "success";
+  mostrarAlert.value = true;
+  return true;
+}
+
+async function eliminar(id) {
+  muestraConfirmacion.value = false;
+  const mensaje = await eliminarSP({ vIDNOVHABER: id }, 1);
+
+  if (mensaje) {
+    alertMensaje.value = mensaje;
+    alertTipo.value = "error";
+    mostrarAlert.value = true;
+    return false;
+  }
+
+  alertMensaje.value = "Se eliminó el registro";
+  alertTipo.value = "success";
+  mostrarAlert.value = true;
+  return true;
 }
 
 // -------------------------------------------------
