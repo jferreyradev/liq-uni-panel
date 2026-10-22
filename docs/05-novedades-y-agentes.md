@@ -29,8 +29,9 @@ Administración de legajos de empleados municipales (personas, cargas familiares
 El módulo sigue el contrato general: **consultas con vistas (`view/*`), escrituras con SPs (`sp/*`)**. No se usan entidades `/en` ni escrituras REST por entidad (lo verifica el guard arquitectónico).
 
 ### Consultas
-- **Personas**: `view/personaLista?{filtro}` (parámetros `DNI`, `Apellido`, `Nombre`).
-- **Cargos de agente**: `view/cargo?PersonaId=...`. El listado general y la carga familiar todavía usan `en/cargo` (deuda de la Tanda B: falta soportar `Salario=1` y las columnas ricas de la grilla).
+- **Personas**: `view/personaLista?{filtro}` (parámetros `Documento`, `Apellido`, `Nombre`). `PersonaId` es la clave de la persona.
+- **Persona (ficha editable)**: `en/persona?Id=...` (pendiente: `view/persona`). `view/personaLista` no trae domicilio, CP, piso, localidad, provincia, email ni estado civil, que son los campos del formulario.
+- **Cargos de agente**: `view/cargo?{filtro}` (filtrable por `PersonaId`, `TipoLiquidacionId`, `EstadoCargoId`, `ReparticionId`, `Orden`, `Salario`; devuelve las columnas ricas de la grilla). La carga familiar usa `view/cargo?PersonaId=...&Salario=1` para el cargo asociado.
 - **Cargas familiares**: `en/cargaFamiliar?PersonaId=...` (pendiente: `view/cargaFamiliar`).
 - **Conceptos del cargo**: `en/conceptoLiq?CargoId=...` (pendiente: `view/conceptoLiq`).
 - **Novedades de la hoja**: `view/novAltas?HojaId=...`, `view/novHaberes?HojaId=...`, `view/novVarias?HojaId=...`.
@@ -40,7 +41,7 @@ El módulo sigue el contrato general: **consultas con vistas (`view/*`), escritu
 - **Cargos**: `sp/CargoUpd`.
 - **Cargas familiares**: `sp/CargaFamIns`, `sp/CargaFamUpd`, `sp/CargaFamDel`, `sp/AsignaSalario`.
 - **Conceptos de liquidación**: `sp/ConceptoLiqIns`, `sp/ConceptoLiqUpd`, `sp/ConceptoLiqDel`.
-- **Haberes variables**: `sp/NovHaberesIns`, `sp/NovHaberesUpd`, `sp/NovHaberesDel` (la baja envía `{ vIDNOVHABER: id }`).
+- **Haberes variables**: `sp/NovHaberesIns`, `sp/NovHaberesUpd`, `sp/NovHaberesDel` (la baja envía `{ vIDNOVHAB: id }`).
 - **Altas y varias**: `sp/NovAltasIns/Upd/Del` y `sp/NovVariasIns/Upd/Del`.
 
 ---

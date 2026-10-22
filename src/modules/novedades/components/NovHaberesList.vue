@@ -132,7 +132,7 @@ async function grabar(item) {
 
 async function eliminar(id) {
   muestraConfirmacion.value = false;
-  const mensaje = await eliminarSP({ vIDNOVHABER: id }, 1);
+  const mensaje = await eliminarSP({ vIDNOVHAB: id }, 1);
 
   if (mensaje) {
     alertMensaje.value = mensaje;

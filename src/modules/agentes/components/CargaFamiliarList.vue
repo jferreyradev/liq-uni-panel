@@ -64,7 +64,7 @@ const {
 
 // lectura de cargo asociado
 const { data: cargoData, load: loadCargo } = useDataTable({
-  buildUrl: (pId) => `en/cargo?PersonaId=${pId}&Salario=1&_t=${Date.now()}`,
+  buildUrl: (pId) => `view/cargo?PersonaId=${pId}&Salario=1`,
 });
 
 const cargoAsociado = computed(() => {

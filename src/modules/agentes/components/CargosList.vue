@@ -63,7 +63,7 @@ const {
       ...parseQueryString(filtro),
       sort: JSON.stringify({ ReparticionId: "asc", Orden: "asc" }),
     };
-    return `en/cargo?${buildQuery(params)}`;
+    return `view/cargo?${buildQuery(params)}`;
   },
 });
 

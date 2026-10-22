@@ -488,8 +488,7 @@ describe('Reglas de Oro de arquitectura', () => {
       const PENDIENTES_TANDA_B = {
         'src/modules/agentes/views/AgentesView.vue': ['en/persona'],
         'src/modules/agentes/components/PersonasList.vue': ['en/persona'],
-        'src/modules/agentes/components/CargosList.vue': ['en/cargo'],
-        'src/modules/agentes/components/CargaFamiliarList.vue': ['en/cargaFamiliar', 'en/cargo'],
+        'src/modules/agentes/components/CargaFamiliarList.vue': ['en/cargaFamiliar'],
         'src/modules/agentes/components/CargosConceptosList.vue': ['en/conceptoLiq'],
         'src/modules/agentes/components/LocalidadesList.vue': ['en/localidad'],
         'src/modules/liquidaciones/components/PanelCtrlLiq.vue': ['en/reparticion'],

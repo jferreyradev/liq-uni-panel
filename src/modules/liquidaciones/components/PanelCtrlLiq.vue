@@ -46,7 +46,7 @@ async function obtieneApellidoYNombre() {
 
   try {
     const { datos, operacionOk } = await leerDatos("view/personaLista", {
-      query: { DNI: dni.value },
+      query: { Documento: dni.value },
     });
 
     if (!operacionOk || !Array.isArray(datos) || datos.length === 0) {
