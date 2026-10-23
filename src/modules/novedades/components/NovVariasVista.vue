@@ -28,7 +28,7 @@ const periodo = ref(periodoInicial.value);
 const registroVacio = ref({
   IDREP: 470,
   ORDEN: null,
-  CODIGO: null,
+  CODIGO: 0,
   SUBCODIGO: 0,
   PARAM1: 0,
   PARAM2: 0,
@@ -179,7 +179,7 @@ function validarRegistro() {
                   hide-details="auto"
                   label="Código"
                   :rules="[
-                    (val) => (val !== null && val !== undefined && val !== '' && Number(val) > 0) || 'Código requerido y mayor a 0',
+                    (val) => (val !== null && val !== undefined && val !== '' && Number(val) >= 0) || 'Código requerido',
                     ...rules.number,
                     (val) => rules.longitudEntre(val, 1, 4),
                   ]"

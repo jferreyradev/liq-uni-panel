@@ -142,6 +142,50 @@ describe('NovVariasVista', () => {
     expect(cerrarSpy).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('El código 999 no existe')
   })
+
+  it('permite guardar registro con código 0 y subcódigo 0', async () => {
+    const funcionSpy = vi.fn().mockResolvedValue({ ok: true })
+    const cerrarSpy = vi.fn()
+
+    const wrapper = mount(NovVariasVista, {
+      props: {
+        Registro: null,
+        cerrar: cerrarSpy,
+        funcion: funcionSpy,
+        hojaId: 153,
+        hojaPeriodo: '2026-10-01T03:00:00.000Z',
+      },
+      global: { plugins: [vuetify] },
+    })
+
+    await flushPromises()
+
+    const textFields = wrapper.findAllComponents({ name: 'VTextField' })
+    const ordenField = textFields.find((tf) => tf.props('label') === 'Nro. Boleta')
+    const codigoField = textFields.find((tf) => tf.props('label') === 'Código')
+    const subcodField = textFields.find((tf) => tf.props('label') === 'Sub. Cód.')
+    const importeField = textFields.find((tf) => tf.props('label') === 'Importe')
+
+    await ordenField.find('input').setValue('10')
+    await codigoField.find('input').setValue('0')
+    await subcodField.find('input').setValue('0')
+    await importeField.find('input').setValue('100.00')
+    await flushPromises()
+
+    const btnGrabar = wrapper.find('button[value="grabar"]')
+    await btnGrabar.trigger('click')
+    await flushPromises()
+
+    expect(funcionSpy).toHaveBeenCalledTimes(1)
+    const [payload, id] = funcionSpy.mock.calls[0]
+    expect(id).toBe(0)
+    expect(payload.vCOD).toBe(0)
+    expect(payload.vSUBCOD).toBe(0)
+    expect(payload.vORDEN).toBe(10)
+    expect(payload.vIDREP).toBe(470)
+    expect(payload.vIDHOJANOV).toBe(153)
+    expect(cerrarSpy).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('NovVariasList', () => {
