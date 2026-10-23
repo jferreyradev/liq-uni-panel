@@ -27,8 +27,8 @@ const periodo = ref(periodoInicial.value);
 
 const registroVacio = ref({
   IDREP: 470,
-  ORDEN: 0,
-  CODIGO: 0,
+  ORDEN: null,
+  CODIGO: null,
   SUBCODIGO: 0,
   PARAM1: 0,
   PARAM2: 0,
@@ -75,15 +75,15 @@ async function grabaRegistro() {
     }
   }
   let registroGrabar = {
-    vIDREP: registroActual.value.IDREP,
-    vORDEN: registroActual.value.ORDEN,
-    vCOD: registroActual.value.CODIGO,
-    vSUBCOD: registroActual.value.SUBCODIGO,
-    vP1: registroActual.value.PARAM1,
-    vP2: registroActual.value.PARAM2,
+    vIDREP: Number(registroActual.value.IDREP) || 0,
+    vORDEN: Number(registroActual.value.ORDEN) || 0,
+    vCOD: Number(registroActual.value.CODIGO) || 0,
+    vSUBCOD: Number(registroActual.value.SUBCODIGO) || 0,
+    vP1: Number(registroActual.value.PARAM1) || 0,
+    vP2: Number(registroActual.value.PARAM2) || 0,
     vVTO: vto,
     vIMP: getDecimalToAPI(registroActual.value.IMPORTE),
-    vIDHOJANOV: hojaId,
+    vIDHOJANOV: Number(hojaId) || 0,
     vPERIODO: getFechaToAPIFromMMYYYY(periodo.value),
   };
   if (registroActual.value.ID && registroActual.value.ID !== 0) {
@@ -167,6 +167,7 @@ function validarRegistro() {
                   label="Nro. Boleta"
                   lazy-validation
                   :rules="[
+                    (val) => (val !== null && val !== undefined && val !== '' && Number(val) > 0) || 'Nro. de boleta requerido',
                     ...rules.number,
                     (val) => rules.longitudEntre(val, 1, 7),
                   ]"
@@ -178,6 +179,7 @@ function validarRegistro() {
                   hide-details="auto"
                   label="Código"
                   :rules="[
+                    (val) => (val !== null && val !== undefined && val !== '' && Number(val) > 0) || 'Código requerido y mayor a 0',
                     ...rules.number,
                     (val) => rules.longitudEntre(val, 1, 4),
                   ]"

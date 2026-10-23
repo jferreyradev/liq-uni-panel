@@ -54,8 +54,8 @@ describe('NovVariasVista', () => {
     expect(funcionSpy).toHaveBeenCalledTimes(1)
     const [payload, id] = funcionSpy.mock.calls[0]
     expect(id).toBe(0)
-    expect(payload.vORDEN).toBe('123')
-    expect(payload.vCOD).toBe('201')
+    expect(payload.vORDEN).toBe(123)
+    expect(payload.vCOD).toBe(201)
     expect(payload.vIMP).toBe(1500.5)
     expect(payload.vIDHOJANOV).toBe(42)
     expect(payload.vVTO).toBeNull()
@@ -124,7 +124,13 @@ describe('NovVariasVista', () => {
 
     await flushPromises()
 
-    const importeField = wrapper.findAllComponents({ name: 'VTextField' }).find((tf) => tf.props('label') === 'Importe')
+    const textFields = wrapper.findAllComponents({ name: 'VTextField' })
+    const ordenField = textFields.find((tf) => tf.props('label') === 'Nro. Boleta')
+    const codigoField = textFields.find((tf) => tf.props('label') === 'Código')
+    const importeField = textFields.find((tf) => tf.props('label') === 'Importe')
+
+    await ordenField.find('input').setValue('10')
+    await codigoField.find('input').setValue('999')
     await importeField.find('input').setValue('500')
     await flushPromises()
 
