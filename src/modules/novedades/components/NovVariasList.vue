@@ -1,7 +1,8 @@
 <script setup>
 import { ref } from "vue";
-import { leerDatos, ejecutarSP } from "@/shared/services/apiService";
-import { TooltipButton } from "@/shared/components";
+import { leerDatos } from "@/shared/services/apiService";
+import { useSpGrabar } from "@/composables/useSpGrabar";
+import { TooltipButton, ConfirmacionDialog } from "@/shared/components";
 import { getVto, getFechaDMY, financial } from "@/utils/formatos";
 import NovVariasVista from "./NovVariasVista.vue";
 import { utils, writeFileXLSX } from "xlsx";
@@ -97,47 +98,48 @@ function cierraForm() {
 }
 
 // funciones de agregado, modificación y eliminación
+const { grabar: grabarSPService } = useSpGrabar({
+  urlIns: "sp/NovVariasIns",
+  urlUpd: "sp/NovVariasUpd",
+  refresh: () => leerListaRegs(),
+});
+
+const { grabar: eliminarSPService } = useSpGrabar({
+  urlUpd: "sp/NovVariasDel",
+  refresh: () => leerListaRegs(),
+});
+
 async function grabarSP(item, id) {
-  let url = id == 0 ? "sp/NovVariasIns" : "sp/NovVariasUpd";
+  const mensaje = await grabarSPService(item, id);
 
-  try {
-    const { operacionOk, valorError, valorSalida, out, datos } = await ejecutarSP(url, item);
-    const errCode = valorError !== undefined && valorError !== -1
-      ? valorError
-      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
-
-    if (operacionOk && errCode == 0) {
-      Promise.resolve(leerListaRegs()).catch((e) => {
-        console.warn("Error refrescando lista NovVarias:", e);
-      });
-      alertMensaje.value = "Se grabó la novedad Nº " + (valorSalida || "");
-      alertTipo.value = "success";
-      mostrarAlert.value = true;
-      return true;
-    }
-  } catch (err) {
-    console.error("Error en grabarSP NovVarias:", err);
+  if (mensaje) {
+    alertMensaje.value = mensaje;
+    alertTipo.value = "error";
+    mostrarAlert.value = true;
+    return { ok: false, mensaje };
   }
 
-  return false;
+  alertMensaje.value = "Los datos se grabaron satisfactoriamente";
+  alertTipo.value = "success";
+  mostrarAlert.value = true;
+  return { ok: true };
 }
 
 async function eliminar(id) {
   muestraConfirmacion.value = false;
-  let item = {
-    vIDNOV: id,
-  };
-  let url = "sp/NovVariasDel";
+  const mensaje = await eliminarSPService({ vIDNOV: id }, 1);
 
-  const { valorError } = await ejecutarSP(url, item);
-  if (valorError == 0) {
-    await leerListaRegs();
-    alertMensaje.value = "Se eliminó la novedad Nº" + id;
-    alertTipo.value = "success";
+  if (mensaje) {
+    alertMensaje.value = mensaje;
+    alertTipo.value = "error";
     mostrarAlert.value = true;
-    return true;
+    return false;
   }
-  return false;
+
+  alertMensaje.value = "Se eliminó la novedad Nº " + id;
+  alertTipo.value = "success";
+  mostrarAlert.value = true;
+  return true;
 }
 // -------------------------------------------------
 // funciones de exportación a archivo excel
@@ -326,17 +328,18 @@ function exportFile() {
       :cerrar="cierraForm"
       :funcion="grabarSP"
       :hojaId="hojaEditar?.ID ?? hojaEditar?.Id ?? 0"
+      :hojaPeriodo="hojaEditar?.PERIODOID"
     ></NovVariasVista>
   </v-dialog>
 
   <v-dialog v-model="muestraConfirmacion" max-width="80%" persistent="">
-    <confirmacion
+    <ConfirmacionDialog
       :titulo="'Eliminar registro'"
       :mensaje="'Seguro que desea eliminar el registro?'"
       :cerrar="cierraConfirmacion"
       :aceptar="eliminar"
       :parametro="itemEliminar"
-    ></confirmacion>
+    ></ConfirmacionDialog>
   </v-dialog>
 </template>
 

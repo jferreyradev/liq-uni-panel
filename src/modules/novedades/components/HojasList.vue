@@ -3,7 +3,7 @@ import { ref } from "vue";
 import HojaVista from "./HojaVista.vue";
 import { getName, tipoCarga, estadosHoja } from "@/utils/tipos";
 import { leerDatos, ejecutarSP } from "@/shared/services/apiService";
-import { TooltipButton } from "@/shared/components";
+import { TooltipButton, ConfirmacionDialog } from "@/shared/components";
 import { getVto, getFechaDMY } from "@/utils/formatos";
 import HojasListFilter from "./HojasListFilter.vue";
 
@@ -258,22 +258,22 @@ if (props.filtros.getFiltroString() != null)
   </v-dialog>
 
   <v-dialog v-model="muestraConfirmacion" max-width="80%" persistent="">
-    <confirmacion
+    <ConfirmacionDialog
       v-if="accionHoja == 6"
       :titulo="'Anular Hoja'"
       :mensaje="'Seguro que desea anular la hoja?'"
       :cerrar="cierraConfirmacion"
       :aceptar="CambiarEstadoHojaSP"
       :parametro="itemEliminar"
-    ></confirmacion>
-    <confirmacion
+    ></ConfirmacionDialog>
+    <ConfirmacionDialog
       v-if="accionHoja == 4"
       :titulo="'Cerrar Hoja'"
       :mensaje="'Seguro que desea cerrar la hoja?'"
       :cerrar="cierraConfirmacion"
       :aceptar="CambiarEstadoHojaSP"
       :parametro="itemEliminar"
-    ></confirmacion>
+    ></ConfirmacionDialog>
   </v-dialog>
 </template>
 

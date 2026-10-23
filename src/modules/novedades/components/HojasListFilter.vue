@@ -82,11 +82,12 @@ function setCamposFiltros() {
   return campos;
 }
 
-async function filtar() {
+async function filtrar() {
   // Forzar la validación del formulario y esperar a que se complete
-  const isValid = await form.value.validate();
+  const validation = await form.value.validate();
+  const valid = typeof validation === "object" && validation !== null ? validation.valid : validation;
 
-  if (!isValid) {
+  if (!valid) {
     return;
   }
   let filtro = ObtieneFiltro();
@@ -170,7 +171,7 @@ const formOK = ref(null);
             elevation="3"
             outlined
             value="filtrar"
-            @click="filtar()"
+            @click="filtrar()"
             >Buscar</v-btn
           >
         </v-col>

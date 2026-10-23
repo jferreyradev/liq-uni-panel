@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import { leerDatos } from "@/shared/services/apiService";
 import { useSpGrabar } from "@/composables/useSpGrabar";
-import { TooltipButton } from "@/shared/components";
+import { TooltipButton, ConfirmacionDialog } from "@/shared/components";
 import { getVto, getFechaDMY, financial } from "@/utils/formatos";
 import NovHaberesVista from "./NovHaberesVista.vue";
 
@@ -249,12 +249,12 @@ async function eliminar(id) {
   </v-dialog>
 
   <v-dialog v-model="muestraConfirmacion" max-width="80%" persistent="">
-    <confirmacion
+    <ConfirmacionDialog
       :titulo="'Eliminar registro'"
       :mensaje="'Seguro que desea eliminar el registro?'"
       :cerrar="cierraConfirmacion"
       :aceptar="eliminar"
       :parametro="itemEliminar"
-    ></confirmacion>
+    ></ConfirmacionDialog>
   </v-dialog>
 </template>

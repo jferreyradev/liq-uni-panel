@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import {
   getVto,
   getVtoActual,
@@ -8,7 +8,7 @@ import {
 import { rules } from "@/utils/reglasValidacion";
 import { sexos, getObjetList } from "@/utils/tipos";
 
-const props = defineProps(["Registro", "cerrar", "funcion", "hojaId"]);
+const props = defineProps(["Registro", "cerrar", "funcion", "hojaId", "hojaPeriodo"]);
 let registroOrigen = props.Registro;
 let hojaId = props.hojaId;
 let registroActual = ref({});
@@ -17,7 +17,12 @@ const form = ref(null);
 const formOK = ref(false);
 
 const vencimiento = ref(getVtoActual());
-const periodo = ref(getVtoActual());
+const periodoInicial = computed(() => {
+  if (registroOrigen?.PERIODO) return getVto(registroOrigen.PERIODO);
+  if (props.hojaPeriodo) return getVto(props.hojaPeriodo);
+  return getVtoActual();
+});
+const periodo = ref(periodoInicial.value);
 
 const sexoSelected = ref(sexos[0]);
 
@@ -46,11 +51,10 @@ const registroVacio = ref({
 });
 
 if (registroOrigen) {
-  console.log(registroOrigen.APJUB);
   registroActual.value = { ...registroOrigen };
   registroActual.value.AJUB = registroOrigen.APJUB == 1;
   vencimiento.value = getVto(registroOrigen.VTO);
-  periodo.value = getVto(registroOrigen.PERIODO);
+  periodo.value = periodoInicial.value;
   sexoSelected.value = getObjetList(sexos, registroOrigen.SEXO);
 } else {
   registroActual.value = registroVacio.value;
@@ -62,10 +66,10 @@ let mensajeError = ref("");
 const isSaving = ref(false);
 
 async function grabaRegistro() {
-  const isValid = await form.value.validate();
-  const valid = typeof isValid === "object" && isValid !== null ? isValid.valid : isValid;
+  const validation = await form.value.validate();
+  const valid = typeof validation === "object" && validation !== null ? validation.valid : validation;
 
-  if (!valid || formOK.value === false) {
+  if (!valid) {
     return;
   }
   mostrarAlert.value = false;
@@ -73,10 +77,10 @@ async function grabaRegistro() {
     mostrarAlert.value = true;
     return;
   }
-  let vto = "";
+  let vto = null;
   if (vencimiento.value != null && vencimiento.value !== undefined) {
     if (String(vencimiento.value).trim().length > 0)
-      vto = getFechaToAPIFromMMYYYY(vencimiento.value);
+      vto = getFechaToAPIFromMMYYYY(vencimiento.value) || null;
   }
 
   const sexoVal =
@@ -117,12 +121,14 @@ async function grabaRegistro() {
   console.log("NovAltas registro a grabar:", registroGrabar);
   isSaving.value = true;
   try {
-    let grabarOk = await props.funcion(registroGrabar, registroActual.value.ID || 0);
+    let resultado = await props.funcion(registroGrabar, registroActual.value.ID || 0);
 
-    if (grabarOk) {
+    const ok = typeof resultado === "boolean" ? resultado : resultado?.ok ?? (resultado === null);
+    if (ok) {
       props.cerrar();
     } else {
-      mensajeError.value = "No se pudieron grabar los datos";
+      const err = typeof resultado === "string" ? resultado : resultado?.mensaje;
+      mensajeError.value = err || "No se pudieron grabar los datos";
       mostrarAlert.value = true;
     }
   } catch (err) {
