@@ -79,11 +79,7 @@ async function grabaRegistro() {
     vORDEN: Number(registroActual.value.ORDEN) || 0,
     vCOD: Number(registroActual.value.CODIGO) || 0,
     vSUBCOD: Number(registroActual.value.SUBCODIGO) || 0,
-    vP1:
-      registroActual.value.PARAM1 !== null &&
-      registroActual.value.PARAM1 !== undefined
-        ? String(registroActual.value.PARAM1)
-        : "0",
+    vP1: Number(registroActual.value.PARAM1) || 0,
     vP2: Number(registroActual.value.PARAM2) || 0,
     vVTO: vto,
     vIMP: getDecimalToAPI(registroActual.value.IMPORTE),
