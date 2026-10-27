@@ -181,7 +181,7 @@ export async function ejecutarSP(url = "", data = {}, metodo = "POST", options =
         out = datos;
       }
     } else {
-      errmsg = "Error al intentar ejecutar el proceso";
+      errmsg = res.errmsg || "Error al intentar ejecutar el proceso";
       errorMsg = errmsg;
     }
   } catch (error) {
