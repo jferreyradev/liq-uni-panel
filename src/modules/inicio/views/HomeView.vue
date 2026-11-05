@@ -35,6 +35,15 @@ const modules = [
     route: '/agentes'
   },
   {
+    title: 'Conceptos',
+    subtitle: 'por Cargo',
+    description: 'Modificación de conceptos liquidados, baja de cargo y cobro de ley',
+    icon: 'mdi-format-list-checks',
+    color: 'teal-darken-1',
+    route: '/conceptos',
+    isNew: true
+  },
+  {
     title: 'Novedades y Hojas',
     description: 'Carga de novedades mensuales, altas y haberes',
     icon: 'mdi-notebook-edit-outline',
@@ -42,11 +51,12 @@ const modules = [
     route: '/hojas'
   },
   {
-    title: 'Procesos de Liquidación',
-    description: 'Panel de control y ejecución de procesos de cálculo',
+    title: 'Operaciones',
+    description: 'Transformación de novedades, liquidaciones y publicación de boletas',
     icon: 'mdi-cogs',
     color: 'blue-grey',
-    route: '/procesos'
+    route: '/operaciones',
+    isNew: true
   },
   {
     title: 'Acreditaciones',
@@ -121,16 +131,38 @@ const modules = [
             </div>
           </v-col>
 
-          <v-col cols="12" md="4" class="text-md-end text-center">
+          <v-col cols="12" md="4" class="text-md-end text-center d-flex flex-column align-md-end justify-center ga-2">
             <v-btn
               color="primary"
               size="large"
               prepend-icon="mdi-view-dashboard"
-              class="elevation-2"
+              class="elevation-2 w-100 w-md-auto"
               @click="router.push('/panel')"
             >
               Ir al Panel Principal
             </v-btn>
+            <div class="d-flex ga-2 w-100 justify-md-end justify-center flex-wrap">
+              <v-btn
+                color="teal-darken-1"
+                variant="tonal"
+                size="small"
+                prepend-icon="mdi-format-list-checks"
+                @click="router.push('/conceptos')"
+              >
+                Conceptos
+                <v-chip size="x-small" color="primary" variant="flat" class="ms-1 font-weight-bold">NUEVO</v-chip>
+              </v-btn>
+              <v-btn
+                color="blue-grey"
+                variant="tonal"
+                size="small"
+                prepend-icon="mdi-cogs"
+                @click="router.push('/operaciones')"
+              >
+                Operaciones
+                <v-chip size="x-small" color="primary" variant="flat" class="ms-1 font-weight-bold">NUEVO</v-chip>
+              </v-btn>
+            </div>
           </v-col>
         </v-row>
       </v-card-text>
@@ -160,11 +192,15 @@ const modules = [
               <v-avatar :color="mod.color" size="44" rounded="md" class="text-white">
                 <v-icon :icon="mod.icon" size="24"></v-icon>
               </v-avatar>
-              <v-icon icon="mdi-arrow-right" color="grey-lighten-1" size="small"></v-icon>
+              <v-chip v-if="mod.isNew" size="x-small" color="primary" variant="flat" class="font-weight-bold">
+                NUEVO
+              </v-chip>
+              <v-icon v-else icon="mdi-arrow-right" color="grey-lighten-1" size="small"></v-icon>
             </div>
 
-            <div class="text-subtitle-1 font-weight-bold mb-1">
+            <div class="text-subtitle-1 font-weight-bold mb-1 d-flex align-center">
               {{ mod.title }}
+              <span v-if="mod.subtitle" class="text-caption text-medium-emphasis ms-1">({{ mod.subtitle }})</span>
             </div>
             <div class="text-caption text-medium-emphasis flex-grow-1">
               {{ mod.description }}

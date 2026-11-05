@@ -4,16 +4,18 @@ import logoTafi from '@/assets/tenants/tafiviejo.png'
 import logoTrancas from '@/assets/tenants/trancas.png'
 import logoDefault from '@/assets/logo.png'
 
+export const API_URL = 'https://api-desa.liqsysonline.com'
+
 export const DEFAULT_ENDPOINTS = {
   desa: {
-    boletas: 'https://dno-mid-boletas.jferreyradev.deno.net',
-    base: 'https://dno-mid-api-22.jferreyradev.deno.net',
-    sp: 'https://dno-mid-boletas.jferreyradev.deno.net'
+    boletas: `${API_URL}/api`,
+    base: API_URL,
+    sp: `${API_URL}/api`
   },
   prod: {
-    boletas: 'https://dno-mid-boletas.jferreyradev.deno.net',
-    base: 'https://dno-mid-api-22.jferreyradev.deno.net',
-    sp: 'https://dno-mid-boletas.jferreyradev.deno.net'
+    boletas: `${API_URL}/api`,
+    base: API_URL,
+    sp: `${API_URL}/api`
   }
 }
 

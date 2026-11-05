@@ -19,6 +19,7 @@
  */
 export const ROLES = {
   ADMINISTRADOR: 5,
+  LIQUIDADOR: 6,
 };
 
 /**

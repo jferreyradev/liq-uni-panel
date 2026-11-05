@@ -1,10 +1,13 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { tipoLiq } from "@/utils/tipos";
 import { getVto, getFechaToAPIFromMMYYYY } from "@/utils/formatos";
 import { rules } from "@/utils/reglasValidacion";
 import { leerDatos, ejecutarSP_SinEspera } from "@/shared/services/apiService";
 import ProcesosList from "./ProcesosList.vue";
+
+const router = useRouter();
 
 // tipos
 const tiposProceso = [
@@ -16,6 +19,7 @@ const tiposProceso = [
 const formasLiquidar = [
   { name: "Grupo de Rep.", value: 1 },
   { name: "DNI de persona", value: 2 },
+  { name: "Por Cargo", value: 3 },
 ];
 
 const form = ref(null);
@@ -28,6 +32,7 @@ const formaLiquidarSelected = ref(formasLiquidar[0]);
 const tipoLiqSelected = ref(tipoLiq[0]);
 const periodo = ref("");
 const adicional = ref(0);
+const cargoId = ref("");
 
 const grupoRepSelected = ref(gruposRep[0]);
 const reparticiones = ref(valorListaErroneo);
@@ -193,6 +198,7 @@ async function Liquidar() {
   let resultado = 0;
   let mensaje = "";
   let idPers = 0;
+  let idCargo = 0;
   let grupoRep = 0;
   let rep = 0;
   if (formaLiquidarSelected.value.value == 1) {
@@ -203,11 +209,19 @@ async function Liquidar() {
       rep = repSelected.value.value;
       mensaje = "Enviado a liquidar por repartición";
     }
-  } else if (personaId.value == 0) {
-    return { resultado: "ERROR", mensaje: "Debe ingresar un DNI válido" };
-  } else {
+  } else if (formaLiquidarSelected.value.value == 2) {
+    if (personaId.value == 0) {
+      return { resultado: "ERROR", mensaje: "Debe ingresar un DNI válido" };
+    }
     idPers = personaId.value;
     mensaje = "Enviado a liquidar por DNI de la persona";
+  } else if (formaLiquidarSelected.value.value == 3) {
+    if (!cargoId.value) {
+      return { resultado: "ERROR", mensaje: "Debe ingresar un ID de cargo válido" };
+    }
+    idCargo = Number(cargoId.value);
+    idPers = personaId.value || 0;
+    mensaje = `Enviado a liquidar por Cargo #${idCargo}`;
   }
 
   let item = {
@@ -215,7 +229,7 @@ async function Liquidar() {
     GrupoRep: grupoRep,
     Rep: rep,
     IdPersona: idPers,
-    CargoId: 0,
+    CargoId: idCargo,
     TipoLiq: tipoLiqSelected.value.value,
     GrupoAdicional: adicional.value,
   };
@@ -271,6 +285,42 @@ function cierraVerProcesos() {
     <v-card :loading="isRunning">
       <v-progress-linear v-if="isRunning" indeterminate color="primary"></v-progress-linear>
       <v-form ref="form" v-model="formOK">
+        <v-alert
+          color="primary"
+          variant="tonal"
+          density="comfortable"
+          class="ma-4 mb-0"
+          prepend-icon="mdi-information-outline"
+        >
+          <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+            <div>
+              <strong>Nuevos módulos disponibles:</strong> Acceda al módulo unificado de
+              <strong>Operaciones</strong> (con monitor en tiempo real y cálculo por Repartición, Persona o Cargo)
+              y al módulo de <strong>Conceptos por Cargo</strong>.
+            </div>
+            <div class="d-flex ga-2">
+              <v-btn
+                size="small"
+                color="primary"
+                variant="flat"
+                prepend-icon="mdi-cogs"
+                @click="router.push('/operaciones')"
+              >
+                Ir a Operaciones
+              </v-btn>
+              <v-btn
+                size="small"
+                color="primary"
+                variant="outlined"
+                prepend-icon="mdi-format-list-checks"
+                @click="router.push('/conceptos')"
+              >
+                Conceptos por Cargo
+              </v-btn>
+            </div>
+          </div>
+        </v-alert>
+
         <v-card-title>
           <v-row>
             <v-col cols="6"> Procesos de Liquidación </v-col>
@@ -402,6 +452,22 @@ function cierraVerProcesos() {
                   hide-details="auto"
                   label="Apellido y Nombre"
                   readonly
+                ></v-text-field>
+              </v-col>
+            </v-row>
+
+            <v-row v-if="formaLiquidarSelected.value == 3">
+              <v-col cols="4">
+                <v-text-field
+                  v-model="cargoId"
+                  hide-details="auto"
+                  label="ID de Cargo"
+                  type="number"
+                  placeholder="Ej: 1054"
+                  :rules="[
+                    (val) => !!val || 'El ID de cargo es requerido',
+                    ...rules.number,
+                  ]"
                 ></v-text-field>
               </v-col>
             </v-row>

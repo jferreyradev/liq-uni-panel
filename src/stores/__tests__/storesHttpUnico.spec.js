@@ -6,7 +6,7 @@ import { useFilterStore } from '../filterStore'
 import { usePersonasStore } from '../personasStore'
 import { useLiqStore } from '../liqStore'
 
-const API_BASE = 'https://dno-mid-api-22.jferreyradev.deno.net'
+const API_BASE = 'https://api-desa.liqsysonline.com'
 
 function respuesta(cuerpo, { status = 200 } = {}) {
   return {

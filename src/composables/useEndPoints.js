@@ -37,7 +37,13 @@ function setStoredEnv(val) {
 function getStoredValue(key, fallback = '') {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
-      return window.localStorage.getItem(key) || fallback
+      const val = window.localStorage.getItem(key)
+      // Si el navegador tenía guardada una URL obsoleta (Deno o host anterior de pruebas), limpiarla para usar el default
+      if (val && (val.includes('deno.net') || val.includes('deno.dev') || val.includes('api-rpi.liqsysonline.com'))) {
+        window.localStorage.removeItem(key)
+        return fallback
+      }
+      return val || fallback
     }
   } catch {
     // ignore

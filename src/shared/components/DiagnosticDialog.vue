@@ -42,22 +42,16 @@ const filteredLogs = computed(() => {
 })
 
 function applyPreset(preset) {
-  if (preset === 'deno-proxy') {
-    editBase.value = 'https://dno-mid-api-22.jferreyradev.deno.net'
-    editBoletas.value = 'https://dno-mid-boletas.jferreyradev.deno.net'
-    editSp.value = 'https://dno-mid-boletas.jferreyradev.deno.net'
+  if (preset === 'api-desa') {
+    editBase.value = 'https://api-desa.liqsysonline.com'
+    editBoletas.value = 'https://api-desa.liqsysonline.com/api'
+    editSp.value = 'https://api-desa.liqsysonline.com/api'
     editKey.value = 'desarrollo'
     editPort.value = '3005'
   } else if (preset === 'local-3005') {
     editBase.value = 'http://localhost:3005'
-    editBoletas.value = 'http://localhost:3005'
-    editSp.value = 'http://localhost:3005'
-    editKey.value = 'desarrollo'
-    editPort.value = '3005'
-  } else if (preset === 'local-8000') {
-    editBase.value = 'http://localhost:8000'
-    editBoletas.value = 'http://localhost:8000'
-    editSp.value = 'http://localhost:8000'
+    editBoletas.value = 'http://localhost:3005/api'
+    editSp.value = 'http://localhost:3005/api'
     editKey.value = 'desarrollo'
     editPort.value = '3005'
   }
@@ -297,14 +291,11 @@ function copyLogsToClipboard() {
           <div class="mb-3">
             <div class="text-caption font-weight-bold mb-1">Cargar Presets Rápidos para Desarrollo:</div>
             <div class="d-flex flex-wrap gap-2">
-              <v-btn size="x-small" variant="outlined" color="primary" class="me-2 mb-2" @click="applyPreset('deno-proxy')">
-                Proxy Deno Cloud (dno-mid-api-22)
+              <v-btn size="x-small" variant="outlined" color="purple" class="me-2 mb-2" @click="applyPreset('api-desa')">
+                API Liqsys Desa (api-desa.liqsysonline.com)
               </v-btn>
               <v-btn size="x-small" variant="outlined" color="teal" class="me-2 mb-2" @click="applyPreset('local-3005')">
                 Localhost :3005 (Node API / api_liquid)
-              </v-btn>
-              <v-btn size="x-small" variant="outlined" color="indigo" class="me-2 mb-2" @click="applyPreset('local-8000')">
-                Localhost :8000 (Deno Proxy)
               </v-btn>
             </div>
           </div>

@@ -77,7 +77,7 @@ export const useUserStore = defineStore('userStore', {
     isRegistred: (state) => !!state.user,
     isAuthenticated: (state) => !!state.auth,
     isAuth: (state) => !!state.auth,
-    isAdmin: (state) => !!state.user && state.user.ROL === 5,
+    isAdmin: (state) => !!state.user && (state.user.ROL === 5 || state.user.ROL === 6),
     isValid: (state) => !!state.pers,
     userName: (state) => state.user?.name || '',
     checkPassword(state) {
@@ -311,10 +311,48 @@ export const useUserStore = defineStore('userStore', {
         )
         if (!hasArchivos) {
           data.push({
-            IDROL: this.user?.ROL || 5,
+            IDROL: this.user?.ROL || 6,
             IDMENU: 7,
             DESCRIPCION: 'Obra Social IPSST',
             PATH: '/ipsst'
+          })
+        }
+
+        // Modernizar /procesos a /operaciones y /conceptos-cargo a /conceptos
+        data.forEach((m) => {
+          const p = (m.PATH || '').toLowerCase().trim()
+          if (p === '/procesos') {
+            m.PATH = '/operaciones'
+            m.DESCRIPCION = 'Operaciones'
+          } else if (p === '/conceptos-cargo') {
+            m.PATH = '/conceptos'
+          }
+        })
+
+        const hasOperaciones = data.some(
+          (m) => (m.PATH || '').toLowerCase().trim() === '/operaciones'
+        )
+        if (!hasOperaciones) {
+          data.push({
+            IDROL: this.user?.ROL || 6,
+            IDMENU: 8,
+            DESCRIPCION: 'Operaciones',
+            PATH: '/operaciones'
+          })
+        }
+
+        const hasConceptos = data.some(
+          (m) => {
+            const p = (m.PATH || '').toLowerCase().trim()
+            return p === '/conceptos' || p === '/conceptos-cargo'
+          }
+        )
+        if (!hasConceptos) {
+          data.push({
+            IDROL: this.user?.ROL || 6,
+            IDMENU: 9,
+            DESCRIPCION: 'Conceptos por Cargo',
+            PATH: '/conceptos'
           })
         }
 

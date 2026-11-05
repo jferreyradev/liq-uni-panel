@@ -82,7 +82,7 @@ function setCamposFiltros() {
   return campos;
 }
 
-async function filtrar() {
+async function ejecutarFiltro() {
   // Forzar la validación del formulario y esperar a que se complete
   const validation = await form.value.validate();
   const valid = typeof validation === "object" && validation !== null ? validation.valid : validation;
@@ -171,7 +171,7 @@ const formOK = ref(null);
             elevation="3"
             outlined
             value="filtrar"
-            @click="filtrar()"
+            @click="ejecutarFiltro()"
             >Buscar</v-btn
           >
         </v-col>

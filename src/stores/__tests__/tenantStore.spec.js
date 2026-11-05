@@ -102,20 +102,20 @@ describe('TenantStore and Multi-Tenant Integration', () => {
     expect(env.value).toBe('Prod')
     expect(isProd.value).toBe(true)
     expect(isDesa.value).toBe(false)
-    expect(apiBase.value).toContain('dno-mid-api-22')
+    expect(apiBase.value).toContain('api-desa.liqsysonline.com')
 
     setDesa()
     expect(env.value).toBe('Desa')
     expect(isDesa.value).toBe(true)
     expect(isProd.value).toBe(false)
-    expect(apiBase.value).toContain('dno-mid-api-22')
+    expect(apiBase.value).toContain('api-desa.liqsysonline.com')
     if (typeof window !== 'undefined' && window.localStorage) {
       expect(window.localStorage.getItem('liq_env')).toBe('Desa')
     }
 
     toggleEnv()
     expect(env.value).toBe('Prod')
-    expect(apiBase.value).toContain('dno-mid-api-22')
+    expect(apiBase.value).toContain('api-desa.liqsysonline.com')
     if (typeof window !== 'undefined' && window.localStorage) {
       expect(window.localStorage.getItem('liq_env')).toBe('Prod')
     }

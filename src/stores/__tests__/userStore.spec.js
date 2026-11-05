@@ -4,8 +4,8 @@ import { setActivePinia, createPinia } from 'pinia'
 
 import { useUserStore } from '../userStore'
 
-const API_BOLETAS = 'https://dno-mid-boletas.jferreyradev.deno.net'
-const API_BASE = 'https://dno-mid-api-22.jferreyradev.deno.net'
+const API_BOLETAS = 'https://api-desa.liqsysonline.com/api'
+const API_BASE = 'https://api-desa.liqsysonline.com'
 
 function respuesta(cuerpo, { status = 200 } = {}) {
   return {
@@ -110,5 +110,24 @@ describe('userStore sobre el cliente HTTP unico', () => {
     expect(store.result).toBe('')
     expect(store.error).toBeInstanceOf(Error)
     expect(store.error.message).toContain('400')
+  })
+
+  it('fetchRol asegura la presencia de /operaciones y /conceptos y moderniza /procesos', async () => {
+    global.fetch.mockResolvedValue(
+      respuesta([
+        { IDMENU: 1, PATH: '/agentes', DESCRIPCION: 'Agentes' },
+        { IDMENU: 4, PATH: '/procesos', DESCRIPCION: 'Procesos' }
+      ])
+    )
+    const store = useUserStore()
+    store.user = { ROL: 5 }
+
+    await store.fetchRol()
+
+    expect(store.rol).toBeDefined()
+    const paths = store.rol.map((m) => m.PATH)
+    expect(paths).toContain('/operaciones')
+    expect(paths).toContain('/conceptos')
+    expect(paths).not.toContain('/procesos')
   })
 })

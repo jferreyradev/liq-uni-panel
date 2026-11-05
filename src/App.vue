@@ -13,16 +13,84 @@ const storeFilter = useFilterStore()
 const tenantStore = useTenantStore()
 const store = useUserStore()
 const logStore = useLogStore()
-const { itemsMenu } = useItemsMenu()
+const { itemsMenu, setItemsMenu } = useItemsMenu()
 
 // El logo del municipio es un recurso remoto: si no carga, se cae al ícono.
 const logoFallo = ref(false)
 
+const allModules = [
+  { title: 'Panel Principal', route: '/panel', icon: 'mdi-view-dashboard' },
+  { title: 'Boletas de Sueldo', route: '/boletas', icon: 'mdi-file-document-outline' },
+  { title: 'Agentes y Legajos', route: '/agentes', icon: 'mdi-account-group' },
+  { title: 'Cargos', route: '/cargos', icon: 'mdi-badge-account' },
+  { title: 'Conceptos por Cargo', route: '/conceptos', icon: 'mdi-format-list-checks', isNew: true },
+  { title: 'Novedades y Hojas', route: '/hojas', icon: 'mdi-notebook-edit-outline' },
+  { title: 'Operaciones', route: '/operaciones', icon: 'mdi-cogs', isNew: true },
+  { title: 'Acreditaciones', route: '/acredit', icon: 'mdi-bank-transfer' },
+  { title: 'Previsional', route: '/prevision', icon: 'mdi-shield-check' },
+  { title: 'Obra Social IPSST', route: '/ipsst', icon: 'mdi-hospital-box' },
+  { title: 'Reportes y Planillas', route: '/repo', icon: 'mdi-chart-box-outline' }
+]
+
+function getMenuIcon(path, descripcion = '') {
+  const p = (path || '').toLowerCase().trim()
+  const d = (descripcion || '').toLowerCase().trim()
+  const match = allModules.find((m) => m.route === p)
+  if (match) return match.icon
+  if (p === '/' || d.includes('inicio')) return 'mdi-home'
+  if (p.includes('panel') || d.includes('panel')) return 'mdi-view-dashboard'
+  if (p.includes('boleta') || d.includes('boleta')) return 'mdi-file-document-outline'
+  if (p.includes('agente') || d.includes('agente')) return 'mdi-account-group'
+  if (p.includes('cargo') && !p.includes('concepto') && !d.includes('concepto')) return 'mdi-badge-account'
+  if (p.includes('concepto') || d.includes('concepto')) return 'mdi-format-list-checks'
+  if (p.includes('hoja') || p.includes('novedad') || d.includes('novedad')) return 'mdi-notebook-edit-outline'
+  if (p.includes('operacion') || p.includes('proceso') || d.includes('operacion') || d.includes('proceso')) return 'mdi-cogs'
+  if (p.includes('acredit') || d.includes('acredit')) return 'mdi-bank-transfer'
+  if (p.includes('previs') || d.includes('previs')) return 'mdi-shield-check'
+  if (p.includes('ipsst') || p.includes('archivo') || d.includes('ipsst')) return 'mdi-hospital-box'
+  if (p.includes('repo') || d.includes('reporte')) return 'mdi-chart-box-outline'
+  return 'mdi-circle-small'
+}
+
+const currentModuleName = computed(() => {
+  const currentPath = router.currentRoute.value.path
+  if (currentPath === '/') return 'Inicio'
+  const found = allModules.find((m) => m.route === currentPath)
+  return found ? found.title : 'Navegación'
+})
+
 const navItems = computed(() => {
-  if (!itemsMenu.value || !Array.isArray(itemsMenu.value)) return []
+  const source = (itemsMenu.value && Array.isArray(itemsMenu.value) && itemsMenu.value.length > 0)
+    ? itemsMenu.value
+    : (store.rol && Array.isArray(store.rol) && store.rol.length > 0)
+      ? store.rol
+      : []
+
+  const list = [...source]
+
+  // Siempre asegurar /operaciones y /conceptos en la lista
+  if (!list.some((i) => (i.PATH || '').toLowerCase().trim() === '/operaciones')) {
+    list.push({ IDMENU: 8, DESCRIPCION: 'Operaciones', PATH: '/operaciones' })
+  }
+  if (!list.some((i) => {
+    const p = (i.PATH || '').toLowerCase().trim()
+    return p === '/conceptos' || p === '/conceptos-cargo'
+  })) {
+    list.push({ IDMENU: 9, DESCRIPCION: 'Conceptos por Cargo', PATH: '/conceptos' })
+  }
+
   const seenPaths = new Set()
-  return itemsMenu.value.filter((item) => {
-    const key = (item.PATH || '').toLowerCase().trim()
+  return list.filter((item) => {
+    let key = (item.PATH || '').toLowerCase().trim()
+    if (key === '/procesos') {
+      key = '/operaciones'
+      item.PATH = '/operaciones'
+      item.DESCRIPCION = 'Operaciones'
+    }
+    if (key === '/conceptos-cargo') {
+      key = '/conceptos'
+      item.PATH = '/conceptos'
+    }
     if (!key || seenPaths.has(key)) return false
     seenPaths.add(key)
     return true
@@ -37,6 +105,17 @@ watchEffect(() => {
   const shortName = tenantStore?.tenantShortName
   document.title = shortName ? `Liq Panel — ${shortName}` : 'Liq Panel'
 })
+
+// Sincronizar items de menú si ya está logueado pero el composable no se inicializó
+if (store.auth && (!itemsMenu.value || itemsMenu.value.length === 0)) {
+  if (store.rol && store.rol.length > 0) {
+    setItemsMenu(store.rol)
+  } else {
+    store.fetchRol().then(() => {
+      setItemsMenu(store.rol)
+    })
+  }
+}
 
 // configServer solo se consulta una vez que el usuario está logueado
 if (store.auth) {
@@ -79,6 +158,48 @@ function handleLogout() {
       </v-app-bar-title>
 
       <v-spacer></v-spacer>
+
+      <!-- Selector de Módulo -->
+      <div v-if="store.auth" class="me-2">
+        <v-menu location="bottom end" transition="scale-transition">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              variant="tonal"
+              color="white"
+              class="text-none px-3"
+              prepend-icon="mdi-apps"
+              append-icon="mdi-chevron-down"
+            >
+              <span class="d-none d-sm-inline font-weight-medium me-1">Módulo:</span>
+              <strong>{{ currentModuleName }}</strong>
+            </v-btn>
+          </template>
+
+          <v-list density="compact" class="py-1" min-width="260">
+            <v-list-subheader class="text-uppercase text-caption font-weight-bold">
+              Seleccionar Módulo
+            </v-list-subheader>
+
+            <v-list-item
+              v-for="mod in allModules"
+              :key="mod.route"
+              :active="$route.path === mod.route"
+              :prepend-icon="mod.icon"
+              :title="mod.title"
+              color="primary"
+              class="py-1"
+              @click="router.push(mod.route)"
+            >
+              <template v-if="mod.isNew" #append>
+                <v-chip size="x-small" color="primary" variant="flat" class="font-weight-bold">
+                  NUEVO
+                </v-chip>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </div>
 
       <!-- Selector de Municipio / Tenant -->
       <div class="me-2">
@@ -204,10 +325,17 @@ function handleLogout() {
           <v-list-item
             v-for="item in navItems"
             :key="item.IDMENU || item.PATH"
+            :prepend-icon="getMenuIcon(item.PATH, item.DESCRIPCION)"
             :title="item.DESCRIPCION"
             :active="$route.path === item.PATH"
             @click="router.push(item.PATH)"
-          />
+          >
+            <template v-if="item.PATH === '/operaciones' || item.PATH === '/conceptos' || item.PATH === '/conceptos-cargo'" #append>
+              <v-chip size="x-small" color="primary" variant="flat" class="font-weight-bold">
+                NUEVO
+              </v-chip>
+            </template>
+          </v-list-item>
         </template>
 
         <!-- Enlaces rápidos directos si el menú por rol aún no cargó -->
@@ -217,8 +345,9 @@ function handleLogout() {
           <v-list-item prepend-icon="mdi-file-document-outline" title="Boletas" @click="router.push('/boletas')" />
           <v-list-item prepend-icon="mdi-account-group" title="Agentes" @click="router.push('/agentes')" />
           <v-list-item prepend-icon="mdi-badge-account" title="Cargos" @click="router.push('/cargos')" />
+          <v-list-item prepend-icon="mdi-format-list-checks" title="Conceptos por Cargo" @click="router.push('/conceptos')" />
           <v-list-item prepend-icon="mdi-notebook-edit-outline" title="Novedades" @click="router.push('/hojas')" />
-          <v-list-item prepend-icon="mdi-cogs" title="Procesos" @click="router.push('/procesos')" />
+          <v-list-item prepend-icon="mdi-cogs" title="Operaciones" @click="router.push('/operaciones')" />
           <v-list-item prepend-icon="mdi-bank-transfer" title="Acreditaciones" @click="router.push('/acredit')" />
           <v-list-item prepend-icon="mdi-shield-check" title="Previsional" @click="router.push('/prevision')" />
           <v-list-item prepend-icon="mdi-hospital-box" title="Obra Social IPSST" @click="router.push('/ipsst')" />

@@ -38,10 +38,17 @@ export function resolveServiceUrl(service = "base", path = "") {
 
   const cleanPath = String(path ?? "").replace(/^\/+/, "");
 
-  if (service === "sp") return `${apiSp.value}/${cleanPath}`;
-  if (service === "boletas") return `${apiBoletas.value}/${cleanPath}`;
+  if (service === "sp") {
+    const base = String(apiSp.value ?? "").replace(/\/+$/, "");
+    return `${base}/${cleanPath}`;
+  }
+  if (service === "boletas") {
+    const base = String(apiBoletas.value ?? "").replace(/\/+$/, "");
+    return `${base}/${cleanPath}`;
+  }
 
-  return `${apiBase.value}/api/${cleanPath}`;
+  const base = String(apiBase.value ?? "").replace(/\/+$/, "");
+  return cleanPath.startsWith("api/") ? `${base}/${cleanPath}` : `${base}/api/${cleanPath}`;
 }
 
 /**

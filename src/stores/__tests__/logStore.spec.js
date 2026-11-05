@@ -84,7 +84,7 @@ describe('LogStore y Diagnóstico de Conexión', () => {
     expect(current.base).toBe('http://localhost:3005')
 
     resetDesaOverrides()
-    expect(apiBase.value).toContain('dno-mid-api-22')
+    expect(apiBase.value).toContain('api-desa.liqsysonline.com')
   })
 
   it('envía x-project-key: desarrollo y x-project-port: 3005 en modo desarrollo', () => {
