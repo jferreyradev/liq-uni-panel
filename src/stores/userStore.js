@@ -61,6 +61,7 @@ async function pedir({
 export const useUserStore = defineStore('userStore', {
   state: () => ({
     user: null, // Estado inicial del usuario
+    token: typeof window !== 'undefined' && window.localStorage ? (window.localStorage.getItem('liq_token') || '') : '',
     pers: null,
     loading: false,
     result: '',
@@ -147,14 +148,61 @@ export const useUserStore = defineStore('userStore', {
     async loginUserName(userName, pass) {
       this.auth = false
       this.lastError = null
-      await this.fetchUserName(userName)
-      if (this.user) {
-        if (atob(this.user?.PASSWORD) === pass) {
+      this.loading = true
+      this.error = null
+
+      try {
+        // Opción 1: Autenticación nativa con el nuevo backend node-apiliq (POST /api/auth/login)
+        const res = await pedir({
+          service: 'base',
+          path: 'auth/login',
+          method: 'POST',
+          body: { usr: userName, pws: pass },
+          category: 'AUTH'
+        })
+
+        if (res.operacionOk && res.datos?.token) {
+          const token = res.datos.token
+          this.token = token
+          const { setAuthToken } = useEndPoints()
+          setAuthToken(token)
+
+          const u = res.datos.user || {}
+          this.user = {
+            ID: u.id,
+            USERNAME: u.usr,
+            EMAIL: u.email,
+            ROL: u.role,
+            role: u.role
+          }
           this.auth = true
-        } else {
-          this.auth = false
+          this.success = true
+          return
         }
+
+        // Opción 2 (Fallback): Consulta a view/users (para entornos que usan API Key o esquema legacy)
+        await this.fetchUserName(userName)
+        if (this.user) {
+          if (atob(this.user?.PASSWORD) === pass) {
+            this.auth = true
+            this.success = true
+          } else {
+            this.auth = false
+          }
+        }
+      } catch (err) {
+        this.error = err.message
+      } finally {
+        this.loading = false
       }
+    },
+
+    logout() {
+      this.user = null
+      this.auth = false
+      this.token = ''
+      const { clearAuthToken } = useEndPoints()
+      clearAuthToken()
     },
 
     async verifyRegister(dni, orden) {

@@ -13,7 +13,13 @@ const {
   apiBase,
   setDesaOverrides,
   resetDesaOverrides,
-  getDesaOverrides
+  getDesaOverrides,
+  authToken,
+  apiKeyOverride,
+  adminKeyOverride,
+  setApiKey,
+  setAdminKey,
+  clearAuthToken
 } = useEndPoints()
 const tenantStore = useTenantStore()
 
@@ -22,13 +28,15 @@ const logFilter = ref('all') // 'all' | 'error' | 'http'
 const pingLoading = ref(false)
 const pingResult = ref(null)
 
-// Campos editables de endpoints para Desarrollo
+// Campos editables de endpoints para Desarrollo y Seguridad
 const overrides = getDesaOverrides()
 const editBase = ref(overrides.base || '')
 const editBoletas = ref(overrides.boletas || '')
 const editSp = ref(overrides.sp || '')
 const editKey = ref(overrides.key || 'desarrollo')
 const editPort = ref(overrides.port || '3005')
+const editApiKey = ref(apiKeyOverride.value || '')
+const editAdminKey = ref(adminKeyOverride.value || '')
 const saveSuccess = ref(false)
 
 const filteredLogs = computed(() => {
@@ -65,6 +73,8 @@ function handleSaveEndpoints() {
     key: editKey.value.trim(),
     port: editPort.value.trim()
   })
+  setApiKey(editApiKey.value.trim())
+  setAdminKey(editAdminKey.value.trim())
   saveSuccess.value = true
   setTimeout(() => {
     saveSuccess.value = false
@@ -73,6 +83,10 @@ function handleSaveEndpoints() {
 
 function handleResetEndpoints() {
   resetDesaOverrides()
+  setApiKey('')
+  setAdminKey('')
+  editApiKey.value = ''
+  editAdminKey.value = ''
   const fresh = getDesaOverrides()
   editBase.value = fresh.base || ''
   editBoletas.value = fresh.boletas || ''
@@ -89,7 +103,7 @@ async function runPing() {
   pingLoading.value = true
   pingResult.value = null
   try {
-    const url = `${apiBase.value}/api/view/periodo?Activo=1`
+    const url = `${apiBase.value}/api/status`
     const res = await testConnection(url)
     pingResult.value = {
       url,
@@ -363,8 +377,69 @@ function copyLogsToClipboard() {
             </v-col>
           </v-row>
 
+          <v-divider class="my-3"></v-divider>
+
+          <div class="text-caption font-weight-bold mb-2">
+            Seguridad API (clientAuth - node-apiliq):
+          </div>
+
+          <div class="d-flex align-center justify-space-between mb-3 pa-2 bg-grey-lighten-4 rounded border">
+            <div class="d-flex align-center">
+              <v-icon
+                :icon="authToken ? 'mdi-shield-check' : 'mdi-shield-outline'"
+                :color="authToken ? 'success' : 'grey'"
+                class="me-2"
+              ></v-icon>
+              <div>
+                <div class="text-caption font-weight-bold">
+                  Token JWT Bearer: {{ authToken ? 'Activo' : 'No iniciado' }}
+                </div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ authToken ? 'El token se renueva con /api/auth/login' : 'Inicia sesión para obtener token' }}
+                </div>
+              </div>
+            </div>
+            <v-btn
+              v-if="authToken"
+              size="x-small"
+              variant="text"
+              color="error"
+              prepend-icon="mdi-logout"
+              @click="clearAuthToken"
+            >
+              Borrar Token
+            </v-btn>
+          </div>
+
+          <v-row dense class="mb-2">
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="editApiKey"
+                label="X-API-Key (Cliente Frontend)"
+                density="compact"
+                variant="outlined"
+                placeholder="Ingresar API Key si no hay login..."
+                hint="Permite consultar vistas y SPs sin login de usuario"
+                persistent-hint
+                clearable
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="editAdminKey"
+                label="X-Admin-Key (Clave Maestra)"
+                density="compact"
+                variant="outlined"
+                placeholder="Ingresar Admin Key..."
+                hint="Acceso total (SQL libre, creación de vistas, telemetría)"
+                persistent-hint
+                clearable
+              ></v-text-field>
+            </v-col>
+          </v-row>
+
           <v-alert v-if="saveSuccess" type="success" density="compact" variant="tonal" class="mb-3 text-caption">
-            Configuración de endpoints y headers de desarrollo guardada correctamente en localStorage.
+            Configuración de endpoints y credenciales de seguridad guardada correctamente en localStorage.
           </v-alert>
 
           <div class="d-flex justify-space-between mt-4">

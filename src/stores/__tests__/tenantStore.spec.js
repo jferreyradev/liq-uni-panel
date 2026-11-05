@@ -102,7 +102,7 @@ describe('TenantStore and Multi-Tenant Integration', () => {
     expect(env.value).toBe('Prod')
     expect(isProd.value).toBe(true)
     expect(isDesa.value).toBe(false)
-    expect(apiBase.value).toContain('api-desa.liqsysonline.com')
+    expect(apiBase.value).toContain('api-rpi.liqsysonline.com')
 
     setDesa()
     expect(env.value).toBe('Desa')
@@ -115,7 +115,7 @@ describe('TenantStore and Multi-Tenant Integration', () => {
 
     toggleEnv()
     expect(env.value).toBe('Prod')
-    expect(apiBase.value).toContain('api-desa.liqsysonline.com')
+    expect(apiBase.value).toContain('api-rpi.liqsysonline.com')
     if (typeof window !== 'undefined' && window.localStorage) {
       expect(window.localStorage.getItem('liq_env')).toBe('Prod')
     }

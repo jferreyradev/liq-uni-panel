@@ -9,6 +9,9 @@ const STORAGE_DESA_BOLETAS_KEY = 'liq_desa_boletas'
 const STORAGE_DESA_SP_KEY = 'liq_desa_sp'
 const STORAGE_DESA_KEY_HEADER = 'liq_desa_key'
 const STORAGE_DESA_PORT_HEADER = 'liq_desa_port'
+const STORAGE_AUTH_TOKEN_KEY = 'liq_token'
+const STORAGE_API_KEY = 'liq_api_key'
+const STORAGE_ADMIN_KEY = 'liq_admin_key'
 
 function getStoredEnv() {
   try {
@@ -71,6 +74,9 @@ const desaBoletasOverride = ref(getStoredValue(STORAGE_DESA_BOLETAS_KEY, ''))
 const desaSpOverride = ref(getStoredValue(STORAGE_DESA_SP_KEY, ''))
 const desaKeyOverride = ref(getStoredValue(STORAGE_DESA_KEY_HEADER, ''))
 const desaPortOverride = ref(getStoredValue(STORAGE_DESA_PORT_HEADER, ''))
+const authToken = ref(getStoredValue(STORAGE_AUTH_TOKEN_KEY, ''))
+const apiKeyOverride = ref(getStoredValue(STORAGE_API_KEY, ''))
+const adminKeyOverride = ref(getStoredValue(STORAGE_ADMIN_KEY, ''))
 
 export function useEndPoints() {
   function getTenantStoreSafe() {
@@ -119,10 +125,25 @@ export function useEndPoints() {
       ? (desaPortOverride.value || defaultPort)
       : defaultPort
 
+    const token = authToken.value || getStoredValue(STORAGE_AUTH_TOKEN_KEY, '')
+    const apiKey = apiKeyOverride.value || getStoredValue(STORAGE_API_KEY, '')
+    const adminKey = adminKeyOverride.value || getStoredValue(STORAGE_ADMIN_KEY, '')
+
     const headers = {
       'Content-Type': 'application/json',
       'x-project-key': projectKey,
       'x-project-port': String(projectPort)
+    }
+
+    // Inyectar credenciales del nuevo sistema de seguridad híbrido de node-apiliq
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    } else if (apiKey) {
+      headers['X-API-Key'] = apiKey
+    }
+
+    if (adminKey) {
+      headers['X-Admin-Key'] = adminKey
     }
 
     if (extraHeaders && typeof extraHeaders === 'object') {
@@ -226,6 +247,26 @@ export function useEndPoints() {
   const isDesa = computed(() => env.value === 'Desa' || getTenantStoreSafe()?.activeTenantId === 'desarrollo')
   const isProd = computed(() => env.value === 'Prod' && getTenantStoreSafe()?.activeTenantId !== 'desarrollo')
 
+  function setAuthToken(val) {
+    authToken.value = val || ''
+    setStoredValue(STORAGE_AUTH_TOKEN_KEY, val || '')
+  }
+
+  function clearAuthToken() {
+    authToken.value = ''
+    setStoredValue(STORAGE_AUTH_TOKEN_KEY, '')
+  }
+
+  function setApiKey(val) {
+    apiKeyOverride.value = val || ''
+    setStoredValue(STORAGE_API_KEY, val || '')
+  }
+
+  function setAdminKey(val) {
+    adminKeyOverride.value = val || ''
+    setStoredValue(STORAGE_ADMIN_KEY, val || '')
+  }
+
   return {
     apiBase,
     apiBoletas,
@@ -233,6 +274,13 @@ export function useEndPoints() {
     env,
     isDesa,
     isProd,
+    authToken,
+    apiKeyOverride,
+    adminKeyOverride,
+    setAuthToken,
+    clearAuthToken,
+    setApiKey,
+    setAdminKey,
     setProd,
     setDesa,
     setEnv,

@@ -238,16 +238,28 @@ export async function request({
     }
 
     if (!response.ok) {
-      errmsg = notFound
-        ? "No se encontraron los datos solicitados"
-        : `Error al completar la petición (HTTP ${response.status})`;
+      const serverDetail =
+        datos && typeof datos === "object"
+          ? datos.error || datos.mensaje || datos.message
+          : null;
 
-      if (parseErrorBody && responseType === RESPONSE_JSON) {
-        const detail =
-          datos && typeof datos === "object"
-            ? datos.error || datos.mensaje || datos.message
-            : null;
-        if (detail) errmsg = String(detail);
+      if (response.status === 401) {
+        errmsg = serverDetail ? String(serverDetail) : "Acceso no autorizado (HTTP 401). Se requiere iniciar sesión o clave de acceso.";
+      } else if (response.status === 429) {
+        const retryAfter = response.headers?.get?.("Retry-After");
+        errmsg = serverDetail
+          ? String(serverDetail)
+          : `Límite de peticiones alcanzado (HTTP 429)${retryAfter ? `. Reintenta en ${retryAfter}s` : ""}`;
+      } else {
+        errmsg = notFound
+          ? "No se encontraron los datos solicitados"
+          : serverDetail
+            ? String(serverDetail)
+            : `Error al completar la petición (HTTP ${response.status})`;
+      }
+
+      if (parseErrorBody && responseType === RESPONSE_JSON && serverDetail) {
+        errmsg = String(serverDetail);
       }
     }
   } catch (error) {

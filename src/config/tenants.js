@@ -4,18 +4,19 @@ import logoTafi from '@/assets/tenants/tafiviejo.png'
 import logoTrancas from '@/assets/tenants/trancas.png'
 import logoDefault from '@/assets/logo.png'
 
-export const API_URL = 'https://api-desa.liqsysonline.com'
+export const API_URL_PROD = 'https://api-rpi.liqsysonline.com'
+export const API_URL_DESA = 'https://api-desa.liqsysonline.com'
 
 export const DEFAULT_ENDPOINTS = {
   desa: {
-    boletas: `${API_URL}/api`,
-    base: API_URL,
-    sp: `${API_URL}/api`
+    boletas: `${API_URL_DESA}/api`,
+    base: API_URL_DESA,
+    sp: `${API_URL_DESA}/api`
   },
   prod: {
-    boletas: `${API_URL}/api`,
-    base: API_URL,
-    sp: `${API_URL}/api`
+    boletas: `${API_URL_PROD}/api`,
+    base: API_URL_PROD,
+    sp: `${API_URL_PROD}/api`
   }
 }
 

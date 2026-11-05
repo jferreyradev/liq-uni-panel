@@ -6,7 +6,7 @@ import { useFilterStore } from '../filterStore'
 import { usePersonasStore } from '../personasStore'
 import { useLiqStore } from '../liqStore'
 
-const API_BASE = 'https://api-desa.liqsysonline.com'
+const API_BASE = 'https://api-rpi.liqsysonline.com'
 
 function respuesta(cuerpo, { status = 200 } = {}) {
   return {

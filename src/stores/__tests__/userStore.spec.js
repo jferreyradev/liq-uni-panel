@@ -4,8 +4,8 @@ import { setActivePinia, createPinia } from 'pinia'
 
 import { useUserStore } from '../userStore'
 
-const API_BOLETAS = 'https://api-desa.liqsysonline.com/api'
-const API_BASE = 'https://api-desa.liqsysonline.com'
+const API_BOLETAS = 'https://api-rpi.liqsysonline.com/api'
+const API_BASE = 'https://api-rpi.liqsysonline.com'
 
 function respuesta(cuerpo, { status = 200 } = {}) {
   return {
