@@ -152,14 +152,34 @@ export const useUserStore = defineStore('userStore', {
       this.error = null
 
       try {
-        // Opción 1: Autenticación nativa con el nuevo backend node-apiliq (POST /api/auth/login)
-        const res = await pedir({
+        // En Oracle las contraseñas históricamente se almacenan en Base64.
+        // Probamos primero enviando Base64 (btoa(pass)) y si no coincide, texto plano.
+        let encodedPass = ''
+        try {
+          encodedPass = btoa(pass)
+        } catch {
+          encodedPass = pass
+        }
+
+        // Intento 1: POST /api/auth/login con Base64
+        let res = await pedir({
           service: 'base',
           path: 'auth/login',
           method: 'POST',
-          body: { usr: userName, pws: pass },
+          body: { usr: userName, pws: encodedPass },
           category: 'AUTH'
         })
+
+        // Intento 2: Si devolvió error de credenciales, intentar con texto plano
+        if (!res.operacionOk && encodedPass !== pass) {
+          res = await pedir({
+            service: 'base',
+            path: 'auth/login',
+            method: 'POST',
+            body: { usr: userName, pws: pass },
+            category: 'AUTH'
+          })
+        }
 
         if (res.operacionOk && res.datos?.token) {
           const token = res.datos.token
@@ -170,20 +190,28 @@ export const useUserStore = defineStore('userStore', {
           const u = res.datos.user || {}
           this.user = {
             ID: u.id,
-            USERNAME: u.usr,
+            USERNAME: u.usr || u.userName || userName,
+            name: u.usr || u.userName || userName,
             EMAIL: u.email,
-            ROL: u.role,
-            role: u.role
+            ROL: u.role || u.rol || 6,
+            role: u.role || u.rol || 6,
+            DNI: u.dni
           }
           this.auth = true
           this.success = true
           return
         }
 
-        // Opción 2 (Fallback): Consulta a view/users (para entornos que usan API Key o esquema legacy)
+        // Si el endpoint de login devolvió 401 Credenciales inválidas, no es error técnico
+        if (!res.operacionOk && res.estado === 401) {
+          this.auth = false
+          return
+        }
+
+        // Opción 2 (Fallback): Consulta a view/users (para entornos legacy o si /auth/login no está implementado)
         await this.fetchUserName(userName)
         if (this.user) {
-          if (atob(this.user?.PASSWORD) === pass) {
+          if (atob(this.user?.PASSWORD) === pass || this.user?.PASSWORD === pass) {
             this.auth = true
             this.success = true
           } else {
