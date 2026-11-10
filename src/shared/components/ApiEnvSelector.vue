@@ -51,6 +51,11 @@ function handleSelectEnv(envId) {
   filterStore.serverConfig = {}
   filterStore.serverConfigError = null
 
+  // Sincronizar inmediatamente la configuración y municipio del nuevo servidor
+  filterStore.setConfig().catch((err) => {
+    console.warn('[ApiEnvSelector setConfig]', err)
+  })
+
   if (router?.currentRoute?.value?.path !== '/login') {
     router.push('/login')
   }

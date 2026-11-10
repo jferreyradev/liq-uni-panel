@@ -23,6 +23,8 @@ export const DEFAULT_ENDPOINTS = {
 export const TENANTS = [
   {
     id: 'concepcion',
+    idrep: 300,
+    cela: '0030',
     name: 'Municipalidad de Concepción',
     shortName: 'Concepción',
     location: 'Concepción - Tucumán',
@@ -36,6 +38,8 @@ export const TENANTS = [
   },
   {
     id: 'burruyacu',
+    idrep: 470,
+    cela: '0047',
     name: 'Municipalidad de Burruyacú',
     shortName: 'Burruyacú',
     location: 'Burruyacú - Tucumán',
@@ -49,6 +53,8 @@ export const TENANTS = [
   },
   {
     id: 'tafiviejo',
+    idrep: 400,
+    cela: '0046',
     name: 'Municipalidad de Tafí Viejo',
     shortName: 'Tafí Viejo',
     location: 'Tafí Viejo - Tucumán',
@@ -62,6 +68,8 @@ export const TENANTS = [
   },
   {
     id: 'trancas',
+    idrep: 500,
+    cela: '0050',
     name: 'Municipalidad de Trancas',
     shortName: 'Trancas',
     location: 'Trancas - Tucumán',
@@ -93,4 +101,51 @@ export const DEFAULT_TENANT_ID = 'concepcion'
 
 export function getTenantById(id) {
   return TENANTS.find((t) => t.id === id) || TENANTS[0]
+}
+
+/**
+ * Resuelve automáticamente el municipio predeterminado a partir del objeto
+ * devuelto por la vista `view/configServer` de Oracle (campos: IdRep, Cela, Descripcion, Ambiente).
+ *
+ * @param {Record<string, any>} config
+ * @returns {typeof TENANTS[0] | null}
+ */
+export function resolveTenantFromConfig(config) {
+  if (!config || typeof config !== 'object') return null
+
+  const idRep = Number(config.IDREP || config.IdRep)
+  const cela = String(config.CELA || config.Cela || '').trim()
+  const descripcion = String(
+    config.DESCRIPCION || config.Descripcion || config.AMBIENTE || config.Ambiente || ''
+  ).toLowerCase().trim()
+
+  // 1. Coincidencia por IDREP exacto
+  if (idRep) {
+    const byRep = TENANTS.find((t) => t.idrep === idRep)
+    if (byRep) return byRep
+  }
+
+  // 2. Coincidencia por CELA exacto
+  if (cela) {
+    const byCela = TENANTS.find((t) => t.cela && t.cela === cela)
+    if (byCela) return byCela
+  }
+
+  // 3. Coincidencia semántica por DESCRIPCION / Nombre
+  if (descripcion) {
+    if (descripcion.includes('tafi') || descripcion.includes('tafí')) {
+      return TENANTS.find((t) => t.id === 'tafiviejo') || null
+    }
+    if (descripcion.includes('concep')) {
+      return TENANTS.find((t) => t.id === 'concepcion') || null
+    }
+    if (descripcion.includes('burru')) {
+      return TENANTS.find((t) => t.id === 'burruyacu') || null
+    }
+    if (descripcion.includes('tranca')) {
+      return TENANTS.find((t) => t.id === 'trancas') || null
+    }
+  }
+
+  return null
 }

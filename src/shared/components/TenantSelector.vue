@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTenantStore } from '@/stores/tenantStore'
 import { useUserStore } from '@/stores/userStore'
@@ -16,6 +16,9 @@ const { setDesa, setProd } = useEndPoints()
 
 const tenants = computed(() => tenantStore.tenantsList)
 const activeTenant = computed(() => tenantStore.activeTenant)
+const isPredetermined = computed(() => Boolean(tenantStore.isPredeterminedByServer && filterStore.hasServerConfig))
+
+const dialogBloqueado = ref(false)
 
 // Los logos son recursos remotos: si alguno no carga, se marca para
 // mostrar el ícono por defecto en lugar de una imagen rota.
@@ -23,6 +26,12 @@ const logosFallidos = reactive({})
 
 async function selectTenant(tenantId) {
   if (tenantStore.activeTenantId === tenantId) return
+
+  // Si el municipio ya está predeterminado por configServer, no permitir mezclar reparticiones
+  if (isPredetermined.value) {
+    dialogBloqueado.value = true
+    return
+  }
 
   tenantStore.setTenant(tenantId)
 
@@ -61,17 +70,36 @@ async function selectTenant(tenantId) {
           variant="tonal"
           color="white"
           class="tenant-btn text-none px-3"
-          :prepend-icon="activeTenant.id === 'desarrollo' ? 'mdi-flask' : 'mdi-city-variant-outline'"
+          :prepend-icon="activeTenant.id === 'desarrollo' ? 'mdi-flask' : (isPredetermined ? 'mdi-database-check' : 'mdi-city-variant-outline')"
           append-icon="mdi-chevron-down"
         >
           <span class="d-none d-sm-inline font-weight-medium me-1">Municipio:</span>
           <strong>{{ activeTenant.shortName }}</strong>
+          <v-chip
+            v-if="isPredetermined"
+            size="x-small"
+            color="light-green-accent-3"
+            variant="flat"
+            class="ms-2 font-weight-bold text-black"
+          >
+            BD
+          </v-chip>
         </v-btn>
       </template>
 
-      <v-list density="compact" class="py-1 tenant-dropdown" min-width="260">
+      <v-list density="compact" class="py-1 tenant-dropdown" min-width="280">
+        <div v-if="isPredetermined" class="pa-3 bg-blue-grey-lighten-5 border-b">
+          <div class="d-flex align-center font-weight-bold text-caption text-primary">
+            <v-icon icon="mdi-database-check" size="small" class="me-1" color="primary"></v-icon>
+            Predeterminado por base de datos
+          </div>
+          <div class="text-caption text-medium-emphasis mt-1">
+            Fijado por <code>configServer</code> (IDREP: {{ filterStore.serverIdRep }}{{ filterStore.serverCela ? ` - CELA: ${filterStore.serverCela}` : '' }}) para evitar mezclar reparticiones.
+          </div>
+        </div>
+
         <v-list-subheader class="text-uppercase text-caption font-weight-bold">
-          Seleccionar Municipio
+          {{ isPredetermined ? 'Municipio Conectado' : 'Seleccionar Municipio' }}
         </v-list-subheader>
 
         <v-list-item
@@ -79,6 +107,7 @@ async function selectTenant(tenantId) {
           :key="tenant.id"
           :value="tenant.id"
           :active="tenant.id === activeTenant.id"
+          :disabled="isPredetermined && tenant.id !== activeTenant.id"
           color="primary"
           class="py-2"
           @click="selectTenant(tenant.id)"
@@ -110,10 +139,37 @@ async function selectTenant(tenantId) {
               color="primary"
               size="small"
             ></v-icon>
+            <v-icon
+              v-else-if="isPredetermined"
+              icon="mdi-lock-outline"
+              color="grey"
+              size="x-small"
+            ></v-icon>
           </template>
         </v-list-item>
       </v-list>
     </v-menu>
+
+    <!-- Dialogo explicativo si intenta cambiar mientras esta predeterminado por el servidor -->
+    <v-dialog v-model="dialogBloqueado" max-width="480">
+      <v-card>
+        <v-card-title class="d-flex align-center bg-blue-grey-lighten-5 py-3">
+          <v-icon icon="mdi-shield-lock" color="primary" class="me-2"></v-icon>
+          <span class="text-subtitle-1 font-weight-bold">Municipio Predeterminado</span>
+        </v-card-title>
+        <v-card-text class="pa-4 text-body-2">
+          El servidor conectado pertenece a <strong>{{ activeTenant.name }}</strong> según la vista
+          <code>view/configServer</code> (IDREP: <strong>{{ filterStore.serverIdRep }}</strong>{{ filterStore.serverCela ? `, CELA: ${filterStore.serverCela}` : '' }}).
+          <br /><br />
+          Para evitar mezclar reparticiones o inconsistencias de liquidación, el municipio está bloqueado al asignado por la base de datos actual.
+          <br /><br />
+          Si desea operar con otra repartición o municipio, utilice el menú <strong>Servidor API</strong> para conectar con el servidor correspondiente.
+        </v-card-text>
+        <v-card-actions class="px-4 pb-3 justify-end">
+          <v-btn color="primary" variant="flat" @click="dialogBloqueado = false">Entendido</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 

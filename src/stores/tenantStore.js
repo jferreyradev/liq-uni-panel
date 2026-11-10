@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { TENANTS, DEFAULT_TENANT_ID, getTenantById } from '@/config/tenants'
+import { TENANTS, DEFAULT_TENANT_ID, getTenantById, resolveTenantFromConfig } from '@/config/tenants'
 
 const STORAGE_KEY = 'liq_tenant_id'
 
@@ -29,6 +29,8 @@ export const useTenantStore = defineStore('tenant', () => {
   const storedId = getStoredTenantId()
   const activeTenantId = ref(storedId && TENANTS.some((t) => t.id === storedId) ? storedId : DEFAULT_TENANT_ID)
   const tenantsList = ref([...TENANTS])
+  const isPredeterminedByServer = ref(false)
+  const serverConfig = ref(null)
 
   const activeTenant = computed(() => {
     return getTenantById(activeTenantId.value)
@@ -54,6 +56,19 @@ export const useTenantStore = defineStore('tenant', () => {
     return true
   }
 
+  function syncWithServerConfig(config) {
+    if (!config || typeof config !== 'object') return false
+    serverConfig.value = config
+    const matched = resolveTenantFromConfig(config)
+    if (matched) {
+      activeTenantId.value = matched.id
+      setStoredTenantId(matched.id)
+      isPredeterminedByServer.value = true
+      return true
+    }
+    return false
+  }
+
   return {
     activeTenantId,
     tenantsList,
@@ -65,6 +80,9 @@ export const useTenantStore = defineStore('tenant', () => {
     tenantLocation,
     tenantLogo,
     boletaLogo,
-    setTenant
+    isPredeterminedByServer,
+    serverConfig,
+    setTenant,
+    syncWithServerConfig
   }
 })

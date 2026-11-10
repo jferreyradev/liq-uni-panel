@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/userStore";
 import { useFilterStore } from "@/stores/filterStore";
@@ -21,6 +21,14 @@ if (!activeEnvId.value && apiEnvironments.value && apiEnvironments.value.length 
 const user = useUserStore();
 const router = useRouter();
 const filterStore = useFilterStore();
+
+onMounted(async () => {
+  try {
+    await filterStore.setConfig();
+  } catch (err) {
+    console.warn("[LoginView setConfig]", err);
+  }
+});
 
 const showPassword = ref(false);
 const userInput = ref({
