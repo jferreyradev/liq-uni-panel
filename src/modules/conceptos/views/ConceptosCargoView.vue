@@ -214,9 +214,9 @@ async function cargarConceptos(cargoId) {
       sort: JSON.stringify({ codigo: "asc", subcod: "asc", vencimiento: "asc" }),
     };
 
-    let res = await leerDatos("en/conceptoLiq", { query });
+    let res = await leerDatos("view/conceptoLiq", { query });
     if (!res.operacionOk || !Array.isArray(res.datos)) {
-      res = await leerDatos("view/conceptoLiq", { query });
+      res = await leerDatos("conceptoLiq", { query });
     }
 
     if (res.operacionOk && Array.isArray(res.datos)) {

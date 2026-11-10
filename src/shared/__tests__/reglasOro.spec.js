@@ -491,7 +491,6 @@ describe('Reglas de Oro de arquitectura', () => {
         'src/modules/agentes/components/CargaFamiliarList.vue': ['en/cargaFamiliar'],
         'src/modules/agentes/components/CargosConceptosList.vue': ['en/conceptoLiq'],
         'src/modules/agentes/components/LocalidadesList.vue': ['en/localidad'],
-        'src/modules/conceptos/views/ConceptosCargoView.vue': ['en/conceptoLiq'],
         'src/modules/liquidaciones/components/PanelCtrlLiq.vue': ['en/reparticion'],
         'src/modules/previsional/components/DDJJResumenDJ.vue': ['en/djPrevResumenDJ'],
         'src/stores/personasStore.js': ['en/provincias'],

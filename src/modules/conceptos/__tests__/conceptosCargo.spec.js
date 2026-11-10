@@ -237,7 +237,7 @@ describe("Módulo de Conceptos por Cargo", () => {
 
       // Conceptos cargados
       expect(mockLeerDatos).toHaveBeenCalledWith(
-        "en/conceptoLiq",
+        "view/conceptoLiq",
         expect.objectContaining({ query: expect.objectContaining({ CargoId: 301 }) })
       );
       expect(wrapper.vm.listaConceptos.length).toBe(1);

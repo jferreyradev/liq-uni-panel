@@ -123,22 +123,22 @@ export function useEndPoints() {
   }
 
   const currentEndpoints = computed(() => {
-    // 1. Si hay un override manual de desarrollo, se prioriza
-    if (desaBaseOverride.value) {
-      return {
-        base: desaBaseOverride.value,
-        boletas: desaBoletasOverride.value || `${desaBaseOverride.value}/api`,
-        sp: desaSpOverride.value || `${desaBaseOverride.value}/api`
-      }
-    }
-
-    // 2. Si hay un ambiente API seleccionado explícitamente (ej: rpi-desa, rpi-tv)
+    // 1. Si hay un ambiente API seleccionado explícitamente (ej: rpi-desa, rpi-tv), se prioriza
     if (activeEnvironment.value?.url) {
       const u = activeEnvironment.value.url.replace(/\/+$/, '')
       return {
         base: u,
         boletas: `${u}/api`,
         sp: `${u}/api`
+      }
+    }
+
+    // 2. Si hay un override manual de desarrollo, se utiliza
+    if (desaBaseOverride.value) {
+      return {
+        base: desaBaseOverride.value,
+        boletas: desaBoletasOverride.value || `${desaBaseOverride.value}/api`,
+        sp: desaSpOverride.value || `${desaBaseOverride.value}/api`
       }
     }
 
@@ -180,7 +180,7 @@ export function useEndPoints() {
     const token = authToken.value || getStoredValue(STORAGE_AUTH_TOKEN_KEY, '')
     // Si el ambiente activo define su propia apiKey, se prioriza sobre el default
     const envApiKey = activeEnvironment.value?.apiKey || ''
-    const apiKey = apiKeyOverride.value || envApiKey || getStoredValue(STORAGE_API_KEY, defaultEnvApiKey)
+    const apiKey = envApiKey || apiKeyOverride.value || getStoredValue(STORAGE_API_KEY, defaultEnvApiKey)
     const adminKey = adminKeyOverride.value || getStoredValue(STORAGE_ADMIN_KEY, defaultEnvAdminKey)
 
     const headers = {
@@ -332,6 +332,10 @@ export function useEndPoints() {
 
     activeEnvId.value = envId
     setStoredValue(STORAGE_ACTIVE_ENV_ID_KEY, envId)
+
+    // Limpiar overrides manuales obsoletos para que el ambiente seleccionado tenga efecto inmediato
+    desaBaseOverride.value = ''
+    setStoredValue(STORAGE_DESA_BASE_KEY, '')
 
     // Sincronizar automáticamente la apiKey si el ambiente la define
     if (found.apiKey) {
