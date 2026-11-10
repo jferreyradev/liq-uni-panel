@@ -19,7 +19,10 @@ const {
   adminKeyOverride,
   setApiKey,
   setAdminKey,
-  clearAuthToken
+  clearAuthToken,
+  apiEnvironments,
+  activeEnvId,
+  setApiEnvironment
 } = useEndPoints()
 const tenantStore = useTenantStore()
 
@@ -49,20 +52,12 @@ const filteredLogs = computed(() => {
   return logStore.logs
 })
 
-function applyPreset(preset) {
-  if (preset === 'api-desa') {
-    editBase.value = 'https://api-desa.liqsysonline.com'
-    editBoletas.value = 'https://api-desa.liqsysonline.com/api'
-    editSp.value = 'https://api-desa.liqsysonline.com/api'
-    editKey.value = 'desarrollo'
-    editPort.value = '3005'
-  } else if (preset === 'local-3005') {
-    editBase.value = 'http://localhost:3005'
-    editBoletas.value = 'http://localhost:3005/api'
-    editSp.value = 'http://localhost:3005/api'
-    editKey.value = 'desarrollo'
-    editPort.value = '3005'
-  }
+function selectApiEnvironment(envItem) {
+  setApiEnvironment(envItem.id)
+  editBase.value = envItem.url
+  editBoletas.value = `${envItem.url}/api`
+  editSp.value = `${envItem.url}/api`
+  editApiKey.value = envItem.apiKey
 }
 
 function handleSaveEndpoints() {
@@ -303,13 +298,30 @@ function copyLogsToClipboard() {
           </v-alert>
 
           <div class="mb-3">
-            <div class="text-caption font-weight-bold mb-1">Cargar Presets Rápidos para Desarrollo:</div>
-            <div class="d-flex flex-wrap gap-2">
-              <v-btn size="x-small" variant="outlined" color="purple" class="me-2 mb-2" @click="applyPreset('api-desa')">
-                API Liqsys Desa (api-desa.liqsysonline.com)
-              </v-btn>
-              <v-btn size="x-small" variant="outlined" color="teal" class="me-2 mb-2" @click="applyPreset('local-3005')">
-                Localhost :3005 (Node API / api_liquid)
+            <div class="text-caption font-weight-bold mb-1">
+              Servidores API Configurados (API_ENVIRONMENTS):
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <v-btn
+                v-for="envItem in apiEnvironments"
+                :key="envItem.id"
+                size="small"
+                :variant="envItem.id === activeEnvId ? 'flat' : 'outlined'"
+                :color="envItem.id === activeEnvId ? 'primary' : 'grey-darken-3'"
+                class="me-2 mb-2 font-weight-medium"
+                prepend-icon="mdi-server-network"
+                @click="selectApiEnvironment(envItem)"
+              >
+                {{ envItem.nombre }}
+                <v-chip
+                  v-if="envItem.id === activeEnvId"
+                  size="x-small"
+                  color="white"
+                  variant="flat"
+                  class="ms-2 font-weight-bold text-primary"
+                >
+                  Activo
+                </v-chip>
               </v-btn>
             </div>
           </div>

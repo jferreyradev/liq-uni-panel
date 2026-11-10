@@ -6,7 +6,7 @@ import { useFilterStore } from "@/stores/filterStore";
 import { useItemsMenu } from "@/composables/useItemsMenu";
 import { useTenantStore } from "@/stores/tenantStore";
 import { useLogStore } from "@/stores/logStore";
-import { DiagnosticDialog } from "@/shared/components";
+import { DiagnosticDialog, ApiEnvSelector } from "@/shared/components";
 
 const { setItemsMenu } = useItemsMenu();
 const tenantStore = useTenantStore();
@@ -114,6 +114,14 @@ function openDiagnosticsFromError() {
       </div>
 
       <v-card-text class="pa-5">
+        <div class="d-flex align-center justify-space-between mb-4 pa-2 bg-grey-lighten-4 rounded border">
+          <div class="d-flex align-center text-truncate me-2">
+            <v-icon icon="mdi-server-network" class="me-2" color="primary" size="small"></v-icon>
+            <span class="text-caption font-weight-medium text-truncate">Servidor Backend:</span>
+          </div>
+          <ApiEnvSelector color="primary" variant="outlined" density="compact" :show-label="false" />
+        </div>
+
         <h3 class="text-subtitle-1 font-weight-bold mb-3">Acceso al sistema</h3>
         <v-form v-if="!forgot" @submit.prevent="login">
           <v-text-field

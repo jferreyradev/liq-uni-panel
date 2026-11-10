@@ -7,7 +7,7 @@ import { useItemsMenu } from '@/composables/useItemsMenu'
 import { useFilterStore } from '@/stores/filterStore'
 import { useTenantStore } from '@/stores/tenantStore'
 import { useLogStore } from '@/stores/logStore'
-import { TenantSelector, DiagnosticDialog } from '@/shared/components'
+import { TenantSelector, ApiEnvSelector, DiagnosticDialog } from '@/shared/components'
 
 const storeFilter = useFilterStore()
 const tenantStore = useTenantStore()
@@ -199,6 +199,11 @@ function handleLogout() {
             </v-list-item>
           </v-list>
         </v-menu>
+      </div>
+
+      <!-- Selector de Servidor API (node-apiliq) -->
+      <div class="me-2">
+        <ApiEnvSelector />
       </div>
 
       <!-- Selector de Municipio / Tenant -->

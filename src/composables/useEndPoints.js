@@ -2,6 +2,12 @@ import { ref, computed } from 'vue'
 import { getActivePinia } from 'pinia'
 import { useTenantStore } from '@/stores/tenantStore'
 import { DEFAULT_ENDPOINTS, TENANTS } from '@/config/tenants'
+import {
+  loadApiEnvironments,
+  saveApiEnvironmentsToStorage,
+  STORAGE_ACTIVE_ENV_ID_KEY,
+  DEFAULT_API_ENVIRONMENTS
+} from '@/config/apiEnvironments'
 
 const STORAGE_ENV_KEY = 'liq_env'
 const STORAGE_DESA_BASE_KEY = 'liq_desa_base'
@@ -71,6 +77,29 @@ function setStoredValue(key, val) {
 const defaultEnvApiKey = import.meta.env?.VITE_API_KEY || ''
 const defaultEnvAdminKey = import.meta.env?.VITE_ADMIN_KEY || ''
 
+const apiEnvironments = ref(loadApiEnvironments())
+
+function getStoredActiveEnvId() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const stored = window.localStorage.getItem(STORAGE_ACTIVE_ENV_ID_KEY)
+      if (stored && apiEnvironments.value.some((e) => e.id === stored)) {
+        return stored
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+const activeEnvId = ref(getStoredActiveEnvId())
+
+const activeEnvironment = computed(() => {
+  if (!activeEnvId.value) return null
+  return apiEnvironments.value.find((e) => e.id === activeEnvId.value) || null
+})
+
 const env = ref(getStoredEnv())
 const desaBaseOverride = ref(getStoredValue(STORAGE_DESA_BASE_KEY, ''))
 const desaBoletasOverride = ref(getStoredValue(STORAGE_DESA_BOLETAS_KEY, ''))
@@ -94,14 +123,34 @@ export function useEndPoints() {
   }
 
   const currentEndpoints = computed(() => {
+    // 1. Si hay un override manual de desarrollo, se prioriza
+    if (desaBaseOverride.value) {
+      return {
+        base: desaBaseOverride.value,
+        boletas: desaBoletasOverride.value || `${desaBaseOverride.value}/api`,
+        sp: desaSpOverride.value || `${desaBaseOverride.value}/api`
+      }
+    }
+
+    // 2. Si hay un ambiente API seleccionado explícitamente (ej: rpi-desa, rpi-tv)
+    if (activeEnvironment.value?.url) {
+      const u = activeEnvironment.value.url.replace(/\/+$/, '')
+      return {
+        base: u,
+        boletas: `${u}/api`,
+        sp: `${u}/api`
+      }
+    }
+
+    // 3. Fallback a endpoints de tenants (Concepción, Burruyacú, etc.)
     const tStore = getTenantStoreSafe()
     const tEndpoints = tStore?.activeTenant?.endpoints || DEFAULT_ENDPOINTS
     const isDesaMode = env.value === 'Desa' || tStore?.activeTenantId === 'desarrollo'
     if (isDesaMode) {
       return {
-        base: desaBaseOverride.value || tEndpoints.desa.base,
-        boletas: desaBoletasOverride.value || tEndpoints.desa.boletas,
-        sp: desaSpOverride.value || tEndpoints.desa.sp
+        base: tEndpoints.desa.base,
+        boletas: tEndpoints.desa.boletas,
+        sp: tEndpoints.desa.sp
       }
     }
     return tEndpoints.prod
@@ -129,7 +178,9 @@ export function useEndPoints() {
       : defaultPort
 
     const token = authToken.value || getStoredValue(STORAGE_AUTH_TOKEN_KEY, '')
-    const apiKey = apiKeyOverride.value || getStoredValue(STORAGE_API_KEY, defaultEnvApiKey)
+    // Si el ambiente activo define su propia apiKey, se prioriza sobre el default
+    const envApiKey = activeEnvironment.value?.apiKey || ''
+    const apiKey = apiKeyOverride.value || envApiKey || getStoredValue(STORAGE_API_KEY, defaultEnvApiKey)
     const adminKey = adminKeyOverride.value || getStoredValue(STORAGE_ADMIN_KEY, defaultEnvAdminKey)
 
     const headers = {
@@ -272,6 +323,48 @@ export function useEndPoints() {
     setStoredValue(STORAGE_ADMIN_KEY, val || '')
   }
 
+  function setApiEnvironment(envId) {
+    const found = apiEnvironments.value.find((e) => e.id === envId)
+    if (!found) {
+      console.warn(`[useEndPoints] Ambiente API con id "${envId}" no encontrado.`)
+      return false
+    }
+
+    activeEnvId.value = envId
+    setStoredValue(STORAGE_ACTIVE_ENV_ID_KEY, envId)
+
+    // Sincronizar automáticamente la apiKey si el ambiente la define
+    if (found.apiKey) {
+      setApiKey(found.apiKey)
+    }
+
+    // Al conmutar de backend se limpia el token de sesión previo
+    clearAuthToken()
+    return true
+  }
+
+  function clearActiveApiEnvironment() {
+    activeEnvId.value = null
+    setStoredValue(STORAGE_ACTIVE_ENV_ID_KEY, '')
+  }
+
+  function updateApiEnvironments(list) {
+    if (Array.isArray(list) && list.length > 0) {
+      apiEnvironments.value = [...list]
+      saveApiEnvironmentsToStorage(list)
+      if (activeEnvId.value && !list.some((e) => e.id === activeEnvId.value)) {
+        setApiEnvironment(list[0].id)
+      }
+    }
+  }
+
+  function resetApiEnvironments() {
+    apiEnvironments.value = [...DEFAULT_API_ENVIRONMENTS]
+    saveApiEnvironmentsToStorage([])
+    activeEnvId.value = null
+    setStoredValue(STORAGE_ACTIVE_ENV_ID_KEY, '')
+  }
+
   return {
     apiBase,
     apiBoletas,
@@ -282,6 +375,13 @@ export function useEndPoints() {
     authToken,
     apiKeyOverride,
     adminKeyOverride,
+    apiEnvironments,
+    activeEnvId,
+    activeEnvironment,
+    setApiEnvironment,
+    clearActiveApiEnvironment,
+    updateApiEnvironments,
+    resetApiEnvironments,
     setAuthToken,
     clearAuthToken,
     setApiKey,
