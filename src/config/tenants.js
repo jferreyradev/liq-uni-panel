@@ -4,8 +4,8 @@ import logoTafi from '@/assets/tenants/tafiviejo.png'
 import logoTrancas from '@/assets/tenants/trancas.png'
 import logoDefault from '@/assets/logo.png'
 
-export const API_URL_PROD = 'https://api-rpi.liqsysonline.com'
-export const API_URL_DESA = 'https://api-desa.liqsysonline.com'
+export const API_URL_PROD = import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_URL_PROD || 'https://api-rpi.liqsysonline.com'
+export const API_URL_DESA = import.meta.env?.VITE_API_URL_DESA || 'https://api-desa.liqsysonline.com'
 
 export const DEFAULT_ENDPOINTS = {
   desa: {

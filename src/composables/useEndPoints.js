@@ -68,6 +68,9 @@ function setStoredValue(key, val) {
   }
 }
 
+const defaultEnvApiKey = import.meta.env?.VITE_API_KEY || ''
+const defaultEnvAdminKey = import.meta.env?.VITE_ADMIN_KEY || ''
+
 const env = ref(getStoredEnv())
 const desaBaseOverride = ref(getStoredValue(STORAGE_DESA_BASE_KEY, ''))
 const desaBoletasOverride = ref(getStoredValue(STORAGE_DESA_BOLETAS_KEY, ''))
@@ -75,8 +78,8 @@ const desaSpOverride = ref(getStoredValue(STORAGE_DESA_SP_KEY, ''))
 const desaKeyOverride = ref(getStoredValue(STORAGE_DESA_KEY_HEADER, ''))
 const desaPortOverride = ref(getStoredValue(STORAGE_DESA_PORT_HEADER, ''))
 const authToken = ref(getStoredValue(STORAGE_AUTH_TOKEN_KEY, ''))
-const apiKeyOverride = ref(getStoredValue(STORAGE_API_KEY, ''))
-const adminKeyOverride = ref(getStoredValue(STORAGE_ADMIN_KEY, ''))
+const apiKeyOverride = ref(getStoredValue(STORAGE_API_KEY, defaultEnvApiKey))
+const adminKeyOverride = ref(getStoredValue(STORAGE_ADMIN_KEY, defaultEnvAdminKey))
 
 export function useEndPoints() {
   function getTenantStoreSafe() {
@@ -126,8 +129,8 @@ export function useEndPoints() {
       : defaultPort
 
     const token = authToken.value || getStoredValue(STORAGE_AUTH_TOKEN_KEY, '')
-    const apiKey = apiKeyOverride.value || getStoredValue(STORAGE_API_KEY, '')
-    const adminKey = adminKeyOverride.value || getStoredValue(STORAGE_ADMIN_KEY, '')
+    const apiKey = apiKeyOverride.value || getStoredValue(STORAGE_API_KEY, defaultEnvApiKey)
+    const adminKey = adminKeyOverride.value || getStoredValue(STORAGE_ADMIN_KEY, defaultEnvAdminKey)
 
     const headers = {
       'Content-Type': 'application/json',
@@ -138,7 +141,9 @@ export function useEndPoints() {
     // Inyectar credenciales del nuevo sistema de seguridad híbrido de node-apiliq
     if (token) {
       headers['Authorization'] = `Bearer ${token}`
-    } else if (apiKey) {
+    }
+
+    if (apiKey) {
       headers['X-API-Key'] = apiKey
     }
 

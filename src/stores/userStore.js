@@ -161,12 +161,16 @@ export const useUserStore = defineStore('userStore', {
           encodedPass = pass
         }
 
+        const { apiKeyOverride } = useEndPoints()
+        const currentApiKey = apiKeyOverride?.value || (typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('liq_api_key') : '') || import.meta.env?.VITE_API_KEY || ''
+        const keyPayload = currentApiKey ? { apiKey: currentApiKey } : {}
+
         // Intento 1: POST /api/auth/login con Base64
         let res = await pedir({
           service: 'base',
           path: 'auth/login',
           method: 'POST',
-          body: { usr: userName, pws: encodedPass },
+          body: { usr: userName, pws: encodedPass, ...keyPayload },
           category: 'AUTH'
         })
 
@@ -176,7 +180,7 @@ export const useUserStore = defineStore('userStore', {
             service: 'base',
             path: 'auth/login',
             method: 'POST',
-            body: { usr: userName, pws: pass },
+            body: { usr: userName, pws: pass, ...keyPayload },
             category: 'AUTH'
           })
         }
