@@ -36,7 +36,7 @@ export const RESPONSE_RAW = "raw";
 export function resolveServiceUrl(service = "base", path = "") {
   const { apiBase, apiBoletas, apiSp } = useEndPoints();
 
-  const cleanPath = String(path ?? "").replace(/^\/+/, "");
+  let cleanPath = String(path ?? "").replace(/^\/+/, "");
 
   if (service === "sp") {
     const base = String(apiSp.value ?? "").replace(/\/+$/, "");
@@ -45,6 +45,14 @@ export function resolveServiceUrl(service = "base", path = "") {
   if (service === "boletas") {
     const base = String(apiBoletas.value ?? "").replace(/\/+$/, "");
     return `${base}/${cleanPath}`;
+  }
+
+  // Compatibilidad con entidades: en el backend (node-apiliq) las entidades
+  // se mapean en /api/{entityName} (ej: /api/conceptoLiq, /api/persona),
+  // mientras que /api/en/list es el único endpoint con prefijo /en/.
+  // Si la ruta viene como 'en/<entidad>' (salvo 'en/list'), se normaliza a '<entidad>'.
+  if (cleanPath.startsWith("en/") && !cleanPath.startsWith("en/list")) {
+    cleanPath = cleanPath.slice(3);
   }
 
   const base = String(apiBase.value ?? "").replace(/\/+$/, "");
@@ -158,7 +166,8 @@ export async function request({
 } = {}) {
   const { getBoletasHeaders } = useEndPoints();
 
-  const target = url || resolveServiceUrl(service, path);
+  const rawTarget = url || resolveServiceUrl(service, path);
+  const target = rawTarget.replace(/\/api\/en\/(?!list\b)/, "/api/");
   const finalUrl = appendQuery(target, query);
 
   const controller = new AbortController();

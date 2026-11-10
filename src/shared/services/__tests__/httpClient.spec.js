@@ -65,6 +65,12 @@ describe('httpClient', () => {
     it('no duplica las barras iniciales', () => {
       expect(resolveServiceUrl('base', '/view/cargo')).toBe('https://api.test/api/view/cargo')
     })
+
+    it('normaliza rutas de entidad en/ hacia la ruta real de la API', () => {
+      expect(resolveServiceUrl('base', 'en/conceptoLiq')).toBe('https://api.test/api/conceptoLiq')
+      expect(resolveServiceUrl('base', 'en/persona')).toBe('https://api.test/api/persona')
+      expect(resolveServiceUrl('base', 'en/list')).toBe('https://api.test/api/en/list')
+    })
   })
 
   describe('appendQuery', () => {
