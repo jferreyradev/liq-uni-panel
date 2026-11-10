@@ -5,6 +5,8 @@ import { RepoHeader } from "@/shared/components";
 import OperacionTransformacion from "../components/OperacionTransformacion.vue";
 import OperacionLiquidacion from "../components/OperacionLiquidacion.vue";
 import OperacionBoletas from "../components/OperacionBoletas.vue";
+import OperacionAcreditaciones from "../components/OperacionAcreditaciones.vue";
+import OperacionIPSST from "../components/OperacionIPSST.vue";
 import MonitorProcesos from "../components/MonitorProcesos.vue";
 
 const tenantStore = useTenantStore();
@@ -53,10 +55,16 @@ function onProcesoIniciado(evento) {
           2. Liquidaciones
         </v-tab>
         <v-tab value="boletas" prepend-icon="mdi-file-document-check-outline">
-          3. Publicación Boletas
+          3. Boletas
+        </v-tab>
+        <v-tab value="acreditaciones" prepend-icon="mdi-bank-transfer">
+          4. Acreditaciones
+        </v-tab>
+        <v-tab value="ipsst" prepend-icon="mdi-hospital-box">
+          5. IPSST (DDJJ)
         </v-tab>
         <v-tab value="monitor" prepend-icon="mdi-history">
-          Monitor de Procesos
+          Monitor
         </v-tab>
       </v-tabs>
 
@@ -71,6 +79,14 @@ function onProcesoIniciado(evento) {
 
         <v-window-item value="boletas">
           <OperacionBoletas @proceso-iniciado="onProcesoIniciado" />
+        </v-window-item>
+
+        <v-window-item value="acreditaciones">
+          <OperacionAcreditaciones @proceso-iniciado="onProcesoIniciado" />
+        </v-window-item>
+
+        <v-window-item value="ipsst">
+          <OperacionIPSST @proceso-iniciado="onProcesoIniciado" />
         </v-window-item>
 
         <v-window-item value="monitor">

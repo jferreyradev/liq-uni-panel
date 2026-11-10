@@ -7,6 +7,8 @@ import OperacionesView from "../views/OperacionesView.vue";
 import OperacionTransformacion from "../components/OperacionTransformacion.vue";
 import OperacionLiquidacion from "../components/OperacionLiquidacion.vue";
 import OperacionBoletas from "../components/OperacionBoletas.vue";
+import OperacionAcreditaciones from "../components/OperacionAcreditaciones.vue";
+import OperacionIPSST from "../components/OperacionIPSST.vue";
 import MonitorProcesos from "../components/MonitorProcesos.vue";
 import { operacionesRoutes } from "../routes";
 
@@ -186,6 +188,61 @@ describe("Módulo de Operaciones", () => {
     });
   });
 
+  describe("OperacionAcreditaciones", () => {
+    it("invoca sp/generaArchivoAcred con [vPERIODO, vIDTIPOLIQ, vIDGRUPOADI, vLEY] al confirmar", async () => {
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: "/acredit", component: { template: "<div>Acreditaciones</div>" } }],
+      });
+
+      const wrapper = mount(OperacionAcreditaciones, {
+        global: { plugins: [router] },
+      });
+      await flushPromises();
+
+      expect(wrapper.text()).toContain("Generación de Archivo de Acreditaciones");
+      await wrapper.vm.ejecutarAcreditacion();
+      await flushPromises();
+
+      expect(mockEjecutarSP_SinEspera).toHaveBeenCalledWith(
+        "sp/generaArchivoAcred",
+        expect.objectContaining({
+          vPERIODO: expect.any(String),
+          vIDTIPOLIQ: 1,
+          vIDGRUPOADI: 0,
+          vLEY: 0,
+        })
+      );
+      expect(wrapper.emitted("proceso-iniciado")).toBeTruthy();
+    });
+  });
+
+  describe("OperacionIPSST", () => {
+    it("invoca sp/archivoIPSSTddjj con [Periodo] al confirmar", async () => {
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: "/ipsst", component: { template: "<div>IPSST</div>" } }],
+      });
+
+      const wrapper = mount(OperacionIPSST, {
+        global: { plugins: [router] },
+      });
+      await flushPromises();
+
+      expect(wrapper.text()).toContain("Generación de Archivo IPSST (DDJJ)");
+      await wrapper.vm.ejecutarIPSST();
+      await flushPromises();
+
+      expect(mockEjecutarSP_SinEspera).toHaveBeenCalledWith(
+        "sp/archivoIPSSTddjj",
+        expect.objectContaining({
+          Periodo: expect.any(String),
+        })
+      );
+      expect(wrapper.emitted("proceso-iniciado")).toBeTruthy();
+    });
+  });
+
   describe("MonitorProcesos", () => {
     it("carga y muestra el log de procesos desde view/logProcesos", async () => {
       const wrapper = mount(MonitorProcesos);
@@ -212,8 +269,10 @@ describe("Módulo de Operaciones", () => {
       expect(wrapper.text()).toContain("Módulo de Operaciones");
       expect(wrapper.text()).toContain("1. Transformación");
       expect(wrapper.text()).toContain("2. Liquidaciones");
-      expect(wrapper.text()).toContain("3. Publicación Boletas");
-      expect(wrapper.text()).toContain("Monitor de Procesos");
+      expect(wrapper.text()).toContain("3. Boletas");
+      expect(wrapper.text()).toContain("4. Acreditaciones");
+      expect(wrapper.text()).toContain("5. IPSST (DDJJ)");
+      expect(wrapper.text()).toContain("Monitor");
     });
   });
 });
