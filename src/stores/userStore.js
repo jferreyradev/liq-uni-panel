@@ -58,17 +58,32 @@ async function pedir({
   }
 }
 
+function getStoredUser() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const u = window.localStorage.getItem('liq_user')
+      if (u) return JSON.parse(u)
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+const initialToken = typeof window !== 'undefined' && window.localStorage ? (window.localStorage.getItem('liq_token') || '') : ''
+const initialUser = getStoredUser()
+
 export const useUserStore = defineStore('userStore', {
   state: () => ({
-    user: null, // Estado inicial del usuario
-    token: typeof window !== 'undefined' && window.localStorage ? (window.localStorage.getItem('liq_token') || '') : '',
+    user: initialUser,
+    token: initialToken,
     pers: null,
     loading: false,
     result: '',
     error: null,
     lastError: null, // Detalle técnico del último error ({ status, statusText, url, message, body })
-    success: false,
-    auth: false,
+    success: !!initialToken,
+    auth: !!initialToken && !!initialUser,
     allowSign: false,
     rol: null,
     users: [],
@@ -203,6 +218,9 @@ export const useUserStore = defineStore('userStore', {
           }
           this.auth = true
           this.success = true
+          if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem('liq_user', JSON.stringify(this.user))
+          }
           return
         }
 
@@ -218,6 +236,9 @@ export const useUserStore = defineStore('userStore', {
           if (atob(this.user?.PASSWORD) === pass || this.user?.PASSWORD === pass) {
             this.auth = true
             this.success = true
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem('liq_user', JSON.stringify(this.user))
+            }
           } else {
             this.auth = false
           }
@@ -233,6 +254,30 @@ export const useUserStore = defineStore('userStore', {
       this.user = null
       this.auth = false
       this.token = ''
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('liq_user')
+      }
+      const { clearAuthToken } = useEndPoints()
+      clearAuthToken()
+    },
+
+    $reset() {
+      this.user = null
+      this.auth = false
+      this.token = ''
+      this.pers = null
+      this.loading = false
+      this.result = ''
+      this.error = null
+      this.lastError = null
+      this.success = false
+      this.allowSign = false
+      this.rol = null
+      this.users = []
+      this.config = null
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('liq_user')
+      }
       const { clearAuthToken } = useEndPoints()
       clearAuthToken()
     },

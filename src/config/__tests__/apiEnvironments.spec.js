@@ -72,9 +72,26 @@ describe('apiEnvironments multi-server configuration', () => {
     expect(loaded[0].apiKey).toBe('sec123')
   })
 
-  it('devuelve la lista por defecto cuando no hay nada en storage', () => {
+  it('devuelve la lista por defecto cuando no hay nada en storage ni en env', () => {
+    vi.stubEnv('VITE_API_ENVIRONMENTS', '')
+    vi.stubEnv('API_ENVIRONMENTS', '')
     const loaded = loadApiEnvironments()
     expect(loaded).toEqual(DEFAULT_API_ENVIRONMENTS)
     expect(loaded.length).toBeGreaterThanOrEqual(2)
+    vi.unstubAllEnvs()
+  })
+
+  it('carga ambientes definidos en variable de entorno cuando no hay en storage', () => {
+    vi.stubEnv(
+      'VITE_API_ENVIRONMENTS',
+      JSON.stringify([
+        { id: 'env-test', nombre: 'Test Server', url: 'https://test.api.com', apiKey: 'k-test' }
+      ])
+    )
+    const loaded = loadApiEnvironments()
+    expect(loaded).toHaveLength(1)
+    expect(loaded[0].id).toBe('env-test')
+    expect(loaded[0].apiKey).toBe('k-test')
+    vi.unstubAllEnvs()
   })
 })

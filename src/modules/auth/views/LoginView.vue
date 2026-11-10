@@ -7,10 +7,16 @@ import { useItemsMenu } from "@/composables/useItemsMenu";
 import { useTenantStore } from "@/stores/tenantStore";
 import { useLogStore } from "@/stores/logStore";
 import { DiagnosticDialog, ApiEnvSelector } from "@/shared/components";
+import { useEndPoints } from "@/composables/useEndPoints";
 
 const { setItemsMenu } = useItemsMenu();
 const tenantStore = useTenantStore();
 const logStore = useLogStore();
+const { activeEnvId, apiEnvironments, setApiEnvironment } = useEndPoints();
+
+if (!activeEnvId.value && apiEnvironments.value && apiEnvironments.value.length > 0) {
+  setApiEnvironment(apiEnvironments.value[0].id);
+}
 
 const user = useUserStore();
 const router = useRouter();
