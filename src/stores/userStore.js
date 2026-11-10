@@ -176,8 +176,16 @@ export const useUserStore = defineStore('userStore', {
           encodedPass = pass
         }
 
-        const { apiKeyOverride } = useEndPoints()
-        const currentApiKey = apiKeyOverride?.value || (typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('liq_api_key') : '') || import.meta.env?.VITE_API_KEY || ''
+        const { activeEnvironment, apiKeyOverride } = useEndPoints()
+        const envApiKey =
+          activeEnvironment?.value?.apiKey ||
+          (activeEnvironment?.value?.id === 'rpi-tv' ? 'f098tv' : (activeEnvironment?.value?.id === 'rpi-desa' ? 'admin987front' : ''))
+        const currentApiKey =
+          envApiKey ||
+          apiKeyOverride?.value ||
+          (typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('liq_api_key') : '') ||
+          import.meta.env?.VITE_API_KEY ||
+          ''
         const keyPayload = currentApiKey ? { apiKey: currentApiKey } : {}
 
         // Intento 1: POST /api/auth/login con Base64

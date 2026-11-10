@@ -179,7 +179,9 @@ export function useEndPoints() {
 
     const token = authToken.value || getStoredValue(STORAGE_AUTH_TOKEN_KEY, '')
     // Si el ambiente activo define su propia apiKey, se prioriza sobre el default
-    const envApiKey = activeEnvironment.value?.apiKey || ''
+    const envApiKey =
+      activeEnvironment.value?.apiKey ||
+      (activeEnvironment.value?.id === 'rpi-tv' ? 'f098tv' : (activeEnvironment.value?.id === 'rpi-desa' ? 'admin987front' : ''))
     const apiKey = envApiKey || apiKeyOverride.value || getStoredValue(STORAGE_API_KEY, defaultEnvApiKey)
     const adminKey = adminKeyOverride.value || getStoredValue(STORAGE_ADMIN_KEY, defaultEnvAdminKey)
 
@@ -337,10 +339,9 @@ export function useEndPoints() {
     desaBaseOverride.value = ''
     setStoredValue(STORAGE_DESA_BASE_KEY, '')
 
-    // Sincronizar automáticamente la apiKey si el ambiente la define
-    if (found.apiKey) {
-      setApiKey(found.apiKey)
-    }
+    // Sincronizar automáticamente la apiKey del ambiente seleccionado
+    const keyToSet = found.apiKey || (found.id === 'rpi-tv' ? 'f098tv' : (found.id === 'rpi-desa' ? 'admin987front' : ''))
+    setApiKey(keyToSet)
 
     // Al conmutar de backend se limpia el token de sesión previo
     clearAuthToken()

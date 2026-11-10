@@ -76,6 +76,14 @@ export async function eliminarRegistro(url = "", metodo = "DELETE", options = {}
   };
 }
 
+export const FALLBACK_VIEW_MAP = {
+  'view/conceptoLiq': 'conceptoLiq',
+  'view/resumenLiq': 'view/resumenliq',
+  'view/archivoAcred': 'view/acredBco',
+  'view/detalleAcred': 'view/acredBancoDet',
+  'view/resumenAcred': 'view/resumenAcredBco',
+};
+
 /**
  * Lee un listado.
  *
@@ -84,7 +92,7 @@ export async function eliminarRegistro(url = "", metodo = "DELETE", options = {}
  * arman la URL por su cuenta.
  *
  * @param {string} url ruta relativa a /api/ o URL absoluta
- * @param {{signal?: AbortSignal, timeout?: number, headers?: Object, query?: Object, method?: string, body?: *}} [options]
+ * @param {{signal?: AbortSignal, timeout?: number, headers?: Object, query?: Object, method?: string, body?: *, _isFallback?: boolean}} [options]
  * @returns {Promise<{estado, operacionOk, errmsg, datos, notFound}>}
  */
 export async function leerDatos(url = "", options = {}) {
@@ -99,6 +107,17 @@ export async function leerDatos(url = "", options = {}) {
     signal: options.signal,
     timeout: options.timeout,
   });
+
+  const cleanPath = String(url ?? '').replace(/^\/+/, '');
+  if (res.notFound && FALLBACK_VIEW_MAP[cleanPath] && !options._isFallback) {
+    const fallbackRes = await leerDatos(FALLBACK_VIEW_MAP[cleanPath], {
+      ...options,
+      _isFallback: true
+    });
+    if (fallbackRes.operacionOk && !fallbackRes.notFound) {
+      return fallbackRes;
+    }
+  }
 
   // Se conserva la semántica histórica: un 404 no se considera un error
   // fatal del listado. El flag notFound permite distinguirlo si hace falta.
