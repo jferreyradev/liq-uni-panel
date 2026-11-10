@@ -211,7 +211,7 @@ async function cargarConceptos(cargoId) {
   try {
     const query = {
       CargoId: cargoId,
-      sort: JSON.stringify({ codigo: "asc", subcod: "asc", vencimiento: "asc" }),
+      sort: JSON.stringify({ Codigo: "asc", SubCodigo: "asc", Vencimiento: "asc" }),
     };
 
     let res = await leerDatos("view/conceptoLiq", { query });

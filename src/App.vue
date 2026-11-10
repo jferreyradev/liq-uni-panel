@@ -117,9 +117,9 @@ if (store.auth && (!itemsMenu.value || itemsMenu.value.length === 0)) {
   }
 }
 
-// configServer solo se consulta una vez que el usuario está logueado
+// Si ya está autenticado, inicializar configuración y período activo del servidor
 if (store.auth) {
-  storeFilter.setConfig()
+  storeFilter.init()
 }
 
 function toggleTheme() {

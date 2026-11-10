@@ -30,9 +30,9 @@ async function leerListaRegs() {
   isPending.value = true;
   //const { datos, operacionOk } = await leerDatos('view/novAltas?HojaId=' + hojaEditar.ID)
   let url =
-    "en/conceptoLiq?CargoId=" +
+    "view/conceptoLiq?CargoId=" +
     cargoId +
-    '&sort={"codigo":"asc","subcod":"asc", "vencimiento":"asc"}';
+    '&sort={"Codigo":"asc","SubCodigo":"asc","Vencimiento":"asc"}';
   const { datos, operacionOk } = await leerDatos(url);
   data.value = datos;
   lecturaListaRegs.value = operacionOk;
