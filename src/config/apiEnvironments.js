@@ -9,13 +9,13 @@ export const DEFAULT_API_ENVIRONMENTS = [
     id: 'rpi-desa',
     nombre: 'Producción (Raspberry Pi)',
     url: 'https://api-desa.liqsysonline.com',
-    apiKey: 'admin987front'
+    apiKey: ''
   },
   {
     id: 'rpi-tv',
     nombre: 'Desarrollo Local',
     url: 'https://api-tv.liqsysonline.com',
-    apiKey: 'f098tv'
+    apiKey: ''
   }
 ]
 
