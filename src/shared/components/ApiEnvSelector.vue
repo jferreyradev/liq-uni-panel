@@ -42,8 +42,6 @@ const currentEnvLabel = computed(() => {
 })
 
 function handleSelectEnv(envId) {
-  if (activeEnvId.value === envId) return
-
   setApiEnvironment(envId)
 
   // Cierre de sesión por seguridad al cambiar de backend

@@ -24,6 +24,9 @@ const filterStore = useFilterStore();
 
 onMounted(async () => {
   try {
+    if (activeEnvId.value) {
+      setApiEnvironment(activeEnvId.value);
+    }
     await filterStore.setConfig();
   } catch (err) {
     console.warn("[LoginView setConfig]", err);
