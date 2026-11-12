@@ -6,8 +6,7 @@ export const liquidacionesRoutes = [
   },
   {
     path: "/procesos",
-    name: "procesos",
-    component: () => import("./views/ProcesosView.vue"),
+    redirect: "/operaciones",
   },
   {
     path: "/boletas",

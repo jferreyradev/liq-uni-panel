@@ -218,7 +218,47 @@ describe("Módulo de Operaciones", () => {
   });
 
   describe("OperacionIPSST", () => {
-    it("invoca sp/archivoIPSSTddjj con [Periodo] al confirmar", async () => {
+    it("bloquea la generación si no existe DDJJ previa para el período", async () => {
+      mockLeerDatos.mockImplementation(async (url) => {
+        if (url.includes("view/periodo")) {
+          return { operacionOk: true, datos: [{ PERIODO: "2025-04-01" }] };
+        }
+        return { operacionOk: true, datos: [] };
+      });
+
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [
+          { path: "/ipsst", component: { template: "<div>IPSST</div>" } },
+          { path: "/prevision", component: { template: "<div>Previsión</div>" } },
+        ],
+      });
+
+      const wrapper = mount(OperacionIPSST, {
+        global: { plugins: [router] },
+      });
+      await flushPromises();
+
+      expect(wrapper.text()).toContain("Generación de Archivo IPSST (DDJJ)");
+      expect(wrapper.text()).toContain("No existe DDJJ previa para el período");
+
+      await wrapper.vm.ejecutarIPSST();
+      await flushPromises();
+
+      expect(mockEjecutarSP_SinEspera).not.toHaveBeenCalled();
+    });
+
+    it("invoca sp/archivoIPSSTddjj con [Periodo] cuando la DDJJ previa existe", async () => {
+      mockLeerDatos.mockImplementation(async (url) => {
+        if (url.includes("view/periodo")) {
+          return { operacionOk: true, datos: [{ PERIODO: "2025-04-01" }] };
+        }
+        if (url.includes("djPrevResumenDJ")) {
+          return { operacionOk: true, datos: [{ TOTAL_BRUTO: 150000 }] };
+        }
+        return { operacionOk: true, datos: [] };
+      });
+
       const router = createRouter({
         history: createMemoryHistory(),
         routes: [{ path: "/ipsst", component: { template: "<div>IPSST</div>" } }],
@@ -230,6 +270,8 @@ describe("Módulo de Operaciones", () => {
       await flushPromises();
 
       expect(wrapper.text()).toContain("Generación de Archivo IPSST (DDJJ)");
+      expect(wrapper.text()).toContain("DDJJ Previsional verificada");
+
       await wrapper.vm.ejecutarIPSST();
       await flushPromises();
 
