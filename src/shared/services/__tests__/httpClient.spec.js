@@ -66,10 +66,10 @@ describe('httpClient', () => {
       expect(resolveServiceUrl('base', '/view/cargo')).toBe('https://api.test/api/view/cargo')
     })
 
-    it('normaliza rutas de entidad en/ hacia la ruta real de la API', () => {
-      expect(resolveServiceUrl('base', 'en/conceptoLiq')).toBe('https://api.test/api/conceptoLiq')
-      expect(resolveServiceUrl('base', 'en/persona')).toBe('https://api.test/api/persona')
-      expect(resolveServiceUrl('base', 'en/list')).toBe('https://api.test/api/en/list')
+    it('resuelve rutas directas y de vistas hacia /api/', () => {
+      expect(resolveServiceUrl('base', 'conceptoLiq')).toBe('https://api.test/api/conceptoLiq')
+      expect(resolveServiceUrl('base', 'persona')).toBe('https://api.test/api/persona')
+      expect(resolveServiceUrl('base', 'view/conceptoLiq')).toBe('https://api.test/api/view/conceptoLiq')
     })
   })
 

@@ -12,7 +12,7 @@ import { leerDatos } from "@/shared/services/apiService";
  * componente ya desmontado.
  *
  * @param {Object} options
- * @param {string} [options.baseUrl] ruta base (ej: "en/cargo")
+ * @param {string} [options.baseUrl] ruta base (ej: "view/cargo")
  * @param {(filtro: string|null) => string} [options.buildUrl] arma la url final
  * @param {(err: Error) => void} [options.onError]
  * @param {boolean} [options.autoLoad] carga al crear (default false)

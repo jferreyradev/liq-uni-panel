@@ -47,22 +47,14 @@ export function resolveServiceUrl(service = "base", path = "") {
     return `${base}/${cleanPath}`;
   }
 
-  // Compatibilidad con entidades: en el backend (node-apiliq) las entidades
-  // se mapean en /api/{entityName} (ej: /api/conceptoLiq, /api/persona),
-  // mientras que /api/en/list es el único endpoint con prefijo /en/.
-  // Si la ruta viene como 'en/<entidad>' (salvo 'en/list'), se normaliza a '<entidad>'.
-  if (cleanPath.startsWith("en/") && !cleanPath.startsWith("en/list")) {
-    cleanPath = cleanPath.slice(3);
-  }
-
   const base = String(apiBase.value ?? "").replace(/\/+$/, "");
   return cleanPath.startsWith("api/") ? `${base}/${cleanPath}` : `${base}/api/${cleanPath}`;
 }
 
 /**
  * Indica si la ruta informada ya es una URL absoluta.
- * Permite que las capas de dominio acepte tanto rutas relativas ("en/cargo")
- * como URLs completas ("https://host/api/en/cargo").
+ * Permite que las capas de dominio acepte tanto rutas relativas ("view/cargo")
+ * como URLs completas ("https://host/api/view/cargo").
  *
  * @param {string} value
  * @returns {boolean}
@@ -166,8 +158,7 @@ export async function request({
 } = {}) {
   const { getBoletasHeaders } = useEndPoints();
 
-  const rawTarget = url || resolveServiceUrl(service, path);
-  const target = rawTarget.replace(/\/api\/en\/(?!list\b)/, "/api/");
+  const target = url || resolveServiceUrl(service, path);
   const finalUrl = appendQuery(target, query);
 
   const controller = new AbortController();

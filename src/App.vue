@@ -22,7 +22,6 @@ const allModules = [
   { title: 'Panel Principal', route: '/panel', icon: 'mdi-view-dashboard' },
   { title: 'Boletas de Sueldo', route: '/boletas', icon: 'mdi-file-document-outline' },
   { title: 'Agentes y Legajos', route: '/agentes', icon: 'mdi-account-group' },
-  { title: 'Cargos', route: '/cargos', icon: 'mdi-badge-account' },
   { title: 'Conceptos por Cargo', route: '/conceptos', icon: 'mdi-format-list-checks', isNew: true },
   { title: 'Novedades y Hojas', route: '/hojas', icon: 'mdi-notebook-edit-outline' },
   { title: 'Operaciones', route: '/operaciones', icon: 'mdi-cogs', isNew: true },
@@ -82,6 +81,7 @@ const navItems = computed(() => {
   const seenPaths = new Set()
   return list.filter((item) => {
     let key = (item.PATH || '').toLowerCase().trim()
+    if (key === '/cargos') return false
     if (key === '/procesos') {
       key = '/operaciones'
       item.PATH = '/operaciones'
@@ -143,21 +143,41 @@ function handleLogout() {
         @click.stop="drawer = !drawer"
       ></v-app-bar-nav-icon>
 
-      <v-avatar size="36" class="me-2 d-none d-md-flex" rounded="sm">
-        <v-img
-          v-if="tenantStore.tenantLogo && !logoFallo"
-          :src="tenantStore.tenantLogo"
-          alt="Logo"
-          @error="logoFallo = true"
-        />
-        <v-icon v-else icon="mdi-shield-account"></v-icon>
-      </v-avatar>
+      <div
+        class="d-flex align-center me-3"
+        style="cursor: pointer;"
+        @click="router.push('/')"
+      >
+        <v-avatar size="36" class="me-2 d-none d-md-flex" rounded="sm">
+          <v-img
+            v-if="tenantStore.tenantLogo && !logoFallo"
+            :src="tenantStore.tenantLogo"
+            alt="Logo"
+            @error="logoFallo = true"
+          />
+          <v-icon v-else icon="mdi-shield-account"></v-icon>
+        </v-avatar>
 
-      <v-app-bar-title class="font-weight-bold text-truncate">
-        Liquidación — {{ tenantStore.tenantName }}
-      </v-app-bar-title>
+        <v-app-bar-title class="font-weight-bold text-truncate">
+          Liquidación — {{ tenantStore.tenantName }}
+        </v-app-bar-title>
+      </div>
 
       <v-spacer></v-spacer>
+
+      <!-- Botón Volver al Inicio -->
+      <v-btn
+        v-if="store.auth && $route.path !== '/'"
+        prepend-icon="mdi-home"
+        variant="elevated"
+        color="white"
+        size="small"
+        class="text-primary font-weight-bold me-2"
+        @click="router.push('/')"
+      >
+        <span class="d-none d-sm-inline">Inicio</span>
+        <v-tooltip activator="parent" location="bottom">Volver a la pantalla de Inicio</v-tooltip>
+      </v-btn>
 
       <!-- Selector de Módulo -->
       <div v-if="store.auth" class="me-2">
@@ -349,7 +369,6 @@ function handleLogout() {
           <v-list-item prepend-icon="mdi-view-dashboard" title="Panel Principal" @click="router.push('/panel')" />
           <v-list-item prepend-icon="mdi-file-document-outline" title="Boletas" @click="router.push('/boletas')" />
           <v-list-item prepend-icon="mdi-account-group" title="Agentes" @click="router.push('/agentes')" />
-          <v-list-item prepend-icon="mdi-badge-account" title="Cargos" @click="router.push('/cargos')" />
           <v-list-item prepend-icon="mdi-format-list-checks" title="Conceptos por Cargo" @click="router.push('/conceptos')" />
           <v-list-item prepend-icon="mdi-notebook-edit-outline" title="Novedades" @click="router.push('/hojas')" />
           <v-list-item prepend-icon="mdi-cogs" title="Operaciones" @click="router.push('/operaciones')" />
@@ -372,6 +391,27 @@ function handleLogout() {
     <!-- Contenido Principal -->
     <v-main class="bg-grey-lighten-4 min-h-screen">
       <v-container fluid class="pa-4">
+        <!-- Barra de navegación rápida: Volver al inicio -->
+        <v-row v-if="store.auth && $route.path !== '/' && $route.path !== '/login'" justify="center" class="mb-2">
+          <v-col cols="12" class="d-flex align-center justify-space-between py-1">
+            <v-btn
+              size="small"
+              variant="tonal"
+              color="primary"
+              prepend-icon="mdi-arrow-left"
+              class="font-weight-medium text-none"
+              @click="router.push('/')"
+            >
+              Volver al Inicio
+            </v-btn>
+            <div class="text-caption text-medium-emphasis d-none d-sm-flex align-center">
+              <span style="cursor: pointer;" @click="router.push('/')">Inicio</span>
+              <v-icon icon="mdi-chevron-right" size="x-small" class="mx-1"></v-icon>
+              <strong>{{ currentModuleName }}</strong>
+            </div>
+          </v-col>
+        </v-row>
+
         <v-row justify="center">
           <v-col cols="12">
             <RouterView />

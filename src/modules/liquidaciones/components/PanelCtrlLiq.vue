@@ -80,7 +80,7 @@ const alertMensaje = ref(null);
 const alertTipo = ref("success");
 
 async function obtieneReparticiones() {
-  const url = "en/reparticion";
+  const url = "reparticion";
 
   let valor = valorListaErroneo;
   try {

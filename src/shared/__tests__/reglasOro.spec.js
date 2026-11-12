@@ -482,18 +482,9 @@ describe('Reglas de Oro de arquitectura', () => {
       // consultar con `view/*` y escribir con `sp/*`.
       //
       // La deuda de la Tanda B (endpoints que todavia no tienen vista) se
-      // declara aca archivo por archivo. Es una lista que solo puede bajar:
-      // si una entrada deja de aparecer en su archivo, el test obliga a
-      // borrarla, asi no queda como permiso permanente.
-      const PENDIENTES_TANDA_B = {
-        'src/modules/agentes/views/AgentesView.vue': ['en/persona'],
-        'src/modules/agentes/components/PersonasList.vue': ['en/persona'],
-        'src/modules/agentes/components/CargaFamiliarList.vue': ['en/cargaFamiliar'],
-        'src/modules/agentes/components/LocalidadesList.vue': ['en/localidad'],
-        'src/modules/liquidaciones/components/PanelCtrlLiq.vue': ['en/reparticion'],
-        'src/modules/previsional/components/DDJJResumenDJ.vue': ['en/djPrevResumenDJ'],
-        'src/stores/personasStore.js': ['en/provincias'],
-      }
+      // ha saldado completamente: ya no quedan llamadas con prefijo 'en/'.
+      // Si alguien intenta reintroducir 'en/', el test falla inmediatamente.
+      const PENDIENTES_TANDA_B = {}
 
       /** Codigo sin comentarios (una URL de ejemplo no es una dependencia). */
       function sinComentarios(contenido) {

@@ -34,7 +34,7 @@ const codPostal = ref(0);
 async function leerListaRegs() {
   isPending.value = true;
   let url =
-    "en/localidad?CP=" + codPostal.value + '&sort={"Descripcion":"asc"}';
+    "localidad?CP=" + codPostal.value + '&sort={"Descripcion":"asc"}';
   try {
     const { datos, operacionOk } = await leerDatos(url);
     data.value = Array.isArray(datos) ? datos : datos ? [datos] : [];

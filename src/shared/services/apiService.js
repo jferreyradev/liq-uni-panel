@@ -87,8 +87,8 @@ export const FALLBACK_VIEW_MAP = {
 /**
  * Lee un listado.
  *
- * Acepta tanto una ruta relativa a /api/ ("en/cargo") como una URL absoluta
- * ("https://host/api/en/cargo"), que es lo que necesitan los composables que
+ * Acepta tanto una ruta relativa a /api/ ("view/cargo") como una URL absoluta
+ * ("https://host/api/view/cargo"), que es lo que necesitan los composables que
  * arman la URL por su cuenta.
  *
  * @param {string} url ruta relativa a /api/ o URL absoluta

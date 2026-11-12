@@ -68,7 +68,7 @@ describe('stores migrados al cliente HTTP unico', () => {
       await store.leerProvincias()
 
       const [url] = global.fetch.mock.calls[0]
-      expect(url.startsWith(`${API_BASE}/api/provincias?`) || url.startsWith(`${API_BASE}/api/en/provincias?`)).toBe(true)
+      expect(url.startsWith(`${API_BASE}/api/provincias?`)).toBe(true)
       expect(url).toContain('PaisId=1')
       expect(url).toContain('sort=%7B%22Descripcion%22%3A%22asc%22%7D')
       expect(store.provincias).toEqual([{ name: 'Tucumán', value: 23 }])
