@@ -5,6 +5,8 @@ import { setActivePinia, createPinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import AgentesView from '../views/AgentesView.vue'
 import CargosView from '../views/CargosView.vue'
+import PersonasList from '../components/PersonasList.vue'
+import { ejecutarSP, leerDatos } from '@/shared/services/apiService'
 import { agentesRoutes } from '../routes'
 
 vi.mock('@/shared/services/apiService', () => ({
@@ -132,5 +134,79 @@ describe('Vistas del módulo de agentes', () => {
 
     expect(wrapper.text()).toContain('Listado de Cargos')
     expect(wrapper.find('.cargos-list').exists()).toBe(true)
+  })
+
+  it('PersonasList permite cambiar la condición de Cobra Ley invocando sp/estableceNoLey', async () => {
+    leerDatos.mockImplementation(async (url) => {
+      if (url.includes('view/personaLista')) {
+        return {
+          operacionOk: true,
+          datos: [
+            {
+              PERSONAID: 101,
+              DOCUMENTO: '33444555',
+              APELLIDO: 'PEREZ',
+              NOMBRE: 'JUAN',
+              COBRALEY: 0 // 0 = cobra ley
+            }
+          ]
+        }
+      }
+      if (url.includes('view/periodo')) {
+        return {
+          operacionOk: true,
+          datos: [{ PERIODO: '2026-11-01' }]
+        }
+      }
+      return { operacionOk: true, datos: [] }
+    })
+
+    ejecutarSP.mockResolvedValue({
+      operacionOk: true,
+      valorError: 0,
+      out: { vError: 0 }
+    })
+
+    const wrapper = mount(PersonasList, {
+      props: {
+        setPersonaEdicion: vi.fn()
+      }
+    })
+    await flushPromises()
+
+    const item = {
+      PERSONAID: 101,
+      DOCUMENTO: '33444555',
+      APELLIDO: 'PEREZ',
+      NOMBRE: 'JUAN',
+      NOCOBRALEY: 0 // 0 = cobra ley (no está excluida)
+    }
+
+    // Abrir modal de cambio de ley (cambiará de 0 = cobra a 1 = no cobra)
+    await wrapper.vm.abrirCambioLey(item)
+    expect(wrapper.vm.muestraDialogoLey).toBe(true)
+    expect(wrapper.vm.tipoLeySeleccionado).toBe('1') // sugiere pasar a 1 = no cobra ley
+
+    // Confirmar cambio para excluir de ley (Tipo 1, Dni, Tipo, Periodo)
+    wrapper.vm.periodoLey = '01/11/2026'
+    await wrapper.vm.confirmarCambioLey()
+    await flushPromises()
+
+    expect(ejecutarSP).toHaveBeenCalledWith('sp/estableceNoLey', {
+      Dni: '33444555',
+      Tipo: 1,
+      Periodo: '01/11/2026'
+    })
+
+    // Caso 2: volver a cobrar ley (restaurar con sp/eliminaNoLey y DNI solamente)
+    const itemExcluido = { ...item, NOCOBRALEY: 1 }
+    await wrapper.vm.abrirCambioLey(itemExcluido)
+    expect(wrapper.vm.tipoLeySeleccionado).toBe('0')
+    await wrapper.vm.confirmarCambioLey()
+    await flushPromises()
+
+    expect(ejecutarSP).toHaveBeenCalledWith('sp/eliminaNoLey', {
+      Dni: '33444555'
+    })
   })
 })

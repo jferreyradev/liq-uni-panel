@@ -1,15 +1,19 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { RepoHeader } from "@/shared/components";
 import { useFilterStore } from '@/stores/filterStore'
 import { useEndPoints } from '@/composables/useEndPoints'
 import { useFetch } from '@/composables/useFetch'
 import { descargaArchivo } from '@/shared/services/apiService'
 import { descargarDesdeBlob, descargarDesdeUrl } from '@/utils/descargas'
+import { useDDJJStatus } from '@/composables/useDDJJStatus'
 
+const router = useRouter()
 const { apiBase, getBoletasHeaders, buildApiHeaders } = useEndPoints()
 const store = useFilterStore()
 const downloading = ref(false)
+const { ddjjExiste, isChecking: isCheckingDDJJ } = useDDJJStatus(() => store.periodoString)
 
 function useArchivoIPSST(getId) {
   const headersFn = buildApiHeaders || getBoletasHeaders || (() => ({}))
@@ -109,8 +113,44 @@ async function downloadIpsst() {
       No se pudo obtener el archivo IPSST.
     </div>
 
-    <div v-else-if="!data || data.length === 0" class="py-2 text-medium-emphasis">
-      No existen registros de archivo para {{ store.periodoString }}.
+    <div v-else-if="!data || data.length === 0" class="py-3">
+      <v-card variant="outlined" class="pa-4 bg-grey-lighten-5">
+        <div class="d-flex align-center mb-2">
+          <v-icon icon="mdi-information-outline" color="warning" class="me-2"></v-icon>
+          <span class="text-subtitle-2 font-weight-bold">
+            No existen registros de archivo IPSST generados para {{ store.periodoString || 'el período actual' }}.
+          </span>
+        </div>
+
+        <div v-if="!isCheckingDDJJ && !ddjjExiste" class="text-caption text-grey-darken-2 mb-3">
+          Tampoco se detectó una Declaración Jurada (DDJJ) para este período. Debe procesar primero la DDJJ en Previsional y luego generar el archivo en Operaciones.
+        </div>
+        <div v-else-if="!isCheckingDDJJ && ddjjExiste" class="text-caption text-grey-darken-2 mb-3">
+          La DDJJ previsional de este período existe, pero aún no se ejecutó el proceso de generación del archivo para IPSST.
+        </div>
+
+        <div class="d-flex ga-2 flex-wrap">
+          <v-btn
+            v-if="!ddjjExiste"
+            size="small"
+            color="primary"
+            variant="tonal"
+            prepend-icon="mdi-shield-check"
+            @click="router.push('/prevision')"
+          >
+            Ir a Previsional (Crear DDJJ)
+          </v-btn>
+          <v-btn
+            size="small"
+            color="secondary"
+            variant="tonal"
+            prepend-icon="mdi-cogs"
+            @click="router.push('/operaciones')"
+          >
+            Ir a Operaciones (Generar IPSST)
+          </v-btn>
+        </div>
+      </v-card>
     </div>
 
     <div v-else style="overflow-x: auto;">

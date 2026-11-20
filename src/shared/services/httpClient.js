@@ -36,18 +36,25 @@ export const RESPONSE_RAW = "raw";
 export function resolveServiceUrl(service = "base", path = "") {
   const { apiBase, apiBoletas, apiSp } = useEndPoints();
 
-  const cleanPath = String(path ?? "").replace(/^\/+/, "");
+  let cleanPath = String(path ?? "").replace(/^\/+/, "");
 
-  if (service === "sp") return `${apiSp.value}/${cleanPath}`;
-  if (service === "boletas") return `${apiBoletas.value}/${cleanPath}`;
+  if (service === "sp") {
+    const base = String(apiSp.value ?? "").replace(/\/+$/, "");
+    return `${base}/${cleanPath}`;
+  }
+  if (service === "boletas") {
+    const base = String(apiBoletas.value ?? "").replace(/\/+$/, "");
+    return `${base}/${cleanPath}`;
+  }
 
-  return `${apiBase.value}/api/${cleanPath}`;
+  const base = String(apiBase.value ?? "").replace(/\/+$/, "");
+  return cleanPath.startsWith("api/") ? `${base}/${cleanPath}` : `${base}/api/${cleanPath}`;
 }
 
 /**
  * Indica si la ruta informada ya es una URL absoluta.
- * Permite que las capas de dominio acepte tanto rutas relativas ("en/cargo")
- * como URLs completas ("https://host/api/en/cargo").
+ * Permite que las capas de dominio acepte tanto rutas relativas ("view/cargo")
+ * como URLs completas ("https://host/api/view/cargo").
  *
  * @param {string} value
  * @returns {boolean}
@@ -231,16 +238,28 @@ export async function request({
     }
 
     if (!response.ok) {
-      errmsg = notFound
-        ? "No se encontraron los datos solicitados"
-        : `Error al completar la petición (HTTP ${response.status})`;
+      const serverDetail =
+        datos && typeof datos === "object"
+          ? datos.error || datos.mensaje || datos.message
+          : null;
 
-      if (parseErrorBody && responseType === RESPONSE_JSON) {
-        const detail =
-          datos && typeof datos === "object"
-            ? datos.error || datos.mensaje || datos.message
-            : null;
-        if (detail) errmsg = String(detail);
+      if (response.status === 401) {
+        errmsg = serverDetail ? String(serverDetail) : "Acceso no autorizado (HTTP 401). Se requiere iniciar sesión o clave de acceso.";
+      } else if (response.status === 429) {
+        const retryAfter = response.headers?.get?.("Retry-After");
+        errmsg = serverDetail
+          ? String(serverDetail)
+          : `Límite de peticiones alcanzado (HTTP 429)${retryAfter ? `. Reintenta en ${retryAfter}s` : ""}`;
+      } else {
+        errmsg = notFound
+          ? "No se encontraron los datos solicitados"
+          : serverDetail
+            ? String(serverDetail)
+            : `Error al completar la petición (HTTP ${response.status})`;
+      }
+
+      if (parseErrorBody && responseType === RESPONSE_JSON && serverDetail) {
+        errmsg = String(serverDetail);
       }
     }
   } catch (error) {

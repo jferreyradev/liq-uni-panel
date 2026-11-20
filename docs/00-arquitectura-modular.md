@@ -53,6 +53,12 @@ src/
 │   │   ├── __tests__/
 │   │   └── routes.js              # Rutas: /agentes, /agentes/cargaf/:personaId, /cargos
 │   │
+│   ├── conceptos/                 # Gestión de conceptos por cargo, baja y cobro de ley
+│   │   ├── components/            # BajaCargoDialog.vue, ConceptoLiqModal.vue
+│   │   ├── views/                 # ConceptosCargoView.vue
+│   │   ├── __tests__/             # conceptosCargo.spec.js
+│   │   └── routes.js              # Rutas: /conceptos (alias: /conceptos-cargo)
+│   │
 │   ├── auth/                      # Seguridad, inicio de sesión y claves
 │   │   ├── components/            # PasswordChange.vue
 │   │   ├── views/                 # LoginView.vue, ChangePassword.vue
@@ -73,6 +79,12 @@ src/
 │   │   ├── components/            # HojasList, NovHaberesList, NovVariasList, ...
 │   │   ├── views/                 # HojasView.vue
 │   │   └── routes.js              # Rutas: /hojas
+│   │
+│   ├── operaciones/               # Procesamiento operativo: transformación, liq y boletas
+│   │   ├── components/            # OperacionTransformacion, OperacionLiquidacion, ...
+│   │   ├── views/                 # OperacionesView.vue
+│   │   ├── __tests__/             # operaciones.spec.js
+│   │   └── routes.js              # Rutas: /operaciones
 │   │
 │   ├── previsional/               # Declaraciones juradas previsionales (DDJJ)
 │   │   ├── components/            # DDJJMarco, ParametrosDDJJ_List, ...

@@ -13,7 +13,16 @@ const {
   apiBase,
   setDesaOverrides,
   resetDesaOverrides,
-  getDesaOverrides
+  getDesaOverrides,
+  authToken,
+  apiKeyOverride,
+  adminKeyOverride,
+  setApiKey,
+  setAdminKey,
+  clearAuthToken,
+  apiEnvironments,
+  activeEnvId,
+  setApiEnvironment
 } = useEndPoints()
 const tenantStore = useTenantStore()
 
@@ -22,13 +31,15 @@ const logFilter = ref('all') // 'all' | 'error' | 'http'
 const pingLoading = ref(false)
 const pingResult = ref(null)
 
-// Campos editables de endpoints para Desarrollo
+// Campos editables de endpoints para Desarrollo y Seguridad
 const overrides = getDesaOverrides()
 const editBase = ref(overrides.base || '')
 const editBoletas = ref(overrides.boletas || '')
 const editSp = ref(overrides.sp || '')
 const editKey = ref(overrides.key || 'desarrollo')
 const editPort = ref(overrides.port || '3005')
+const editApiKey = ref(apiKeyOverride.value || '')
+const editAdminKey = ref(adminKeyOverride.value || '')
 const saveSuccess = ref(false)
 
 const filteredLogs = computed(() => {
@@ -41,26 +52,12 @@ const filteredLogs = computed(() => {
   return logStore.logs
 })
 
-function applyPreset(preset) {
-  if (preset === 'deno-proxy') {
-    editBase.value = 'https://dno-mid-api-22.jferreyradev.deno.net'
-    editBoletas.value = 'https://dno-mid-boletas.jferreyradev.deno.net'
-    editSp.value = 'https://dno-mid-boletas.jferreyradev.deno.net'
-    editKey.value = 'desarrollo'
-    editPort.value = '3005'
-  } else if (preset === 'local-3005') {
-    editBase.value = 'http://localhost:3005'
-    editBoletas.value = 'http://localhost:3005'
-    editSp.value = 'http://localhost:3005'
-    editKey.value = 'desarrollo'
-    editPort.value = '3005'
-  } else if (preset === 'local-8000') {
-    editBase.value = 'http://localhost:8000'
-    editBoletas.value = 'http://localhost:8000'
-    editSp.value = 'http://localhost:8000'
-    editKey.value = 'desarrollo'
-    editPort.value = '3005'
-  }
+function selectApiEnvironment(envItem) {
+  setApiEnvironment(envItem.id)
+  editBase.value = envItem.url
+  editBoletas.value = `${envItem.url}/api`
+  editSp.value = `${envItem.url}/api`
+  editApiKey.value = envItem.apiKey
 }
 
 function handleSaveEndpoints() {
@@ -71,6 +68,8 @@ function handleSaveEndpoints() {
     key: editKey.value.trim(),
     port: editPort.value.trim()
   })
+  setApiKey(editApiKey.value.trim())
+  setAdminKey(editAdminKey.value.trim())
   saveSuccess.value = true
   setTimeout(() => {
     saveSuccess.value = false
@@ -79,6 +78,10 @@ function handleSaveEndpoints() {
 
 function handleResetEndpoints() {
   resetDesaOverrides()
+  setApiKey('')
+  setAdminKey('')
+  editApiKey.value = ''
+  editAdminKey.value = ''
   const fresh = getDesaOverrides()
   editBase.value = fresh.base || ''
   editBoletas.value = fresh.boletas || ''
@@ -95,7 +98,7 @@ async function runPing() {
   pingLoading.value = true
   pingResult.value = null
   try {
-    const url = `${apiBase.value}/api/view/periodo?Activo=1`
+    const url = `${apiBase.value}/api/status`
     const res = await testConnection(url)
     pingResult.value = {
       url,
@@ -295,16 +298,30 @@ function copyLogsToClipboard() {
           </v-alert>
 
           <div class="mb-3">
-            <div class="text-caption font-weight-bold mb-1">Cargar Presets Rápidos para Desarrollo:</div>
-            <div class="d-flex flex-wrap gap-2">
-              <v-btn size="x-small" variant="outlined" color="primary" class="me-2 mb-2" @click="applyPreset('deno-proxy')">
-                Proxy Deno Cloud (dno-mid-api-22)
-              </v-btn>
-              <v-btn size="x-small" variant="outlined" color="teal" class="me-2 mb-2" @click="applyPreset('local-3005')">
-                Localhost :3005 (Node API / api_liquid)
-              </v-btn>
-              <v-btn size="x-small" variant="outlined" color="indigo" class="me-2 mb-2" @click="applyPreset('local-8000')">
-                Localhost :8000 (Deno Proxy)
+            <div class="text-caption font-weight-bold mb-1">
+              Servidores API Configurados (API_ENVIRONMENTS):
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <v-btn
+                v-for="envItem in apiEnvironments"
+                :key="envItem.id"
+                size="small"
+                :variant="envItem.id === activeEnvId ? 'flat' : 'outlined'"
+                :color="envItem.id === activeEnvId ? 'primary' : 'grey-darken-3'"
+                class="me-2 mb-2 font-weight-medium"
+                prepend-icon="mdi-server-network"
+                @click="selectApiEnvironment(envItem)"
+              >
+                {{ envItem.nombre }}
+                <v-chip
+                  v-if="envItem.id === activeEnvId"
+                  size="x-small"
+                  color="white"
+                  variant="flat"
+                  class="ms-2 font-weight-bold text-primary"
+                >
+                  Activo
+                </v-chip>
               </v-btn>
             </div>
           </div>
@@ -372,8 +389,69 @@ function copyLogsToClipboard() {
             </v-col>
           </v-row>
 
+          <v-divider class="my-3"></v-divider>
+
+          <div class="text-caption font-weight-bold mb-2">
+            Seguridad API (clientAuth - node-apiliq):
+          </div>
+
+          <div class="d-flex align-center justify-space-between mb-3 pa-2 bg-grey-lighten-4 rounded border">
+            <div class="d-flex align-center">
+              <v-icon
+                :icon="authToken ? 'mdi-shield-check' : 'mdi-shield-outline'"
+                :color="authToken ? 'success' : 'grey'"
+                class="me-2"
+              ></v-icon>
+              <div>
+                <div class="text-caption font-weight-bold">
+                  Token JWT Bearer: {{ authToken ? 'Activo' : 'No iniciado' }}
+                </div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ authToken ? 'El token se renueva con /api/auth/login' : 'Inicia sesión para obtener token' }}
+                </div>
+              </div>
+            </div>
+            <v-btn
+              v-if="authToken"
+              size="x-small"
+              variant="text"
+              color="error"
+              prepend-icon="mdi-logout"
+              @click="clearAuthToken"
+            >
+              Borrar Token
+            </v-btn>
+          </div>
+
+          <v-row dense class="mb-2">
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="editApiKey"
+                label="X-API-Key (Cliente Frontend)"
+                density="compact"
+                variant="outlined"
+                placeholder="Ingresar API Key si no hay login..."
+                hint="Permite consultar vistas y SPs sin login de usuario"
+                persistent-hint
+                clearable
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="editAdminKey"
+                label="X-Admin-Key (Clave Maestra)"
+                density="compact"
+                variant="outlined"
+                placeholder="Ingresar Admin Key..."
+                hint="Acceso total (SQL libre, creación de vistas, telemetría)"
+                persistent-hint
+                clearable
+              ></v-text-field>
+            </v-col>
+          </v-row>
+
           <v-alert v-if="saveSuccess" type="success" density="compact" variant="tonal" class="mb-3 text-caption">
-            Configuración de endpoints y headers de desarrollo guardada correctamente en localStorage.
+            Configuración de endpoints y credenciales de seguridad guardada correctamente en localStorage.
           </v-alert>
 
           <div class="d-flex justify-space-between mt-4">

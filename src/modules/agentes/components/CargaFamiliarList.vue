@@ -59,7 +59,7 @@ const {
   lecturaOk,
   load: loadLista,
 } = useDataTable({
-  buildUrl: (pId) => `en/cargaFamiliar?PersonaId=${pId}&_t=${Date.now()}`,
+  buildUrl: (pId) => `cargaFamiliar?PersonaId=${pId}&_t=${Date.now()}`,
 });
 
 // lectura de cargo asociado

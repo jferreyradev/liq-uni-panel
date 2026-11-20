@@ -5,7 +5,9 @@ import { inicioRoutes } from "@/modules/inicio/routes";
 import { authRoutes } from "@/modules/auth/routes";
 import { usuariosRoutes } from "@/modules/usuarios/routes";
 import { agentesRoutes } from "@/modules/agentes/routes";
+import { conceptosRoutes } from "@/modules/conceptos/routes";
 import { novedadesRoutes } from "@/modules/novedades/routes";
+import { operacionesRoutes } from "@/modules/operaciones/routes";
 import { liquidacionesRoutes } from "@/modules/liquidaciones/routes";
 import { previsionalRoutes } from "@/modules/previsional/routes";
 import { ipsstRoutes } from "@/modules/ipsst/routes";
@@ -19,7 +21,9 @@ const router = createRouter({
     ...authRoutes,
     ...usuariosRoutes,
     ...agentesRoutes,
+    ...conceptosRoutes,
     ...novedadesRoutes,
+    ...operacionesRoutes,
     ...liquidacionesRoutes,
     ...previsionalRoutes,
     ...ipsstRoutes,

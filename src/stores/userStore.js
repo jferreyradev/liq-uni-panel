@@ -58,16 +58,32 @@ async function pedir({
   }
 }
 
+function getStoredUser() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const u = window.localStorage.getItem('liq_user')
+      if (u) return JSON.parse(u)
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+const initialToken = typeof window !== 'undefined' && window.localStorage ? (window.localStorage.getItem('liq_token') || '') : ''
+const initialUser = getStoredUser()
+
 export const useUserStore = defineStore('userStore', {
   state: () => ({
-    user: null, // Estado inicial del usuario
+    user: initialUser,
+    token: initialToken,
     pers: null,
     loading: false,
     result: '',
     error: null,
     lastError: null, // Detalle técnico del último error ({ status, statusText, url, message, body })
-    success: false,
-    auth: false,
+    success: !!initialToken,
+    auth: !!initialToken && !!initialUser,
     allowSign: false,
     rol: null,
     users: [],
@@ -77,7 +93,7 @@ export const useUserStore = defineStore('userStore', {
     isRegistred: (state) => !!state.user,
     isAuthenticated: (state) => !!state.auth,
     isAuth: (state) => !!state.auth,
-    isAdmin: (state) => !!state.user && state.user.ROL === 5,
+    isAdmin: (state) => !!state.user && (state.user.ROL === 5 || state.user.ROL === 6),
     isValid: (state) => !!state.pers,
     userName: (state) => state.user?.name || '',
     checkPassword(state) {
@@ -147,14 +163,131 @@ export const useUserStore = defineStore('userStore', {
     async loginUserName(userName, pass) {
       this.auth = false
       this.lastError = null
-      await this.fetchUserName(userName)
-      if (this.user) {
-        if (atob(this.user?.PASSWORD) === pass) {
-          this.auth = true
-        } else {
-          this.auth = false
+      this.loading = true
+      this.error = null
+
+      try {
+        // En Oracle las contraseñas históricamente se almacenan en Base64.
+        // Probamos primero enviando Base64 (btoa(pass)) y si no coincide, texto plano.
+        let encodedPass = ''
+        try {
+          encodedPass = btoa(pass)
+        } catch {
+          encodedPass = pass
         }
+
+        const { activeEnvironment, apiKeyOverride } = useEndPoints()
+        const envApiKey =
+          activeEnvironment?.value?.apiKey ||
+          (activeEnvironment?.value?.id === 'rpi-tv' ? 'f098tv' : (activeEnvironment?.value?.id === 'rpi-desa' ? 'admin987front' : ''))
+        const currentApiKey =
+          envApiKey ||
+          apiKeyOverride?.value ||
+          (typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('liq_api_key') : '') ||
+          import.meta.env?.VITE_API_KEY ||
+          ''
+        const keyPayload = currentApiKey ? { apiKey: currentApiKey } : {}
+
+        // Intento 1: POST /api/auth/login con Base64
+        let res = await pedir({
+          service: 'base',
+          path: 'auth/login',
+          method: 'POST',
+          body: { usr: userName, pws: encodedPass, ...keyPayload },
+          category: 'AUTH'
+        })
+
+        // Intento 2: Si devolvió error de credenciales, intentar con texto plano
+        if (!res.operacionOk && encodedPass !== pass) {
+          res = await pedir({
+            service: 'base',
+            path: 'auth/login',
+            method: 'POST',
+            body: { usr: userName, pws: pass, ...keyPayload },
+            category: 'AUTH'
+          })
+        }
+
+        if (res.operacionOk && res.datos?.token) {
+          const token = res.datos.token
+          this.token = token
+          const { setAuthToken } = useEndPoints()
+          setAuthToken(token)
+
+          const u = res.datos.user || {}
+          this.user = {
+            ID: u.id,
+            USERNAME: u.usr || u.userName || userName,
+            name: u.usr || u.userName || userName,
+            EMAIL: u.email,
+            ROL: u.role || u.rol || 6,
+            role: u.role || u.rol || 6,
+            DNI: u.dni
+          }
+          this.auth = true
+          this.success = true
+          if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem('liq_user', JSON.stringify(this.user))
+          }
+          return
+        }
+
+        // Si el endpoint de login devolvió 401 Credenciales inválidas, no es error técnico
+        if (!res.operacionOk && res.estado === 401) {
+          this.auth = false
+          return
+        }
+
+        // Opción 2 (Fallback): Consulta a view/users (para entornos legacy o si /auth/login no está implementado)
+        await this.fetchUserName(userName)
+        if (this.user) {
+          if (atob(this.user?.PASSWORD) === pass || this.user?.PASSWORD === pass) {
+            this.auth = true
+            this.success = true
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem('liq_user', JSON.stringify(this.user))
+            }
+          } else {
+            this.auth = false
+          }
+        }
+      } catch (err) {
+        this.error = err.message
+      } finally {
+        this.loading = false
       }
+    },
+
+    logout() {
+      this.user = null
+      this.auth = false
+      this.token = ''
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('liq_user')
+      }
+      const { clearAuthToken } = useEndPoints()
+      clearAuthToken()
+    },
+
+    $reset() {
+      this.user = null
+      this.auth = false
+      this.token = ''
+      this.pers = null
+      this.loading = false
+      this.result = ''
+      this.error = null
+      this.lastError = null
+      this.success = false
+      this.allowSign = false
+      this.rol = null
+      this.users = []
+      this.config = null
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('liq_user')
+      }
+      const { clearAuthToken } = useEndPoints()
+      clearAuthToken()
     },
 
     async verifyRegister(dni, orden) {
@@ -311,19 +444,65 @@ export const useUserStore = defineStore('userStore', {
         )
         if (!hasArchivos) {
           data.push({
-            IDROL: this.user?.ROL || 5,
+            IDROL: this.user?.ROL || 6,
             IDMENU: 7,
             DESCRIPCION: 'Obra Social IPSST',
             PATH: '/ipsst'
           })
         }
 
+        // Modernizar /procesos a /operaciones y /conceptos-cargo a /conceptos
+        data.forEach((m) => {
+          const p = (m.PATH || '').toLowerCase().trim()
+          const d = (m.DESCRIPCION || '').toLowerCase().trim()
+          if (p === '/procesos' || p === '/proceso' || p === '/operacion' || d === 'procesos' || d === 'operación') {
+            m.PATH = '/operaciones'
+            m.DESCRIPCION = 'Operaciones'
+          } else if (p === '/conceptos-cargo' || p === '/cargos') {
+            m.PATH = '/conceptos'
+            m.DESCRIPCION = 'Cargos y conceptos a liq.'
+          }
+        })
+
+        const hasOperaciones = data.some(
+          (m) =>
+            (m.PATH || '').toLowerCase().trim() === '/operaciones' ||
+            (m.DESCRIPCION || '').toLowerCase().trim() === 'operaciones'
+        )
+        if (!hasOperaciones) {
+          data.push({
+            IDROL: this.user?.ROL || 6,
+            IDMENU: 8,
+            DESCRIPCION: 'Operaciones',
+            PATH: '/operaciones'
+          })
+        }
+
+        const hasConceptos = data.some(
+          (m) => {
+            const p = (m.PATH || '').toLowerCase().trim()
+            const d = (m.DESCRIPCION || '').toLowerCase().trim()
+            return p === '/conceptos' || p === '/conceptos-cargo' || d.includes('concepto')
+          }
+        )
+        if (!hasConceptos) {
+          data.push({
+            IDROL: this.user?.ROL || 6,
+            IDMENU: 9,
+            DESCRIPCION: 'Cargos y conceptos a liq.',
+            PATH: '/conceptos'
+          })
+        }
+
         const seenPaths = new Set()
+        const seenDescriptions = new Set()
         const uniqueData = []
         for (const item of data) {
           const pathKey = (item.PATH || '').toLowerCase().trim()
-          if (!pathKey || !seenPaths.has(pathKey)) {
+          const descKey = (item.DESCRIPCION || '').toLowerCase().trim()
+          if ((!pathKey || !seenPaths.has(pathKey)) && (!descKey || !seenDescriptions.has(descKey))) {
             if (pathKey) seenPaths.add(pathKey)
+            if (descKey) seenDescriptions.add(descKey)
             uniqueData.push(item)
           }
         }

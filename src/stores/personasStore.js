@@ -22,7 +22,7 @@ export const usePersonasStore = defineStore('personasListas', {
     },
     async leerProvincias() {
       try {
-        const res = await leerDatos('en/provincias', {
+        const res = await leerDatos('provincias', {
           query: { PaisId: 1, sort: JSON.stringify({ Descripcion: 'asc' }) },
         })
         if (!res.operacionOk) {

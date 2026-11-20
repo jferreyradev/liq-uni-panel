@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { useEndPoints } from '@/composables/useEndPoints'
 import { leerDatos } from '@/shared/services/apiService'
+import { useTenantStore } from '@/stores/tenantStore'
 
 const liqMap = new Map([
   ['1', 'Mensual'],
@@ -120,6 +121,12 @@ export const useFilterStore = defineStore('filter', {
         const data = res.datos
         if (data?.[0]) {
           this.serverConfig = data[0]
+          try {
+            const tenantStore = useTenantStore()
+            tenantStore.syncWithServerConfig(data[0])
+          } catch (_) {
+            // Ignorar fuera de contexto Pinia
+          }
         } else {
           this.serverConfig = {}
         }

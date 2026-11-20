@@ -85,7 +85,7 @@ watch(
  * @returns {Promise<Object|null>}
  */
 async function buscarPersona(id) {
-  const { datos, operacionOk } = await leerDatos("en/persona?Id=" + id);
+  const { datos, operacionOk } = await leerDatos("persona?Id=" + id);
   if (!operacionOk) return null;
   return Array.isArray(datos) ? datos[0] : datos;
 }

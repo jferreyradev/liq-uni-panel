@@ -102,23 +102,61 @@ describe('TenantStore and Multi-Tenant Integration', () => {
     expect(env.value).toBe('Prod')
     expect(isProd.value).toBe(true)
     expect(isDesa.value).toBe(false)
-    expect(apiBase.value).toContain('dno-mid-api-22')
+    expect(apiBase.value).toContain('api-rpi.liqsysonline.com')
 
     setDesa()
     expect(env.value).toBe('Desa')
     expect(isDesa.value).toBe(true)
     expect(isProd.value).toBe(false)
-    expect(apiBase.value).toContain('dno-mid-api-22')
+    expect(apiBase.value).toContain('api-desa.liqsysonline.com')
     if (typeof window !== 'undefined' && window.localStorage) {
       expect(window.localStorage.getItem('liq_env')).toBe('Desa')
     }
 
     toggleEnv()
     expect(env.value).toBe('Prod')
-    expect(apiBase.value).toContain('dno-mid-api-22')
+    expect(apiBase.value).toContain('api-rpi.liqsysonline.com')
     if (typeof window !== 'undefined' && window.localStorage) {
       expect(window.localStorage.getItem('liq_env')).toBe('Prod')
     }
+  })
+
+  it('sincroniza automáticamente el municipio a partir de la respuesta de configServer', () => {
+    const store = useTenantStore()
+    expect(store.activeTenantId).toBe('concepcion')
+    expect(store.isPredeterminedByServer).toBe(false)
+
+    // Respuesta típica de configServer en Tafí Viejo (Raspberry Pi)
+    const ok = store.syncWithServerConfig({
+      IDCONF: 1,
+      IDREP: 400,
+      AMBIENTE: 'DESARROLLO',
+      CELA: '0046'
+    })
+
+    expect(ok).toBe(true)
+    expect(store.activeTenantId).toBe('tafiviejo')
+    expect(store.tenantName).toContain('Tafí Viejo')
+    expect(store.isPredeterminedByServer).toBe(true)
+
+    // Respuesta con descripción explícita de Concepción
+    store.syncWithServerConfig({
+      IDREP: 300,
+      DESCRIPCION: 'MUNICIPALIDAD DE CONCEPCION'
+    })
+    expect(store.activeTenantId).toBe('concepcion')
+
+    // Respuesta con IDREP de Burruyacú
+    store.syncWithServerConfig({
+      IDREP: 470
+    })
+    expect(store.activeTenantId).toBe('burruyacu')
+
+    // Respuesta con IDREP de Trancas
+    store.syncWithServerConfig({
+      IDREP: 500
+    })
+    expect(store.activeTenantId).toBe('trancas')
   })
 })
 

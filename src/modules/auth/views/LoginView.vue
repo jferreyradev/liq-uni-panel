@@ -1,20 +1,37 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/userStore";
 import { useFilterStore } from "@/stores/filterStore";
 import { useItemsMenu } from "@/composables/useItemsMenu";
 import { useTenantStore } from "@/stores/tenantStore";
 import { useLogStore } from "@/stores/logStore";
-import { DiagnosticDialog } from "@/shared/components";
+import { DiagnosticDialog, ApiEnvSelector } from "@/shared/components";
+import { useEndPoints } from "@/composables/useEndPoints";
 
 const { setItemsMenu } = useItemsMenu();
 const tenantStore = useTenantStore();
 const logStore = useLogStore();
+const { activeEnvId, apiEnvironments, setApiEnvironment } = useEndPoints();
+
+if (!activeEnvId.value && apiEnvironments.value && apiEnvironments.value.length > 0) {
+  setApiEnvironment(apiEnvironments.value[0].id);
+}
 
 const user = useUserStore();
 const router = useRouter();
 const filterStore = useFilterStore();
+
+onMounted(async () => {
+  try {
+    if (activeEnvId.value) {
+      setApiEnvironment(activeEnvId.value);
+    }
+    await filterStore.setConfig();
+  } catch (err) {
+    console.warn("[LoginView setConfig]", err);
+  }
+});
 
 const showPassword = ref(false);
 const userInput = ref({
@@ -114,6 +131,14 @@ function openDiagnosticsFromError() {
       </div>
 
       <v-card-text class="pa-5">
+        <div class="d-flex align-center justify-space-between mb-4 pa-2 bg-grey-lighten-4 rounded border">
+          <div class="d-flex align-center text-truncate me-2">
+            <v-icon icon="mdi-server-network" class="me-2" color="primary" size="small"></v-icon>
+            <span class="text-caption font-weight-medium text-truncate">Servidor Backend:</span>
+          </div>
+          <ApiEnvSelector color="primary" variant="outlined" density="compact" :show-label="false" />
+        </div>
+
         <h3 class="text-subtitle-1 font-weight-bold mb-3">Acceso al sistema</h3>
         <v-form v-if="!forgot" @submit.prevent="login">
           <v-text-field

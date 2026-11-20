@@ -104,11 +104,18 @@ describe('extractSpMessage', () => {
   it('devuelve el fallback si no hay mensaje', () => {
     expect(extractSpMessage({}, 'Sin mensaje')).toBe('Sin mensaje')
   })
+
+  it('no devuelve "0" u "OK" como si fuera un mensaje de error', () => {
+    expect(extractSpMessage({ errorMsg: '0' }, 'Fallo')).toBe('Fallo')
+    expect(extractSpMessage({ errorMsg: 'OK' }, 'Fallo')).toBe('Fallo')
+    expect(extractSpMessage({ out: { error: '0' } }, 'Fallo')).toBe('Fallo')
+  })
 })
 
 describe('isSpOk', () => {
   it('es true solo con operación exitosa y código 0', () => {
     expect(isSpOk({ operacionOk: true, valorError: 0 })).toBe(true)
+    expect(isSpOk({ operacionOk: true, valorError: '0' })).toBe(true)
     expect(isSpOk({ operacionOk: true, valorError: 2 })).toBe(false)
     expect(isSpOk({ operacionOk: false, valorError: 0 })).toBe(false)
   })
