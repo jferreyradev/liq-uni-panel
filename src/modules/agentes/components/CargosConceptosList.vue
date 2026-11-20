@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { getVto, financial } from "@/utils/formatos";
 import { leerDatos, ejecutarSP } from "@/shared/services/apiService";
+import { resolveSpErrorCode, extractSpMessage, SP_OK } from "@/utils/spRespuesta";
 import { ConfirmacionDialog, TooltipButton } from "@/shared/components";
 import CargosConceptosVista from "./CargosConceptosVista.vue";
 
@@ -28,14 +29,52 @@ const lecturaListaRegs = ref(true);
 
 async function leerListaRegs() {
   isPending.value = true;
-  //const { datos, operacionOk } = await leerDatos('view/novAltas?HojaId=' + hojaEditar.ID)
-  let url =
-    "view/conceptoLiq?CargoId=" +
-    cargoId +
-    '&sort={"Codigo":"asc","SubCodigo":"asc","Vencimiento":"asc"}';
-  const { datos, operacionOk } = await leerDatos(url);
-  data.value = datos;
-  lecturaListaRegs.value = operacionOk;
+  let [resView, resEntidad] = await Promise.all([
+    leerDatos("view/conceptosLiq", { query: { idCargo: cargoId } }),
+    leerDatos("conceptoLiq", { query: { CargoId: cargoId } }),
+  ]);
+
+  let datos = [];
+  if (resView.operacionOk && Array.isArray(resView.datos) && resView.datos.length > 0) {
+    datos = resView.datos;
+  } else if (resEntidad.operacionOk && Array.isArray(resEntidad.datos)) {
+    datos = resEntidad.datos;
+  }
+
+  const mapEntidad = new Map();
+  if (resEntidad.operacionOk && Array.isArray(resEntidad.datos)) {
+    for (const item of resEntidad.datos) {
+      const k = `${item.CODIGO ?? item.Codigo}-${item.SUBCODIGO ?? item.SubCodigo ?? 0}`;
+      mapEntidad.set(k, item);
+    }
+  }
+
+  data.value = datos
+    .map((c) => {
+      const cod = Number(c.CODIGO ?? c.Codigo ?? 0);
+      const sub = Number(c.SUBCODIGO ?? c.SubCodigo ?? 0);
+      const key = `${cod}-${sub}`;
+      const ent = mapEntidad.get(key) || {};
+      return {
+        ID: c.ID || c.Id || c.IDCONCEPTOLIQ || ent.ID || ent.Id || 0,
+        CARGOID: c.IDCARGO || c.CARGOID || c.CargoId || cargoId,
+        CODIGO: cod,
+        SUBCODIGO: sub,
+        PARAMETRO1: c.PARAM1 ?? c.PARAMETRO1 ?? ent.PARAMETRO1 ?? 0,
+        PARAMETRO2: c.PARAM2 ?? c.PARAMETRO2 ?? ent.PARAMETRO2 ?? 0,
+        IMPORTE: c.IMPORTE ?? ent.IMPORTE ?? 0,
+        VENCIMIENTO: c.VTO || c.VENCIMIENTO || ent.VENCIMIENTO || null,
+        PERIODO: c.PERIODO || ent.PERIODO || null,
+        GRUPOADICIONALID: c.GRUPOADICIONALID ?? ent.GRUPOADICIONALID ?? 0,
+        PENLEY: c.PENLEY ?? ent.PENLEY ?? 0,
+      };
+    })
+    .sort((a, b) => {
+      if (a.CODIGO !== b.CODIGO) return a.CODIGO - b.CODIGO;
+      return a.SUBCODIGO - b.SUBCODIGO;
+    });
+
+  lecturaListaRegs.value = Boolean(resView.operacionOk || resEntidad.operacionOk);
   isPending.value = false;
 }
 
@@ -88,21 +127,18 @@ function cierraForm() {
 
 // funciones de agregado, modificación y eliminación
 async function grabarSP(item, id) {
-  let url = "";
-  if (id == 0) {
-    url = "sp/ConceptoLiqIns";
-  } else {
-    url = "sp/ConceptoLiqUpd";
-  }
-  //console.log(url, item)
+  let url = id == 0 ? "sp/conceptoliq_spiConceptoliq" : "sp/conceptoliq_spuConceptoliq";
 
   try {
-    const { operacionOk, valorError, errorMsg, datos, out } = await ejecutarSP(url, item);
-    const errCode = valorError !== undefined && valorError !== -1
-      ? valorError
-      : (out?.vError ?? datos?.out?.vError ?? (operacionOk ? 0 : -1));
+    let res = await ejecutarSP(url, item);
+    if (!res.operacionOk && res.estado === 404) {
+      const legacySp = id == 0 ? "sp/ConceptoLiqIns" : "sp/ConceptoLiqUpd";
+      res = await ejecutarSP(legacySp, item);
+    }
+    const errCode = resolveSpErrorCode(res);
+    const esExito = res.operacionOk && (errCode === SP_OK || Number(res.valorError) === 0);
 
-    if (operacionOk && errCode == 0) {
+    if (esExito) {
       Promise.resolve(leerListaRegs()).catch((e) => {
         console.warn("Error al refrescar conceptos de cargo:", e);
       });
@@ -111,7 +147,7 @@ async function grabarSP(item, id) {
       mostrarAlert.value = true;
       return null;
     }
-    return errorMsg || out?.vErrorMsg || "No se pudo grabar el concepto de liquidación";
+    return extractSpMessage(res, "No se pudo grabar el concepto de liquidación");
   } catch (err) {
     console.error("Error en grabarSP Conceptos:", err);
     return err.message || "Error al grabar concepto";
@@ -121,19 +157,36 @@ async function grabarSP(item, id) {
 async function eliminar(id) {
   muestraConfirmacion.value = false;
   let item = {
-    vIDCONCEPTOLIQ: id,
+    vIDCONCEPTOLIQ: Number(id),
   };
-  let url = "sp/ConceptoLiqDel";
+  let url = "sp/conceptoliq_spdConceptoliq";
 
-  const { valorError } = await ejecutarSP(url, item);
-  if (valorError == 0) {
-    await leerListaRegs();
-    alertMensaje.value = "Se eliminó el concepto de liquidación";
-    alertTipo.value = "success";
+  try {
+    let res = await ejecutarSP(url, item);
+    if (!res.operacionOk && res.estado === 404) {
+      res = await ejecutarSP("sp/ConceptoLiqDel", item);
+    }
+    const errCode = resolveSpErrorCode(res);
+    const esExito = res.operacionOk && (errCode === SP_OK || Number(res.valorError) === 0);
+
+    if (esExito) {
+      await leerListaRegs();
+      alertMensaje.value = "Se eliminó el concepto de liquidación";
+      alertTipo.value = "success";
+      mostrarAlert.value = true;
+      return true;
+    }
+    alertMensaje.value = extractSpMessage(res, "No se pudo eliminar el concepto de liquidación");
+    alertTipo.value = "error";
     mostrarAlert.value = true;
-    return true;
+    return false;
+  } catch (err) {
+    console.error("Error en eliminar Conceptos:", err);
+    alertMensaje.value = err.message || "Error al eliminar concepto";
+    alertTipo.value = "error";
+    mostrarAlert.value = true;
+    return false;
   }
-  return false;
 }
 
 //--------------------------------------------

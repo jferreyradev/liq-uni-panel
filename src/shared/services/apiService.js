@@ -192,8 +192,14 @@ export async function ejecutarSP(url = "", data = {}, metodo = "POST", options =
           payload.ErrorMsg ||
           payload.mensaje ||
           payload.message ||
-          (typeof payload.error === "string" ? payload.error : "") ||
+          (typeof payload.error === "string" && payload.error.trim() !== "0" && payload.error.toLowerCase() !== "ok" ? payload.error : "") ||
           "";
+        if (typeof errorMsg === "string") {
+          const trimmed = errorMsg.trim();
+          if (trimmed === "0" || trimmed.toLowerCase() === "ok") {
+            errorMsg = "";
+          }
+        }
         out = datos && datos.out ? datos.out : payload;
       } else {
         valorError = 0;

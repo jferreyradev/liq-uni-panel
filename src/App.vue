@@ -22,7 +22,7 @@ const allModules = [
   { title: 'Panel Principal', route: '/panel', icon: 'mdi-view-dashboard' },
   { title: 'Boletas de Sueldo', route: '/boletas', icon: 'mdi-file-document-outline' },
   { title: 'Agentes y Legajos', route: '/agentes', icon: 'mdi-account-group' },
-  { title: 'Conceptos por Cargo', route: '/conceptos', icon: 'mdi-format-list-checks', isNew: true },
+  { title: 'Cargos y conceptos a liq.', route: '/conceptos', icon: 'mdi-format-list-checks', isNew: true },
   { title: 'Novedades y Hojas', route: '/hojas', icon: 'mdi-notebook-edit-outline' },
   { title: 'Operaciones', route: '/operaciones', icon: 'mdi-cogs', isNew: true },
   { title: 'Acreditaciones', route: '/acredit', icon: 'mdi-bank-transfer' },
@@ -40,8 +40,7 @@ function getMenuIcon(path, descripcion = '') {
   if (p.includes('panel') || d.includes('panel')) return 'mdi-view-dashboard'
   if (p.includes('boleta') || d.includes('boleta')) return 'mdi-file-document-outline'
   if (p.includes('agente') || d.includes('agente')) return 'mdi-account-group'
-  if (p.includes('cargo') && !p.includes('concepto') && !d.includes('concepto')) return 'mdi-badge-account'
-  if (p.includes('concepto') || d.includes('concepto')) return 'mdi-format-list-checks'
+  if (p.includes('cargo') || p.includes('concepto') || d.includes('concepto') || d.includes('cargo')) return 'mdi-format-list-checks'
   if (p.includes('hoja') || p.includes('novedad') || d.includes('novedad')) return 'mdi-notebook-edit-outline'
   if (p.includes('operacion') || p.includes('proceso') || d.includes('operacion') || d.includes('proceso')) return 'mdi-cogs'
   if (p.includes('acredit') || d.includes('acredit')) return 'mdi-bank-transfer'
@@ -58,6 +57,13 @@ const currentModuleName = computed(() => {
   return found ? found.title : 'Navegación'
 })
 
+const currentModuleIcon = computed(() => {
+  const currentPath = router.currentRoute.value.path
+  if (currentPath === '/') return 'mdi-home'
+  const found = allModules.find((m) => m.route === currentPath)
+  return found ? found.icon : 'mdi-apps'
+})
+
 const navItems = computed(() => {
   const source = (itemsMenu.value && Array.isArray(itemsMenu.value) && itemsMenu.value.length > 0)
     ? itemsMenu.value
@@ -65,36 +71,74 @@ const navItems = computed(() => {
       ? store.rol
       : []
 
-  const list = [...source]
+  const list = []
+  const seenPaths = new Set()
+  const seenTitles = new Set()
 
-  // Siempre asegurar /operaciones y /conceptos en la lista
-  if (!list.some((i) => (i.PATH || '').toLowerCase().trim() === '/operaciones')) {
+  for (const rawItem of source) {
+    if (!rawItem) continue
+    const item = { ...rawItem }
+    let path = (item.PATH || '').toLowerCase().trim()
+    let desc = (item.DESCRIPCION || '').trim()
+
+    // Normalizar equivalencias de rutas y descripciones
+    if (
+      path === '/cargos' ||
+      path === '/conceptos-cargo' ||
+      path === '/conceptos' ||
+      desc.toLowerCase().includes('concepto') ||
+      desc.toLowerCase().includes('cargo')
+    ) {
+      path = '/conceptos'
+      desc = 'Cargos y conceptos a liq.'
+    } else if (
+      path === '/procesos' ||
+      path === '/operaciones' ||
+      path === '/proceso' ||
+      path === '/operacion' ||
+      desc.toLowerCase() === 'procesos' ||
+      desc.toLowerCase() === 'operaciones' ||
+      desc.toLowerCase() === 'operación'
+    ) {
+      path = '/operaciones'
+      desc = 'Operaciones'
+    } else if (path === '/archivos' || path === '/ipsst' || desc.toLowerCase().includes('ipsst')) {
+      path = '/ipsst'
+      desc = 'Obra Social IPSST'
+    }
+
+    if (!path) continue
+    const descKey = desc.toLowerCase()
+
+    // Evitar duplicados tanto por ruta como por descripción
+    if (seenPaths.has(path) || (descKey && seenTitles.has(descKey))) {
+      continue
+    }
+
+    seenPaths.add(path)
+    if (descKey) seenTitles.add(descKey)
+
+    list.push({
+      ...item,
+      PATH: path,
+      DESCRIPCION: desc
+    })
+  }
+
+  // Asegurar que Operaciones y Conceptos existan exactamente una sola vez
+  if (!seenPaths.has('/operaciones') && !seenTitles.has('operaciones')) {
+    seenPaths.add('/operaciones')
+    seenTitles.add('operaciones')
     list.push({ IDMENU: 8, DESCRIPCION: 'Operaciones', PATH: '/operaciones' })
   }
-  if (!list.some((i) => {
-    const p = (i.PATH || '').toLowerCase().trim()
-    return p === '/conceptos' || p === '/conceptos-cargo'
-  })) {
-    list.push({ IDMENU: 9, DESCRIPCION: 'Conceptos por Cargo', PATH: '/conceptos' })
+
+  if (!seenPaths.has('/conceptos') && !seenTitles.has('cargos y conceptos a liq.')) {
+    seenPaths.add('/conceptos')
+    seenTitles.add('cargos y conceptos a liq.')
+    list.push({ IDMENU: 9, DESCRIPCION: 'Cargos y conceptos a liq.', PATH: '/conceptos' })
   }
 
-  const seenPaths = new Set()
-  return list.filter((item) => {
-    let key = (item.PATH || '').toLowerCase().trim()
-    if (key === '/cargos') return false
-    if (key === '/procesos') {
-      key = '/operaciones'
-      item.PATH = '/operaciones'
-      item.DESCRIPCION = 'Operaciones'
-    }
-    if (key === '/conceptos-cargo') {
-      key = '/conceptos'
-      item.PATH = '/conceptos'
-    }
-    if (!key || seenPaths.has(key)) return false
-    seenPaths.add(key)
-    return true
-  })
+  return list
 })
 
 const theme = useTheme()
@@ -136,191 +180,219 @@ function handleLogout() {
 
 <template>
   <v-layout class="rounded rounded-md d-flex flex-column min-h-screen">
-    <v-app-bar color="primary" prominent elevation="2">
+    <v-app-bar color="primary" elevation="2" density="compact" class="px-2">
+      <!-- Menú lateral (drawer de módulos) -->
       <v-app-bar-nav-icon
         v-if="store.auth"
         variant="text"
+        density="compact"
+        class="me-1"
         @click.stop="drawer = !drawer"
-      ></v-app-bar-nav-icon>
+      >
+        <v-tooltip activator="parent" location="bottom">Menú lateral</v-tooltip>
+      </v-app-bar-nav-icon>
 
+      <!-- Marca / Municipio (clic lleva a Inicio) -->
       <div
-        class="d-flex align-center me-3"
-        style="cursor: pointer;"
+        class="d-flex align-center me-2 flex-shrink-0"
+        style="cursor: pointer; max-width: 240px; min-width: 0;"
         @click="router.push('/')"
       >
-        <v-avatar size="36" class="me-2 d-none d-md-flex" rounded="sm">
+        <v-avatar size="28" class="me-2 d-none d-sm-flex flex-shrink-0" rounded="sm">
           <v-img
             v-if="tenantStore.tenantLogo && !logoFallo"
             :src="tenantStore.tenantLogo"
             alt="Logo"
             @error="logoFallo = true"
           />
-          <v-icon v-else icon="mdi-shield-account"></v-icon>
+          <v-icon v-else icon="mdi-shield-account" size="small"></v-icon>
         </v-avatar>
 
-        <v-app-bar-title class="font-weight-bold text-truncate">
-          Liquidación — {{ tenantStore.tenantName }}
-        </v-app-bar-title>
+        <div class="text-truncate">
+          <span class="font-weight-bold text-caption text-sm-subtitle-2 text-truncate">
+            {{ tenantStore.tenantShortName || tenantStore.tenantName }}
+          </span>
+        </div>
+        <v-tooltip activator="parent" location="bottom">Ir a Inicio</v-tooltip>
       </div>
 
       <v-spacer></v-spacer>
 
-      <!-- Botón Volver al Inicio -->
-      <v-btn
-        v-if="store.auth && $route.path !== '/'"
-        prepend-icon="mdi-home"
-        variant="elevated"
-        color="white"
-        size="small"
-        class="text-primary font-weight-bold me-2"
-        @click="router.push('/')"
-      >
-        <span class="d-none d-sm-inline">Inicio</span>
-        <v-tooltip activator="parent" location="bottom">Volver a la pantalla de Inicio</v-tooltip>
-      </v-btn>
+      <!-- Bloque Central: Menú Desplegable con Icono + Selectores -->
+      <div class="d-flex align-center ga-1 flex-shrink-1" style="min-width: 0;">
+        <!-- Menú Desplegable de Módulos (con icono visible) -->
+        <div v-if="store.auth" class="flex-shrink-1 me-1" style="min-width: 0;">
+          <v-menu location="bottom end" transition="scale-transition">
+            <template #activator="{ props: menuProps }">
+              <v-btn
+                v-bind="menuProps"
+                variant="tonal"
+                color="white"
+                size="small"
+                density="compact"
+                class="text-none px-2 flex-shrink-1 text-truncate"
+                style="max-width: 220px;"
+                :prepend-icon="currentModuleIcon"
+                append-icon="mdi-chevron-down"
+              >
+                <span class="text-truncate font-weight-medium">{{ currentModuleName }}</span>
+                <v-tooltip activator="parent" location="bottom">Módulos del Sistema</v-tooltip>
+              </v-btn>
+            </template>
 
-      <!-- Selector de Módulo -->
-      <div v-if="store.auth" class="me-2">
-        <v-menu location="bottom end" transition="scale-transition">
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              variant="tonal"
-              color="white"
-              class="text-none px-3"
-              prepend-icon="mdi-apps"
-              append-icon="mdi-chevron-down"
-            >
-              <span class="d-none d-sm-inline font-weight-medium me-1">Módulo:</span>
-              <strong>{{ currentModuleName }}</strong>
-            </v-btn>
-          </template>
+            <v-list density="compact" class="py-1" min-width="270">
+              <v-list-subheader class="text-uppercase text-caption font-weight-bold">
+                Módulos del Sistema
+              </v-list-subheader>
 
-          <v-list density="compact" class="py-1" min-width="260">
-            <v-list-subheader class="text-uppercase text-caption font-weight-bold">
-              Seleccionar Módulo
-            </v-list-subheader>
+              <v-list-item
+                v-for="mod in allModules"
+                :key="mod.route"
+                :active="$route.path === mod.route"
+                :prepend-icon="mod.icon"
+                :title="mod.title"
+                color="primary"
+                class="py-1"
+                @click="router.push(mod.route)"
+              >
+                <template v-if="mod.isNew" #append>
+                  <v-chip size="x-small" color="primary" variant="flat" class="font-weight-bold">
+                    NUEVO
+                  </v-chip>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
 
-            <v-list-item
-              v-for="mod in allModules"
-              :key="mod.route"
-              :active="$route.path === mod.route"
-              :prepend-icon="mod.icon"
-              :title="mod.title"
-              color="primary"
-              class="py-1"
-              @click="router.push(mod.route)"
-            >
-              <template v-if="mod.isNew" #append>
-                <v-chip size="x-small" color="primary" variant="flat" class="font-weight-bold">
-                  NUEVO
-                </v-chip>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </div>
+        <!-- Selector de Servidor API (node-apiliq) -->
+        <div class="flex-shrink-0">
+          <ApiEnvSelector density="compact" :show-label="false" />
+        </div>
 
-      <!-- Selector de Servidor API (node-apiliq) -->
-      <div class="me-2">
-        <ApiEnvSelector />
-      </div>
+        <!-- Selector de Municipio / Tenant -->
+        <div class="flex-shrink-0">
+          <TenantSelector density="compact" />
+        </div>
 
-      <!-- Selector de Municipio / Tenant -->
-      <div class="me-2">
-        <TenantSelector />
-      </div>
-
-      <!-- Indicador de Base de Datos Conectada (view/configServer) - solo visible una vez logueado -->
-      <v-chip
-        v-if="store.auth"
-        size="small"
-        class="me-1 font-weight-medium"
-        :color="storeFilter.hasServerConfig ? 'white' : (storeFilter.serverConfigError ? 'error' : 'grey-lighten-2')"
-        :variant="storeFilter.hasServerConfig ? 'outlined' : 'tonal'"
-        style="cursor: pointer;"
-        @click="logStore.openDialog"
-      >
-        <v-icon
-          :icon="storeFilter.serverConfigLoading ? 'mdi-loading mdi-spin' : (storeFilter.hasServerConfig ? 'mdi-database-check' : (storeFilter.serverConfigError ? 'mdi-database-alert' : 'mdi-database-clock-outline'))"
-          start
-          size="x-small"
-          :color="storeFilter.hasServerConfig ? 'light-green-accent-3' : undefined"
-        ></v-icon>
-        <span class="text-caption font-weight-bold">
-          BD: {{ storeFilter.serverDescripcion || storeFilter.serverAmbiente || (storeFilter.serverConfigLoading ? 'Conectando...' : 'Sin BD') }}
-        </span>
-        <v-tooltip activator="parent" location="bottom">
-          <div class="text-caption">
-            <div><strong>Base de Datos Conectada (view/configServer):</strong></div>
-            <div>&bull; Descripción: <strong>{{ storeFilter.serverDescripcion || 'Pendiente' }}</strong></div>
-            <div>&bull; Ambiente: <strong>{{ storeFilter.serverAmbiente || 'Pendiente' }}</strong></div>
-            <div v-if="storeFilter.serverCela">&bull; CELA: {{ storeFilter.serverCela }}</div>
-            <div v-if="storeFilter.serverIdConf">&bull; ID Config: {{ storeFilter.serverIdConf }} (Rep: {{ storeFilter.serverIdRep }})</div>
-            <div v-if="storeFilter.serverConfigError" class="text-red-accent-2 mt-1">
-              Error al consultar configServer: {{ storeFilter.serverConfigError }}
+        <!-- Indicador de Base de Datos Conectada (view/configServer) -->
+        <v-chip
+          v-if="store.auth"
+          size="small"
+          density="compact"
+          class="font-weight-medium flex-shrink-0 d-none d-md-inline-flex"
+          :color="storeFilter.hasServerConfig ? 'white' : (storeFilter.serverConfigError ? 'error' : 'grey-lighten-2')"
+          :variant="storeFilter.hasServerConfig ? 'outlined' : 'tonal'"
+          style="cursor: pointer; max-width: 160px;"
+          @click="logStore.openDialog"
+        >
+          <v-icon
+            :icon="storeFilter.serverConfigLoading ? 'mdi-loading mdi-spin' : (storeFilter.hasServerConfig ? 'mdi-database-check' : (storeFilter.serverConfigError ? 'mdi-database-alert' : 'mdi-database-clock-outline'))"
+            start
+            size="x-small"
+            :color="storeFilter.hasServerConfig ? 'light-green-accent-3' : undefined"
+          ></v-icon>
+          <span class="text-caption font-weight-bold text-truncate">
+            BD: {{ storeFilter.serverAmbiente || storeFilter.serverDescripcion || (storeFilter.serverConfigLoading ? '...' : 'Sin BD') }}
+          </span>
+          <v-tooltip activator="parent" location="bottom">
+            <div class="text-caption">
+              <div><strong>Base de Datos Conectada (view/configServer):</strong></div>
+              <div>&bull; Descripción: <strong>{{ storeFilter.serverDescripcion || 'Pendiente' }}</strong></div>
+              <div>&bull; Ambiente: <strong>{{ storeFilter.serverAmbiente || 'Pendiente' }}</strong></div>
+              <div v-if="storeFilter.serverCela">&bull; CELA: {{ storeFilter.serverCela }}</div>
+              <div v-if="storeFilter.serverIdConf">&bull; ID Config: {{ storeFilter.serverIdConf }} (Rep: {{ storeFilter.serverIdRep }})</div>
+              <div v-if="storeFilter.serverConfigError" class="text-red-accent-2 mt-1">
+                Error al consultar configServer: {{ storeFilter.serverConfigError }}
+              </div>
+              <div class="mt-1 text-grey-lighten-2">Clic para abrir Diagnóstico y Logs.</div>
             </div>
-            <div class="mt-1 text-grey-lighten-2">Clic para abrir Diagnóstico y Logs.</div>
-          </div>
-        </v-tooltip>
-      </v-chip>
+          </v-tooltip>
+        </v-chip>
+      </div>
 
-      <!-- Conmutador Tema Claro/Oscuro -->
-      <v-btn icon="mdi-theme-light-dark" size="small" class="me-1" @click="toggleTheme">
-        <v-tooltip activator="parent" location="bottom">Cambiar tema</v-tooltip>
-        <v-icon icon="mdi-theme-light-dark"></v-icon>
-      </v-btn>
+      <!-- Botones de la Derecha (Alineados, consistentes y sin duplicar iconos) -->
+      <div class="d-flex align-center flex-shrink-0 ga-1 ms-2">
+        <!-- Conmutador Tema Claro/Oscuro -->
+        <v-btn
+          icon="mdi-theme-light-dark"
+          size="small"
+          density="compact"
+          variant="text"
+          color="white"
+          @click="toggleTheme"
+        >
+          <v-tooltip activator="parent" location="bottom">Cambiar tema</v-tooltip>
+        </v-btn>
 
-      <!-- Botón Diagnóstico y Logs -->
-      <v-btn
-        icon="mdi-bug-outline"
-        size="small"
-        class="me-1"
-        :color="logStore.hasErrors ? 'error' : undefined"
-        @click="logStore.openDialog"
-      >
-        <v-tooltip activator="parent" location="bottom">Diagnóstico y Logs del Sistema</v-tooltip>
-        <v-icon icon="mdi-bug-outline"></v-icon>
-      </v-btn>
+        <!-- Botón Diagnóstico y Logs -->
+        <v-btn
+          icon="mdi-bug-outline"
+          size="small"
+          density="compact"
+          variant="text"
+          :color="logStore.hasErrors ? 'amber-accent-2' : 'white'"
+          @click="logStore.openDialog"
+        >
+          <v-tooltip activator="parent" location="bottom">Diagnóstico y Logs</v-tooltip>
+        </v-btn>
 
-      <!-- Botón Salir Rápido -->
-      <v-btn v-if="store.isAuth" icon="mdi-logout" size="small" class="me-1" @click="handleLogout">
-        <v-tooltip activator="parent" location="bottom">Cerrar sesión</v-tooltip>
-        <v-icon icon="mdi-logout"></v-icon>
-      </v-btn>
+        <!-- Botón Salir Rápido -->
+        <v-btn
+          v-if="store.isAuth"
+          icon="mdi-logout"
+          size="small"
+          density="compact"
+          variant="text"
+          color="white"
+          @click="handleLogout"
+        >
+          <v-tooltip activator="parent" location="bottom">Cerrar sesión</v-tooltip>
+        </v-btn>
 
-      <!-- Menú de Usuario -->
-      <div v-if="store.auth">
-        <v-menu location="bottom end">
-          <template #activator="{ props }">
-            <v-btn icon="mdi-account-circle" v-bind="props" size="small">
-              <v-icon icon="mdi-account-circle"></v-icon>
-            </v-btn>
-          </template>
+        <!-- Menú de Usuario -->
+        <div v-if="store.auth">
+          <v-menu location="bottom end">
+            <template #activator="{ props: userProps }">
+              <v-btn
+                v-bind="userProps"
+                icon="mdi-account-circle"
+                size="small"
+                density="compact"
+                variant="text"
+                color="white"
+              >
+                <v-tooltip activator="parent" location="bottom">
+                  {{ store.user?.USERNAME || store.user?.NOMBRE || 'Usuario' }}
+                </v-tooltip>
+              </v-btn>
+            </template>
 
-          <v-list density="compact" min-width="220">
-            <v-list-item
-              :subtitle="store.user?.EMAIL || ''"
-              :title="store.user?.USERNAME || store.user?.NOMBRE || 'Usuario'"
-            >
-              <template #prepend>
-                <v-icon icon="mdi-account"></v-icon>
-              </template>
-            </v-list-item>
+            <v-list density="compact" min-width="220">
+              <v-list-item
+                :subtitle="store.user?.EMAIL || ''"
+                :title="store.user?.USERNAME || store.user?.NOMBRE || 'Usuario'"
+              >
+                <template #prepend>
+                  <v-icon icon="mdi-account"></v-icon>
+                </template>
+              </v-list-item>
 
-            <v-divider></v-divider>
-            <v-list-item
-              prepend-icon="mdi-lock-reset"
-              title="Cambiar contraseña"
-              @click="router.push('/passchange')"
-            />
-            <v-list-item
-              prepend-icon="mdi-logout"
-              title="Cerrar sesión"
-              @click="handleLogout"
-            />
-          </v-list>
-        </v-menu>
+              <v-divider></v-divider>
+              <v-list-item
+                prepend-icon="mdi-lock-reset"
+                title="Cambiar contraseña"
+                @click="router.push('/passchange')"
+              />
+              <v-list-item
+                prepend-icon="mdi-logout"
+                title="Cerrar sesión"
+                color="error"
+                @click="handleLogout"
+              />
+            </v-list>
+          </v-menu>
+        </div>
       </div>
     </v-app-bar>
 
@@ -369,7 +441,7 @@ function handleLogout() {
           <v-list-item prepend-icon="mdi-view-dashboard" title="Panel Principal" @click="router.push('/panel')" />
           <v-list-item prepend-icon="mdi-file-document-outline" title="Boletas" @click="router.push('/boletas')" />
           <v-list-item prepend-icon="mdi-account-group" title="Agentes" @click="router.push('/agentes')" />
-          <v-list-item prepend-icon="mdi-format-list-checks" title="Conceptos por Cargo" @click="router.push('/conceptos')" />
+          <v-list-item prepend-icon="mdi-format-list-checks" title="Cargos y conceptos a liq." @click="router.push('/conceptos')" />
           <v-list-item prepend-icon="mdi-notebook-edit-outline" title="Novedades" @click="router.push('/hojas')" />
           <v-list-item prepend-icon="mdi-cogs" title="Operaciones" @click="router.push('/operaciones')" />
           <v-list-item prepend-icon="mdi-bank-transfer" title="Acreditaciones" @click="router.push('/acredit')" />

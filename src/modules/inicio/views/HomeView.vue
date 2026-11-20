@@ -35,8 +35,7 @@ const modules = [
     route: '/agentes'
   },
   {
-    title: 'Conceptos',
-    subtitle: 'por Cargo',
+    title: 'Cargos y conceptos a liq.',
     description: 'Modificación de conceptos liquidados, baja de cargo y cobro de ley',
     icon: 'mdi-format-list-checks',
     color: 'teal-darken-1',
@@ -149,7 +148,7 @@ const modules = [
                 prepend-icon="mdi-format-list-checks"
                 @click="router.push('/conceptos')"
               >
-                Conceptos
+                Cargos y conceptos a liq.
                 <v-chip size="x-small" color="primary" variant="flat" class="ms-1 font-weight-bold">NUEVO</v-chip>
               </v-btn>
               <v-btn

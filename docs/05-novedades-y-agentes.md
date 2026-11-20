@@ -38,7 +38,10 @@ El módulo sigue el contrato general: **consultas con vistas (`view/*`), escritu
 
 ### Escrituras (SPs)
 - **Personas**: `sp/persUpd`.
-- **Cargos**: `sp/CargoUpd`.
+- **Condición Cobra Ley (Previsión)**:
+  - Excluir de cobrar ley (`NOCOBRALEY=1`): `sp/estableceNoLey` con `{ "Dni": dni, "Tipo": 1, "Periodo": periodo }`
+  - Restaurar cobro de ley (`NOCOBRALEY=0`): `sp/eliminaNoLey` con `{ "Dni": dni }`
+- **Cargos**: `sp/cargos_spuCargo`.
 - **Cargas familiares**: `sp/CargaFamIns`, `sp/CargaFamUpd`, `sp/CargaFamDel`, `sp/AsignaSalario`.
 - **Conceptos de liquidación**: `sp/ConceptoLiqIns`, `sp/ConceptoLiqUpd`, `sp/ConceptoLiqDel`.
 - **Haberes variables**: `sp/NovHaberesIns`, `sp/NovHaberesUpd`, `sp/NovHaberesDel` (la baja envía `{ vIDNOVHAB: id }`).

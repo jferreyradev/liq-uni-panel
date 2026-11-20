@@ -454,16 +454,20 @@ export const useUserStore = defineStore('userStore', {
         // Modernizar /procesos a /operaciones y /conceptos-cargo a /conceptos
         data.forEach((m) => {
           const p = (m.PATH || '').toLowerCase().trim()
-          if (p === '/procesos') {
+          const d = (m.DESCRIPCION || '').toLowerCase().trim()
+          if (p === '/procesos' || p === '/proceso' || p === '/operacion' || d === 'procesos' || d === 'operación') {
             m.PATH = '/operaciones'
             m.DESCRIPCION = 'Operaciones'
-          } else if (p === '/conceptos-cargo') {
+          } else if (p === '/conceptos-cargo' || p === '/cargos') {
             m.PATH = '/conceptos'
+            m.DESCRIPCION = 'Cargos y conceptos a liq.'
           }
         })
 
         const hasOperaciones = data.some(
-          (m) => (m.PATH || '').toLowerCase().trim() === '/operaciones'
+          (m) =>
+            (m.PATH || '').toLowerCase().trim() === '/operaciones' ||
+            (m.DESCRIPCION || '').toLowerCase().trim() === 'operaciones'
         )
         if (!hasOperaciones) {
           data.push({
@@ -477,24 +481,28 @@ export const useUserStore = defineStore('userStore', {
         const hasConceptos = data.some(
           (m) => {
             const p = (m.PATH || '').toLowerCase().trim()
-            return p === '/conceptos' || p === '/conceptos-cargo'
+            const d = (m.DESCRIPCION || '').toLowerCase().trim()
+            return p === '/conceptos' || p === '/conceptos-cargo' || d.includes('concepto')
           }
         )
         if (!hasConceptos) {
           data.push({
             IDROL: this.user?.ROL || 6,
             IDMENU: 9,
-            DESCRIPCION: 'Conceptos por Cargo',
+            DESCRIPCION: 'Cargos y conceptos a liq.',
             PATH: '/conceptos'
           })
         }
 
         const seenPaths = new Set()
+        const seenDescriptions = new Set()
         const uniqueData = []
         for (const item of data) {
           const pathKey = (item.PATH || '').toLowerCase().trim()
-          if (!pathKey || !seenPaths.has(pathKey)) {
+          const descKey = (item.DESCRIPCION || '').toLowerCase().trim()
+          if ((!pathKey || !seenPaths.has(pathKey)) && (!descKey || !seenDescriptions.has(descKey))) {
             if (pathKey) seenPaths.add(pathKey)
+            if (descKey) seenDescriptions.add(descKey)
             uniqueData.push(item)
           }
         }

@@ -96,7 +96,13 @@ export function extractSpMessage(result = {}, fallback = 'No se pudo completar l
   ];
 
   for (const candidate of candidates) {
-    if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+    if (typeof candidate === 'string' && candidate.trim()) {
+      const trimmed = candidate.trim();
+      // "0" o "ok" no son mensajes de error para el usuario
+      if (trimmed !== '0' && trimmed.toLowerCase() !== 'ok') {
+        return trimmed;
+      }
+    }
   }
 
   return fallback;

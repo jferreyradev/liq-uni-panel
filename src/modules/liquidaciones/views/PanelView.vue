@@ -45,7 +45,7 @@ function handleSelect(id, objElement) {
           prepend-icon="mdi-format-list-checks"
           @click="router.push('/conceptos')"
         >
-          Conceptos
+          Cargos y conceptos a liq.
           <v-chip size="x-small" color="primary" variant="flat" class="ms-1 font-weight-bold">
             NUEVO
           </v-chip>

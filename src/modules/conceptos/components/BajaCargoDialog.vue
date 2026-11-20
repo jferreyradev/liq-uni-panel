@@ -1,8 +1,8 @@
 <script setup>
 import { ref, watch } from "vue";
 import { getFechaToAPIFromDDMMYYYY, getFechaDMY } from "@/utils/formatos";
-import { rules } from "@/utils/reglasValidacion";
-import { ejecutarSP } from "@/shared/services/apiService";
+import { leerDatos, ejecutarSP } from "@/shared/services/apiService";
+import { resolveSpErrorCode, extractSpMessage, SP_OK } from "@/utils/spRespuesta";
 
 const props = defineProps({
   modelValue: {
@@ -31,13 +31,33 @@ function getFechaHoyDMY() {
   return `${dia}/${mes}/${anio}`;
 }
 
+const reglaFechaBaja = [
+  (v) => (v !== null && v !== undefined && String(v).trim() !== "" ? true : "La fecha de baja es requerida"),
+  (v) =>
+    /^([0-2][0-9]|3[0-1])\/(0?[1-9]|1[0-2])\/\d{4}$/.test(String(v || "").trim()) ||
+    "El formato debe ser DD/MM/AAAA",
+];
+
+function resolveCargoId() {
+  return Number(
+    props.cargo?.idcargo ??
+    props.cargo?.IdCargo ??
+    props.cargo?.idCargo ??
+    props.cargo?.IDCARGO ??
+    props.cargo?.CargoId ??
+    props.cargo?.CARGOID ??
+    props.cargo?.ID ??
+    props.cargo?.Id ??
+    0
+  );
+}
+
 watch(
   () => props.modelValue,
   (abierto) => {
     if (abierto) {
-      fechaBaja.value = props.cargo?.FECHABAJA
-        ? getFechaDMY(props.cargo.FECHABAJA)
-        : getFechaHoyDMY();
+      const rawBaja = props.cargo?.FechaBaja || props.cargo?.FECHABAJA;
+      fechaBaja.value = rawBaja ? getFechaDMY(rawBaja) : getFechaHoyDMY();
       errorMessage.value = "";
     }
   },
@@ -58,35 +78,63 @@ async function confirmarBaja() {
   isSubmitting.value = true;
   errorMessage.value = "";
 
+  let cargoId = resolveCargoId();
+
+  if (!cargoId) {
+    const rep = props.cargo?.ReparticionId ?? props.cargo?.REPARTICIONID;
+    const ord = props.cargo?.Orden ?? props.cargo?.ORDEN;
+    if (rep && ord) {
+      try {
+        const resCargo = await leerDatos("cargo", {
+          query: { ReparticionId: rep, Orden: ord },
+        });
+        if (resCargo.operacionOk && Array.isArray(resCargo.datos) && resCargo.datos.length > 0) {
+          cargoId = Number(resCargo.datos[0].ID ?? resCargo.datos[0].Id ?? 0);
+        }
+      } catch (err) {
+        console.warn("No se pudo obtener el ID del cargo desde entidad cargo:", err);
+      }
+    }
+  }
+
+  if (!cargoId) {
+    errorMessage.value = "No se pudo identificar el ID del cargo a dar de baja.";
+    isSubmitting.value = false;
+    return;
+  }
+
   const fecBajaApi = getFechaToAPIFromDDMMYYYY(fechaBaja.value);
-  const cargoId = props.cargo.ID || props.cargo.Id || 0;
+  const rawVto = props.cargo?.VtoEscalafon || props.cargo?.VTOESCALAFON || "";
+  const vtoEscApi = rawVto ? getFechaToAPIFromDDMMYYYY(getFechaDMY(rawVto)) : "";
 
   const payload = {
-    vIDCARGO: cargoId,
-    vIDREP: props.cargo.REPARTICIONID,
-    vORDEN: props.cargo.ORDEN,
-    vAFILIADO: props.cargo.AFILIADO,
-    vANTIG: props.cargo.ANTIGUEDAD,
-    vIDTE: props.cargo.TIPOEMPLEOID,
-    vIDSITREV: props.cargo.SITUACIONREVISTAID,
-    vIDTIPOOS: props.cargo.TIPOOBRASOCIALID,
-    vCATEGORIA: props.cargo.CATEGORIA,
-    vIDTIPOLIQ: props.cargo.TIPOLIQUIDACIONID,
+    vIDCARGO: Number(cargoId),
+    idcargo: Number(cargoId),
+    IdCargo: Number(cargoId),
+    vIDREP: Number(props.cargo?.ReparticionId ?? props.cargo?.REPARTICIONID ?? 0),
+    vORDEN: Number(props.cargo?.Orden ?? props.cargo?.ORDEN ?? 0),
+    vAFILIADO: Number(props.cargo?.Afiliado ?? props.cargo?.AFILIADO ?? 0),
+    vANTIG: Number(props.cargo?.Antiguedad ?? props.cargo?.ANTIGUEDAD ?? 0),
+    vVTOESC: vtoEscApi,
+    vIDTE: Number(props.cargo?.TipoEmpleoId ?? props.cargo?.TIPOEMPLEOID ?? 0),
+    vIDSITREV: Number(props.cargo?.SituacionRevistaId ?? props.cargo?.SITUACIONREVISTAID ?? 0),
+    vIDTIPOOS: Number(props.cargo?.TipoObraSocialId ?? props.cargo?.TIPOOBRASOCIALID ?? 0),
+    vCATEGORIA: Number(props.cargo?.Categoria ?? props.cargo?.CATEGORIA ?? 0),
+    vIDTIPOLIQ: Number(props.cargo?.TipoLiquidacionId ?? props.cargo?.TIPOLIQUIDACIONID ?? 0),
     vIDESTADOCARGO: 3, // 3 = Baja de Cargo
     vFECHABAJA: fecBajaApi,
   };
 
   try {
-    const { operacionOk, valorError, errorMsg, out } = await ejecutarSP("sp/CargoUpd", payload);
-    const errCode = valorError !== undefined && valorError !== -1
-      ? valorError
-      : (out?.vError ?? (operacionOk ? 0 : -1));
+    const res = await ejecutarSP("sp/cargos_spuCargo", payload);
+    const errCode = resolveSpErrorCode(res);
+    const esExito = res.operacionOk && (errCode === SP_OK || Number(res.valorError) === 0);
 
-    if (operacionOk && errCode === 0) {
+    if (esExito) {
       emit("baja-confirmada", { cargo: props.cargo, fechaBaja: fechaBaja.value });
       cerrar();
     } else {
-      errorMessage.value = errorMsg || out?.vErrorMsg || "No se pudo registrar la baja del cargo.";
+      errorMessage.value = extractSpMessage(res, "No se pudo registrar la baja del cargo.");
     }
   } catch (err) {
     errorMessage.value = err.message || "Error al procesar la baja.";
@@ -122,9 +170,9 @@ async function confirmarBaja() {
         </p>
 
         <div class="pa-3 mb-4 bg-grey-lighten-4 rounded border">
-          <div><strong>Cargo ID:</strong> {{ cargo?.ID || cargo?.Id }}</div>
-          <div><strong>Repartición:</strong> {{ cargo?.REPARTICIONID }} — <strong>Orden:</strong> {{ cargo?.ORDEN }}</div>
-          <div><strong>Agente:</strong> {{ cargo?.PERSONAAPELLIDO }} {{ cargo?.PERSONANOMBRE }}</div>
+          <div><strong>Cargo ID:</strong> {{ resolveCargoId() || '—' }}</div>
+          <div><strong>Repartición:</strong> {{ cargo?.ReparticionId ?? cargo?.REPARTICIONID }} — <strong>Orden:</strong> {{ cargo?.Orden ?? cargo?.ORDEN }}</div>
+          <div><strong>Agente:</strong> {{ cargo?.PersonaApellido ?? cargo?.PERSONAAPELLIDO }} {{ cargo?.PersonaNombre ?? cargo?.PERSONANOMBRE }}</div>
         </div>
 
         <v-form ref="form" v-model="formValido" @submit.prevent="confirmarBaja">
@@ -135,10 +183,7 @@ async function confirmarBaja() {
             variant="outlined"
             density="compact"
             prepend-inner-icon="mdi-calendar"
-            :rules="[
-              (v) => !!v || 'La fecha de baja es requerida',
-              (val) => rules.longitudEntre(val, 8, 10),
-            ]"
+            :rules="reglaFechaBaja"
           ></v-text-field>
         </v-form>
       </v-card-text>

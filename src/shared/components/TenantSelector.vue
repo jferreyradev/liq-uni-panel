@@ -7,6 +7,13 @@ import { useFilterStore } from '@/stores/filterStore'
 import { useLiqStore } from '@/stores/liqStore'
 import { useEndPoints } from '@/composables/useEndPoints'
 
+const props = defineProps({
+  density: {
+    type: String,
+    default: 'compact',
+  },
+})
+
 const router = useRouter()
 const tenantStore = useTenantStore()
 const userStore = useUserStore()
@@ -64,23 +71,25 @@ async function selectTenant(tenantId) {
 <template>
   <div class="tenant-selector-wrapper">
     <v-menu location="bottom end" transition="scale-transition">
-      <template #activator="{ props }">
+      <template #activator="{ props: menuProps }">
         <v-btn
-          v-bind="props"
+          v-bind="menuProps"
           variant="tonal"
           color="white"
-          class="tenant-btn text-none px-3"
+          :density="props.density"
+          class="tenant-btn text-none px-2"
+          style="max-width: 175px;"
           :prepend-icon="activeTenant.id === 'desarrollo' ? 'mdi-flask' : (isPredetermined ? 'mdi-database-check' : 'mdi-city-variant-outline')"
           append-icon="mdi-chevron-down"
         >
-          <span class="d-none d-sm-inline font-weight-medium me-1">Municipio:</span>
-          <strong>{{ activeTenant.shortName }}</strong>
+          <span class="d-none d-lg-inline font-weight-medium me-1">Municipio:</span>
+          <strong class="text-truncate">{{ activeTenant.shortName }}</strong>
           <v-chip
             v-if="isPredetermined"
             size="x-small"
             color="light-green-accent-3"
             variant="flat"
-            class="ms-2 font-weight-bold text-black"
+            class="ms-1 font-weight-bold text-black"
           >
             BD
           </v-chip>

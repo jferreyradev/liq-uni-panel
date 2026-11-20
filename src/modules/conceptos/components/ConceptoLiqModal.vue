@@ -8,6 +8,7 @@ import {
 } from "@/utils/formatos";
 import { rules } from "@/utils/reglasValidacion";
 import { ejecutarSP } from "@/shared/services/apiService";
+import { resolveSpErrorCode, extractSpMessage, SP_OK } from "@/utils/spRespuesta";
 
 const props = defineProps({
   modelValue: {
@@ -56,16 +57,17 @@ watch(
       errorMessage.value = "";
       if (props.registro) {
         concepto.value = {
-          ID: props.registro.ID || props.registro.Id || 0,
+          ID: props.registro.ID || props.registro.Id || props.registro.IDCONCEPTOLIQ || 0,
           CODIGO: String(props.registro.CODIGO ?? ""),
           SUBCODIGO: String(props.registro.SUBCODIGO ?? "0"),
-          PARAMETRO1: String(props.registro.PARAMETRO1 ?? "0"),
-          PARAMETRO2: String(props.registro.PARAMETRO2 ?? "0"),
+          PARAMETRO1: String(props.registro.PARAM1 ?? props.registro.PARAMETRO1 ?? "0"),
+          PARAMETRO2: String(props.registro.PARAM2 ?? props.registro.PARAMETRO2 ?? "0"),
           IMPORTE: financial(props.registro.IMPORTE) || "0.00",
           GRUPOADICIONALID: String(props.registro.GRUPOADICIONALID ?? "0"),
           PENLEY: props.registro.PENLEY === 1 || props.registro.PENLEY === true,
         };
-        vencimiento.value = props.registro.VENCIMIENTO ? getVto(props.registro.VENCIMIENTO) : "";
+        const rawVto = props.registro.VTO || props.registro.VENCIMIENTO || "";
+        vencimiento.value = rawVto ? getVto(rawVto) : "";
         periodo.value = props.registro.PERIODO ? getVto(props.registro.PERIODO) : props.periodoDefault;
       } else {
         concepto.value = {
@@ -104,7 +106,7 @@ async function guardar() {
   const fecPer = periodo.value ? getFechaToAPIFromMMYYYY(periodo.value) : "";
 
   let payload = {
-    vIDCARGO: props.cargoId,
+    vIDCARGO: Number(props.cargoId),
     vCODIGO: Number(concepto.value.CODIGO),
     vSUBCOD: Number(concepto.value.SUBCODIGO) || 0,
     vPARM1: Number(concepto.value.PARAMETRO1) || 0,
@@ -116,27 +118,31 @@ async function guardar() {
     vPENLEY: concepto.value.PENLEY ? 1 : 0,
   };
 
-  const isEdit = concepto.value.ID && concepto.value.ID !== 0;
-  const spUrl = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
+  const isEdit = Boolean(concepto.value.ID && concepto.value.ID !== 0);
+  let spUrl = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
 
   if (isEdit) {
     payload = {
-      vIDCONCEPTOLIQ: concepto.value.ID,
+      vIDCONCEPTOLIQ: Number(concepto.value.ID),
       ...payload,
     };
   }
 
   try {
-    const { operacionOk, valorError, errorMsg, out } = await ejecutarSP(spUrl, payload);
-    const errCode = valorError !== undefined && valorError !== -1
-      ? valorError
-      : (out?.vError ?? (operacionOk ? 0 : -1));
+    let res = await ejecutarSP(spUrl, payload);
+    if (!res.operacionOk && res.estado === 404) {
+      // Fallback a nombre de SP legacy si el endpoint con prefijo no estuviera
+      const legacySp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
+      res = await ejecutarSP(legacySp, payload);
+    }
+    const errCode = resolveSpErrorCode(res);
+    const esExito = res.operacionOk && (errCode === SP_OK || Number(res.valorError) === 0);
 
-    if (operacionOk && errCode === 0) {
+    if (esExito) {
       emit("guardado", { isEdit, payload });
       cerrar();
     } else {
-      errorMessage.value = errorMsg || out?.vErrorMsg || "No se pudo guardar el concepto.";
+      errorMessage.value = extractSpMessage(res, "No se pudo guardar el concepto.");
     }
   } catch (err) {
     errorMessage.value = err.message || "Error al procesar el concepto.";
@@ -179,8 +185,8 @@ async function guardar() {
                 variant="outlined"
                 density="compact"
                 :rules="[
-                  (v) => !!v || 'Código requerido',
-                  (v) => Number(v) > 0 || 'Código debe ser mayor a 0',
+                  (v) => (v !== null && v !== undefined && String(v).trim() !== '') || 'Código requerido',
+                  (v) => (!isNaN(Number(v)) && Number(v) >= 0) || 'Código inválido (debe ser mayor o igual a 0)',
                 ]"
               ></v-text-field>
             </v-col>
