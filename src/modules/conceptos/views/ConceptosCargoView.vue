@@ -56,6 +56,7 @@ function normalizarCargo(cargo) {
   const tipoLiqDesc = cargo.TipoLiquidacionDescripcion ?? cargo.TIPOLIQUIDACIONDESCRIPCION ?? getName(tipoLiq, tipoLiqId) ?? "";
   const salario = cargo.Salario ?? cargo.SALARIO;
   const uniOrg = cargo.UniOrg ?? cargo.UNIORG ?? cargo.UniOrgId ?? cargo.UNIORGID ?? "";
+  const observacion = cargo.Observacion ?? cargo.OBSERVACION ?? cargo.observacion ?? cargo.OBS ?? "";
 
   return {
     ...cargo,
@@ -96,6 +97,8 @@ function normalizarCargo(cargo) {
     SALARIO: salario,
     UniOrg: uniOrg,
     UNIORG: uniOrg,
+    Observacion: observacion,
+    OBSERVACION: observacion,
   };
 }
 const personaSeleccionada = ref(null);
@@ -637,6 +640,7 @@ async function eliminarConcepto(id) {
 }
 
 const headersCargos = [
+  { title: "Acciones", key: "ACCIONES", width: "150px", align: "center", sortable: false },
   {
     title: "Rep.",
     key: "ReparticionId",
@@ -747,7 +751,6 @@ const headersCargos = [
     align: "center",
     width: "95px",
   },
-  { title: "CC", key: "ACCIONES", width: "135px", align: "center", sortable: false },
 ];
 
 const totalImporteConceptos = computed(() => {
@@ -905,6 +908,50 @@ onMounted(async () => {
               :class="{ 'bg-blue-lighten-5': (getCargoId(cargoSeleccionado) === getCargoId(item)) }"
               @click="seleccionarCargo(item)"
             >
+              <!-- Acciones (al inicio) -->
+              <td class="text-center pa-1 sticky-col">
+                <div class="d-flex align-center justify-center ga-1">
+                  <v-btn
+                    size="x-small"
+                    color="primary"
+                    variant="flat"
+                    prepend-icon="mdi-format-list-checks"
+                    class="font-weight-bold"
+                    @click.stop="abrirConceptosLiq(item)"
+                  >
+                    Conceptos Liq
+                  </v-btn>
+                  <v-tooltip location="top" text="Actualizar datos del cargo">
+                    <template #activator="{ props: tooltipProps }">
+                      <v-btn
+                        v-bind="tooltipProps"
+                        size="x-small"
+                        icon="mdi-pencil"
+                        color="primary"
+                        variant="tonal"
+                        @click.stop="abrirEditarCargo(item)"
+                      />
+                    </template>
+                  </v-tooltip>
+                  <v-tooltip
+                    v-if="(item.EstadoCargoId ?? item.ESTADOCARGOID) === 1"
+                    location="top"
+                    text="Dar de baja al cargo"
+                  >
+                    <template #activator="{ props: tooltipProps }">
+                      <v-btn
+                        v-bind="tooltipProps"
+                        size="x-small"
+                        icon="mdi-account-arrow-down"
+                        color="error"
+                        variant="tonal"
+                        @click.stop="abrirBajaCargo(item)"
+                      />
+                    </template>
+                  </v-tooltip>
+                </div>
+              </td>
+
               <!-- 1. ReparticionId -->
               <td class="text-center pa-1">{{ item.ReparticionId ?? item.REPARTICIONID }}</td>
 
@@ -996,50 +1043,6 @@ onMounted(async () => {
               <!-- 16. UniOrg -->
               <td class="text-center pa-1">
                 {{ item.UniOrg ?? item.UNIORG ?? item.UniOrgId ?? item.UNIORGID ?? '—' }}
-              </td>
-
-              <!-- CC (Conceptos / Acciones) -->
-              <td class="text-center pa-1 sticky">
-                <div class="d-flex align-center justify-center ga-1">
-                  <v-btn
-                    size="x-small"
-                    color="primary"
-                    variant="flat"
-                    prepend-icon="mdi-format-list-checks"
-                    class="font-weight-bold"
-                    @click.stop="abrirConceptosLiq(item)"
-                  >
-                    Conceptos Liq
-                  </v-btn>
-                  <v-tooltip location="top" text="Actualizar datos del cargo">
-                    <template #activator="{ props: tooltipProps }">
-                      <v-btn
-                        v-bind="tooltipProps"
-                        size="x-small"
-                        icon="mdi-pencil"
-                        color="primary"
-                        variant="tonal"
-                        @click.stop="abrirEditarCargo(item)"
-                      />
-                    </template>
-                  </v-tooltip>
-                  <v-tooltip
-                    v-if="(item.EstadoCargoId ?? item.ESTADOCARGOID) === 1"
-                    location="top"
-                    text="Dar de baja al cargo"
-                  >
-                    <template #activator="{ props: tooltipProps }">
-                      <v-btn
-                        v-bind="tooltipProps"
-                        size="x-small"
-                        icon="mdi-account-arrow-down"
-                        color="error"
-                        variant="tonal"
-                        @click.stop="abrirBajaCargo(item)"
-                      />
-                    </template>
-                  </v-tooltip>
-                </div>
               </td>
             </tr>
           </template>
@@ -1212,5 +1215,11 @@ onMounted(async () => {
 <style scoped>
 .cursor-pointer {
   cursor: pointer;
+}
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background-color: inherit;
+  z-index: 2;
 }
 </style>

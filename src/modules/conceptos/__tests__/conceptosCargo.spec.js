@@ -294,6 +294,74 @@ describe("Módulo de Conceptos por Cargo", () => {
       );
       expect(wrapper.emitted("cargo-actualizado")).toBeTruthy();
     });
+
+    it("incluye el campo observacion y envía null en fechas vacías para evitar errores en SQL Server", async () => {
+      const cargoConObs = {
+        Id: 501,
+        ReparticionId: 469,
+        Orden: 1,
+        TipoEmpleoId: 1,
+        SituacionRevistaId: 1,
+        TipoObraSocialId: 1,
+        TipoLiquidacionId: 1,
+        EstadoCargoId: 1,
+        Categoria: 10,
+        Observacion: "Observación inicial",
+      };
+
+      const wrapper = mount(EditarCargoModal, {
+        props: {
+          modelValue: true,
+          cargo: cargoConObs,
+        },
+      });
+      await flushPromises();
+
+      expect(wrapper.vm.observacion).toBe("Observación inicial");
+
+      // Modificar la observación
+      wrapper.vm.observacion = "Cambio de categoría por resolución 123";
+      await wrapper.vm.guardar();
+      await flushPromises();
+
+      expect(mockEjecutarSP).toHaveBeenCalledWith(
+        "sp/cargos_spuCargo",
+        expect.objectContaining({
+          vIDCARGO: 501,
+          vOBSERVACION: "Cambio de categoría por resolución 123",
+          vFECHABAJA: null,
+          vVTOESC: null,
+        })
+      );
+    });
+
+    it("no permite editar el Tipo de Empleo ni el Tipo de Liquidación", async () => {
+      const cargo = {
+        Id: 502,
+        ReparticionId: 469,
+        Orden: 1,
+        TipoEmpleoId: 1,
+        TipoLiquidacionId: 1,
+        SituacionRevistaId: 1,
+        TipoObraSocialId: 1,
+        EstadoCargoId: 1,
+      };
+
+      const wrapper = mount(EditarCargoModal, {
+        props: {
+          modelValue: true,
+          cargo,
+        },
+      });
+      await flushPromises();
+
+      const selects = wrapper.findAllComponents({ name: "VSelect" });
+      const selectTipoEmpleo = selects.find((s) => s.props("label")?.includes("Tipo de Empleo"));
+      const selectTipoLiq = selects.find((s) => s.props("label")?.includes("Tipo Liquidación"));
+
+      expect(selectTipoEmpleo.props("disabled")).toBe(true);
+      expect(selectTipoLiq.props("disabled")).toBe(true);
+    });
   });
 
   describe("ConceptoLiqModal", () => {
@@ -603,6 +671,7 @@ describe("Módulo de Conceptos por Cargo", () => {
 
       const keys = wrapper.vm.headersCargos.map((h) => h.key);
       expect(keys).toEqual([
+        "ACCIONES",
         "ReparticionId",
         "Orden",
         "PersonaDocumento",
@@ -619,7 +688,6 @@ describe("Módulo de Conceptos por Cargo", () => {
         "TipoLiquidacionDescripcion",
         "Salario",
         "UniOrg",
-        "ACCIONES",
       ]);
     });
 
