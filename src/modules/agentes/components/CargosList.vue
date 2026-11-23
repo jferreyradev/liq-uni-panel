@@ -25,6 +25,7 @@ function seleccionarCargo(item) {
 }
 
 const hojasHeaders = [
+  { title: "Acciones", key: "ACCIONES", align: "center", width: "160px", sortable: false },
   {
     title: "Rep.",
     key: "ReparticionId",
@@ -135,7 +136,6 @@ const hojasHeaders = [
     align: "center",
     width: "95px",
   },
-  { title: "CC", key: "ACCIONES", align: "center", width: "135px", sortable: false },
 ];
 
 // alerta de grabación o error
@@ -266,6 +266,34 @@ load(filterStore.cargosFiltro);
             :class="{ 'bg-blue-lighten-5': (cargoSeleccionado?.ID === (item.ID || item.Id) || cargoSeleccionado?.Id === (item.ID || item.Id)) }"
             @click="seleccionarCargo(item)"
           >
+            <!-- Acciones (al inicio) -->
+            <td class="text-center pa-1 sticky">
+              <div class="d-flex align-center justify-center ga-1">
+                <v-btn
+                  size="x-small"
+                  color="primary"
+                  variant="flat"
+                  prepend-icon="mdi-format-list-checks"
+                  class="font-weight-bold"
+                  @click.stop="handleListaConceptos(item.ID || item.Id)"
+                >
+                  Conceptos Liq
+                </v-btn>
+                <TooltipButton
+                  :icono="'mdi-pencil'"
+                  :toolMsg="'Editar Cargo'"
+                  :funcion="handleModif"
+                  :itemid="item.ID || item.Id"
+                ></TooltipButton>
+                <TooltipButton
+                  :icono="'mdi-dots-horizontal-circle'"
+                  :toolMsg="'Ver detalle del Cargo'"
+                  :funcion="handleVerCargo"
+                  :itemid="item.ID || item.Id"
+                ></TooltipButton>
+              </div>
+            </td>
+
             <!-- 1. ReparticionId -->
             <td class="text-center pa-1">{{ item.ReparticionId ?? item.REPARTICIONID }}</td>
 
@@ -358,34 +386,6 @@ load(filterStore.cargosFiltro);
             <td class="text-center pa-1">
               {{ item.UniOrg ?? item.UNIORG ?? item.UniOrgId ?? item.UNIORGID ?? '—' }}
             </td>
-
-            <!-- CC (Acciones / Conceptos) -->
-            <td class="text-center pa-1 sticky">
-              <div class="d-flex align-center justify-center ga-1">
-                <v-btn
-                  size="x-small"
-                  color="primary"
-                  variant="flat"
-                  prepend-icon="mdi-format-list-checks"
-                  class="font-weight-bold"
-                  @click.stop="handleListaConceptos(item.ID || item.Id)"
-                >
-                  Conceptos Liq
-                </v-btn>
-                <TooltipButton
-                  :icono="'mdi-pencil'"
-                  :toolMsg="'Editar Cargo'"
-                  :funcion="handleModif"
-                  :itemid="item.ID || item.Id"
-                ></TooltipButton>
-                <TooltipButton
-                  :icono="'mdi-dots-horizontal-circle'"
-                  :toolMsg="'Ver detalle del Cargo'"
-                  :funcion="handleVerCargo"
-                  :itemid="item.ID || item.Id"
-                ></TooltipButton>
-              </div>
-            </td>
           </tr>
         </template>
       </v-data-table>
@@ -415,7 +415,8 @@ load(filterStore.cargosFiltro);
 .sticky {
   position: sticky !important;
   left: 0 !important;
-  min-width: 130px !important;
-  z-index: 10 !important;
+  background-color: inherit;
+  min-width: 150px !important;
+  z-index: 2 !important;
 }
 </style>
