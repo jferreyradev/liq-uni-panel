@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useTenantStore } from "@/stores/tenantStore";
+import { useFilterStore } from "@/stores/filterStore";
 import { RepoHeader, ConfirmacionDialog, TooltipButton } from "@/shared/components";
 import { usePII } from "@/composables/usePII";
 import { getVto, getFechaDMY, financial } from "@/utils/formatos";
@@ -13,6 +14,7 @@ import ConceptoLiqModal from "../components/ConceptoLiqModal.vue";
 import EditarCargoModal from "../components/EditarCargoModal.vue";
 
 const tenantStore = useTenantStore();
+const filterStore = useFilterStore();
 const { documento } = usePII();
 
 // Filtros y Búsqueda
@@ -256,11 +258,16 @@ async function cargarCargos() {
       query.TipoLiquidacionId = tipoLiqSeleccionado.value;
     }
 
+    const repActiva = filterStore.serverIdRep || filterStore.serverConfig?.IDREP;
+    if (repActiva) {
+      query.ReparticionId = repActiva;
+    }
+
     const q = (busquedaTexto.value || "").trim();
     if (q) {
       if (/^\d+$/.test(q)) {
         if (q.length <= 6) {
-          query.Id = q;
+          query.Orden = q;
         } else {
           query.PersonaDocumento = q;
         }
@@ -280,6 +287,8 @@ async function cargarCargos() {
         if (q) {
           mostrarMensaje("No se encontraron cargos con el criterio ingresado.", "info");
         }
+      } else if (q && /^\d+$/.test(q) && q.length <= 6 && datos.length === 1) {
+        seleccionarCargo(listaCargos.value[0], false);
       }
     } else {
       listaCargos.value = [];
@@ -839,8 +848,8 @@ onMounted(async () => {
           <v-col cols="12" md="8" sm="8">
             <v-text-field
               v-model="busquedaTexto"
-              label="Buscar por DNI, Apellido o Nro. de Cargo"
-              placeholder="Ej: 28920504, PEREZ o 753"
+              label="Buscar por DNI, Apellido u Orden del Cargo"
+              placeholder="Ej: 63, PEREZ o 28920504"
               prepend-inner-icon="mdi-magnify"
               variant="outlined"
               density="compact"
@@ -900,7 +909,7 @@ onMounted(async () => {
           density="compact"
           hover
           class="border rounded text-caption"
-          no-data-text="No se encontraron cargos para mostrar. Ingrese un DNI, Apellido o Cargo # para buscar."
+          no-data-text="No se encontraron cargos para mostrar. Ingrese un DNI, Apellido u Orden del Cargo para buscar."
         >
           <template #item="{ item }">
             <tr

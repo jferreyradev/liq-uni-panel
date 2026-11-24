@@ -130,4 +130,40 @@ describe('userStore sobre el cliente HTTP unico', () => {
     expect(paths).toContain('/conceptos')
     expect(paths).not.toContain('/procesos')
   })
+
+  it('restaura sesion y rol desde localStorage y los limpia al hacer logout', async () => {
+    const storeMap = new Map()
+    const mockStorage = {
+      getItem: (k) => storeMap.get(k) ?? null,
+      setItem: (k, v) => storeMap.set(k, String(v)),
+      removeItem: (k) => storeMap.delete(k),
+      clear: () => storeMap.clear(),
+    }
+    const originalStorage = globalThis.localStorage
+    globalThis.localStorage = mockStorage
+
+    try {
+      mockStorage.setItem('liq_user', JSON.stringify({ USERNAME: 'testuser', ROL: 5 }))
+      mockStorage.setItem('liq_token', 'jwt-token-123')
+      mockStorage.setItem('liq_rol', JSON.stringify([{ IDMENU: 1, PATH: '/operaciones' }]))
+
+      const store = useUserStore()
+
+      expect(store.auth).toBe(true)
+      expect(store.success).toBe(true)
+      expect(store.user?.USERNAME).toBe('testuser')
+      expect(store.rol?.[0]?.PATH).toBe('/operaciones')
+
+      store.logout()
+
+      expect(store.auth).toBe(false)
+      expect(store.user).toBe(null)
+      expect(store.rol).toBe(null)
+      expect(mockStorage.getItem('liq_user')).toBe(null)
+      expect(mockStorage.getItem('liq_token')).toBe(null)
+      expect(mockStorage.getItem('liq_rol')).toBe(null)
+    } finally {
+      globalThis.localStorage = originalStorage
+    }
+  })
 })

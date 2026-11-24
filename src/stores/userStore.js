@@ -60,8 +60,8 @@ async function pedir({
 
 function getStoredUser() {
   try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const u = window.localStorage.getItem('liq_user')
+    if (typeof localStorage !== 'undefined') {
+      const u = localStorage.getItem('liq_user')
       if (u) return JSON.parse(u)
     }
   } catch {
@@ -70,25 +70,50 @@ function getStoredUser() {
   return null
 }
 
-const initialToken = typeof window !== 'undefined' && window.localStorage ? (window.localStorage.getItem('liq_token') || '') : ''
-const initialUser = getStoredUser()
+function getStoredRol() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const r = localStorage.getItem('liq_rol')
+      if (r) return JSON.parse(r)
+    }
+  } catch {
+    // ignore
+  }
+  return []
+}
+
+function getStoredToken() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem('liq_token') || ''
+    }
+  } catch {
+    // ignore
+  }
+  return ''
+}
 
 export const useUserStore = defineStore('userStore', {
-  state: () => ({
-    user: initialUser,
-    token: initialToken,
-    pers: null,
-    loading: false,
-    result: '',
-    error: null,
-    lastError: null, // Detalle técnico del último error ({ status, statusText, url, message, body })
-    success: !!initialToken,
-    auth: !!initialToken && !!initialUser,
-    allowSign: false,
-    rol: null,
-    users: [],
-    config: null
-  }),
+  state: () => {
+    const user = getStoredUser()
+    const rol = getStoredRol()
+    const token = getStoredToken()
+    return {
+      user,
+      token,
+      pers: null,
+      loading: false,
+      result: '',
+      error: null,
+      lastError: null, // Detalle técnico del último error ({ status, statusText, url, message, body })
+      success: !!user,
+      auth: !!user,
+      allowSign: false,
+      rol,
+      users: [],
+      config: null
+    }
+  },
   getters: {
     isRegistred: (state) => !!state.user,
     isAuthenticated: (state) => !!state.auth,
@@ -228,6 +253,7 @@ export const useUserStore = defineStore('userStore', {
           this.success = true
           if (typeof window !== 'undefined' && window.localStorage) {
             window.localStorage.setItem('liq_user', JSON.stringify(this.user))
+            window.localStorage.setItem('liq_token', token)
           }
           return
         }
@@ -244,8 +270,13 @@ export const useUserStore = defineStore('userStore', {
           if (atob(this.user?.PASSWORD) === pass || this.user?.PASSWORD === pass) {
             this.auth = true
             this.success = true
+            const fallbackToken = `session-${Date.now()}`
+            this.token = fallbackToken
+            const { setAuthToken } = useEndPoints()
+            setAuthToken(fallbackToken)
             if (typeof window !== 'undefined' && window.localStorage) {
               window.localStorage.setItem('liq_user', JSON.stringify(this.user))
+              window.localStorage.setItem('liq_token', fallbackToken)
             }
           } else {
             this.auth = false
@@ -262,8 +293,11 @@ export const useUserStore = defineStore('userStore', {
       this.user = null
       this.auth = false
       this.token = ''
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem('liq_user')
+      this.rol = null
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('liq_user')
+        localStorage.removeItem('liq_token')
+        localStorage.removeItem('liq_rol')
       }
       const { clearAuthToken } = useEndPoints()
       clearAuthToken()
@@ -285,6 +319,8 @@ export const useUserStore = defineStore('userStore', {
       this.config = null
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem('liq_user')
+        window.localStorage.removeItem('liq_token')
+        window.localStorage.removeItem('liq_rol')
       }
       const { clearAuthToken } = useEndPoints()
       clearAuthToken()
@@ -508,6 +544,9 @@ export const useUserStore = defineStore('userStore', {
         }
 
         this.rol = uniqueData
+        if (typeof window !== 'undefined' && window.localStorage && uniqueData.length > 0) {
+          window.localStorage.setItem('liq_rol', JSON.stringify(uniqueData))
+        }
         this.success = true
       } catch (error) {
         this.error = error.message

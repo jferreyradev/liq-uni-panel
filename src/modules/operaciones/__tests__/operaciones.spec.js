@@ -159,6 +159,63 @@ describe("Módulo de Operaciones", () => {
         })
       );
     });
+
+    it("permite liquidar múltiples personas seleccionadas en lote", async () => {
+      const wrapper = mount(OperacionLiquidacion);
+      await flushPromises();
+
+      wrapper.vm.formaLiquidarSelected = { name: "Por Persona", value: 2 };
+      wrapper.vm.agregarPersonaALista({ PERSONAID: 101, DOCUMENTO: "11111", APELLIDOYNOMBRE: "PEREZ, JUAN" });
+      wrapper.vm.agregarPersonaALista({ PERSONAID: 102, DOCUMENTO: "22222", APELLIDOYNOMBRE: "GARCIA, ANA" });
+
+      expect(wrapper.vm.itemsSeleccionados.length).toBe(2);
+
+      await wrapper.vm.ejecutarLiquidacion();
+      await flushPromises();
+
+      expect(mockEjecutarSP_SinEspera).toHaveBeenCalledTimes(2);
+      expect(mockEjecutarSP_SinEspera).toHaveBeenNthCalledWith(
+        1,
+        "sp/liq",
+        expect.objectContaining({ IdPersona: 101, CargoId: 0 })
+      );
+      expect(mockEjecutarSP_SinEspera).toHaveBeenNthCalledWith(
+        2,
+        "sp/liq",
+        expect.objectContaining({ IdPersona: 102, CargoId: 0 })
+      );
+      expect(wrapper.emitted("proceso-iniciado")).toBeTruthy();
+    });
+
+    it("permite liquidar múltiples cargos seleccionados en lote con contexto de login", async () => {
+      const { useFilterStore } = await import("@/stores/filterStore");
+      const filterStore = useFilterStore();
+      filterStore.serverConfig = { IDREP: 400, DESCRIPCION: "MUNICIPALIDAD DE TAFI VIEJO" };
+
+      const wrapper = mount(OperacionLiquidacion);
+      await flushPromises();
+
+      wrapper.vm.formaLiquidarSelected = { name: "Por Cargo", value: 3 };
+      wrapper.vm.agregarCargoALista({ ID: 501, ORDEN: 63, PERSONAID: 101, PERSONAAPELLIDO: "MATIUSSI", PERSONANOMBRE: "ROSINA" });
+      wrapper.vm.agregarCargoALista({ ID: 502, ORDEN: 280, PERSONAID: 102, PERSONAAPELLIDO: "QUINTEROS", PERSONANOMBRE: "SERGIO" });
+
+      expect(wrapper.vm.itemsSeleccionados.length).toBe(2);
+
+      await wrapper.vm.ejecutarLiquidacion();
+      await flushPromises();
+
+      expect(mockEjecutarSP_SinEspera).toHaveBeenCalledTimes(2);
+      expect(mockEjecutarSP_SinEspera).toHaveBeenNthCalledWith(
+        1,
+        "sp/liq",
+        expect.objectContaining({ Rep: 400, GrupoRep: 0, CargoId: 501, IdPersona: 101 })
+      );
+      expect(mockEjecutarSP_SinEspera).toHaveBeenNthCalledWith(
+        2,
+        "sp/liq",
+        expect.objectContaining({ Rep: 400, GrupoRep: 0, CargoId: 502, IdPersona: 102 })
+      );
+    });
   });
 
   describe("OperacionBoletas", () => {

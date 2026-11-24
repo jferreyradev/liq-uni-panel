@@ -690,6 +690,36 @@ describe("Módulo de Conceptos por Cargo", () => {
       );
     });
 
+    it("busca por Orden del cargo cuando el término numérico es <= 6 dígitos con la repartición de sesión", async () => {
+      const { useFilterStore } = await import("@/stores/filterStore");
+      const filterStore = useFilterStore();
+      filterStore.serverConfig = { IDREP: 400 };
+
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: "/conceptos", component: ConceptosCargoView }],
+      });
+
+      const wrapper = mount(ConceptosCargoView, {
+        global: { plugins: [router] },
+      });
+      await flushPromises();
+
+      wrapper.vm.busquedaTexto = "63";
+      await wrapper.vm.cargarCargos();
+      await flushPromises();
+
+      expect(mockLeerDatos).toHaveBeenCalledWith(
+        "view/cargo",
+        expect.objectContaining({
+          query: expect.objectContaining({
+            Orden: "63",
+            ReparticionId: 400,
+          }),
+        })
+      );
+    });
+
     it("calcula la suma total de importes de conceptos del cargo seleccionado", async () => {
       const router = createRouter({
         history: createMemoryHistory(),
