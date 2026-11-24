@@ -216,6 +216,43 @@ describe("Módulo de Operaciones", () => {
         expect.objectContaining({ Rep: 400, GrupoRep: 0, CargoId: 502, IdPersona: 102 })
       );
     });
+
+    it("acota la búsqueda de cargos y personas al TipoLiquidacionId activo", async () => {
+      const wrapper = mount(OperacionLiquidacion);
+      await flushPromises();
+
+      // Cambiar tipo de liquidación a SAC (value: 2)
+      wrapper.vm.tipoLiqSelected = { name: "SAC", value: 2 };
+      wrapper.vm.busquedaCargoTexto = "63";
+      await wrapper.vm.buscarCargosAvanzada();
+      await flushPromises();
+
+      expect(mockLeerDatos).toHaveBeenCalledWith(
+        "view/cargo",
+        expect.objectContaining({
+          query: expect.objectContaining({
+            Orden: "63",
+            TipoLiquidacionId: 2,
+            EstadoCargoId: 1,
+          }),
+        })
+      );
+
+      // Búsqueda de personas acotada a TipoLiquidacionId
+      wrapper.vm.busquedaPersonaTexto = "PEREZ";
+      await wrapper.vm.buscarPersonasAvanzada();
+      await flushPromises();
+
+      expect(mockLeerDatos).toHaveBeenCalledWith(
+        "view/cargo",
+        expect.objectContaining({
+          query: expect.objectContaining({
+            TipoLiquidacionId: 2,
+            EstadoCargoId: 1,
+          }),
+        })
+      );
+    });
   });
 
   describe("OperacionBoletas", () => {

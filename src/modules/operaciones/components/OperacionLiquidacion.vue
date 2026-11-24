@@ -135,7 +135,7 @@ function limpiarSeleccionados() {
   itemsSeleccionados.value = [];
 }
 
-// Búsqueda facilitada de personas (por DNI o Apellido)
+// Búsqueda facilitada de personas (por DNI o Apellido) filtrando por Tipo de Liquidación activo
 async function buscarPersonasAvanzada() {
   const q = String(busquedaPersonaTexto.value || "").trim();
   if (!q) {
@@ -145,18 +145,57 @@ async function buscarPersonasAvanzada() {
   buscandoPersonasLista.value = true;
   resultadosPersonas.value = [];
   try {
-    const query = {};
-    if (/^\d+$/.test(q)) {
-      query.Documento = q;
-    } else {
-      const val = buildSearchValue("Apellido", q);
-      if (val) query.search = val;
+    // 1. Intentar buscar en view/cargo para acotar a la repartición y al Tipo de Liquidación activo
+    const queryCargo = { EstadoCargoId: 1 };
+    if (repId.value) {
+      queryCargo.ReparticionId = repId.value;
     }
-    const { datos, operacionOk } = await leerDatos("view/personaLista", { query });
-    if (operacionOk && Array.isArray(datos)) {
-      resultadosPersonas.value = datos;
-      if (datos.length === 1) {
-        seleccionarPersonaResultado(datos[0]);
+    if (tipoLiqSelected.value?.value && tipoLiqSelected.value.value !== -1) {
+      queryCargo.TipoLiquidacionId = tipoLiqSelected.value.value;
+    }
+    if (/^\d+$/.test(q)) {
+      queryCargo.PersonaDocumento = q;
+    } else {
+      const val = buildSearchValue("PersonaApellido", q);
+      if (val) queryCargo.search = val;
+    }
+    const { datos, operacionOk } = await leerDatos("view/cargo", { query: queryCargo });
+    if (operacionOk && Array.isArray(datos) && datos.length > 0) {
+      const map = new Map();
+      for (const c of datos) {
+        const pId = c.PERSONAID ?? c.PersonaId;
+        if (pId && !map.has(pId)) {
+          const doc = c.PERSONADOCUMENTO || c.Documento;
+          const nom =
+            c.PERSONAAPELLIDO || c.APELLIDO
+              ? `${c.PERSONAAPELLIDO || c.APELLIDO}, ${c.PERSONANOMBRE || c.NOMBRE || ""}`.trim()
+              : `Persona #${pId}`;
+          map.set(pId, {
+            PERSONAID: pId,
+            DOCUMENTO: doc,
+            APELLIDOYNOMBRE: nom,
+          });
+        }
+      }
+      resultadosPersonas.value = Array.from(map.values());
+      if (resultadosPersonas.value.length === 1) {
+        seleccionarPersonaResultado(resultadosPersonas.value[0]);
+      }
+    } else {
+      // Fallback a view/personaLista si no trajo cargos
+      const query = {};
+      if (/^\d+$/.test(q)) {
+        query.Documento = q;
+      } else {
+        const val = buildSearchValue("Apellido", q);
+        if (val) query.search = val;
+      }
+      const resP = await leerDatos("view/personaLista", { query });
+      if (resP.operacionOk && Array.isArray(resP.datos)) {
+        resultadosPersonas.value = resP.datos;
+        if (resP.datos.length === 1) {
+          seleccionarPersonaResultado(resP.datos[0]);
+        }
       }
     }
   } catch {
@@ -179,7 +218,7 @@ function seleccionarPersonaResultado(p) {
   }
 }
 
-// Búsqueda facilitada de cargos (por Orden, DNI o Apellido)
+// Búsqueda facilitada de cargos (por Orden, DNI o Apellido) filtrando por Tipo de Liquidación activo
 async function buscarCargosAvanzada() {
   const q = String(busquedaCargoTexto.value || "").trim();
   if (!q) {
@@ -192,6 +231,9 @@ async function buscarCargosAvanzada() {
     const query = { EstadoCargoId: 1 };
     if (repId.value) {
       query.ReparticionId = repId.value;
+    }
+    if (tipoLiqSelected.value?.value && tipoLiqSelected.value.value !== -1) {
+      query.TipoLiquidacionId = tipoLiqSelected.value.value;
     }
     if (/^\d+$/.test(q)) {
       if (q.length <= 6) {
@@ -231,9 +273,11 @@ async function cargarCargosAgente(pId) {
   }
   cargandoCargos.value = true;
   try {
-    const { datos, operacionOk } = await leerDatos("view/cargo", {
-      query: { PersonaId: pId, EstadoCargoId: 1 },
-    });
+    const query = { PersonaId: pId, EstadoCargoId: 1 };
+    if (tipoLiqSelected.value?.value && tipoLiqSelected.value.value !== -1) {
+      query.TipoLiquidacionId = tipoLiqSelected.value.value;
+    }
+    const { datos, operacionOk } = await leerDatos("view/cargo", { query });
     if (operacionOk && Array.isArray(datos)) {
       cargosAgente.value = datos.map((c) => ({
         name: `Cargo #${c.ID || c.Id} — Orden ${c.ORDEN} (Rep: ${c.REPARTICIONID}, Cat: ${c.CATEGORIA})`,
@@ -243,6 +287,9 @@ async function cargarCargosAgente(pId) {
       if (cargosAgente.value.length > 0) {
         cargoSeleccionado.value = cargosAgente.value[0];
         cargoId.value = cargosAgente.value[0].value;
+      } else {
+        cargoSeleccionado.value = null;
+        cargoId.value = null;
       }
     } else {
       cargosAgente.value = [];
@@ -312,6 +359,18 @@ function onFormaLiquidarChange(val) {
   resultadosPersonas.value = [];
   resultadosCargos.value = [];
   if (valor === 3 && personaId.value > 0 && cargosAgente.value.length === 0) {
+    cargarCargosAgente(personaId.value);
+  }
+}
+
+function onTipoLiqChange() {
+  if (busquedaCargoTexto.value) {
+    buscarCargosAvanzada();
+  }
+  if (busquedaPersonaTexto.value) {
+    buscarPersonasAvanzada();
+  }
+  if (personaId.value > 0 && formaLiquidarSelected.value.value === 3) {
     cargarCargosAgente(personaId.value);
   }
 }
@@ -554,6 +613,7 @@ async function ejecutarLiquidacion() {
               return-object
               variant="outlined"
               density="compact"
+              @update:model-value="onTipoLiqChange"
             ></v-select>
           </v-col>
 
@@ -644,9 +704,14 @@ async function ejecutarLiquidacion() {
         <template v-if="formaLiquidarSelected.value === 2">
           <!-- Búsqueda rápida por Apellido o DNI con lista -->
           <v-card variant="outlined" class="mb-4 pa-3 bg-white">
-            <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center">
-              <v-icon icon="mdi-account-search" size="small" class="me-1 text-primary" />
-              Buscar Agentes para Liquidar
+            <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center justify-space-between flex-wrap ga-2">
+              <div class="d-flex align-center">
+                <v-icon icon="mdi-account-search" size="small" class="me-1 text-primary" />
+                Buscar Agentes para Liquidar
+              </div>
+              <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">
+                Filtrado por: {{ tipoLiqSelected.name }}
+              </v-chip>
             </div>
             <v-row dense align="center">
               <v-col cols="12" sm="8" md="9">
@@ -780,9 +845,14 @@ async function ejecutarLiquidacion() {
         <template v-if="formaLiquidarSelected.value === 3">
           <!-- Búsqueda avanzada de cargos por Orden, DNI o Apellido -->
           <v-card variant="outlined" class="mb-4 pa-3 bg-white">
-            <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center">
-              <v-icon icon="mdi-briefcase-search" size="small" class="me-1 text-primary" />
-              Buscar Cargos para Liquidar (por Orden, Apellido o DNI)
+            <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center justify-space-between flex-wrap ga-2">
+              <div class="d-flex align-center">
+                <v-icon icon="mdi-briefcase-search" size="small" class="me-1 text-primary" />
+                Buscar Cargos para Liquidar (por Orden, Apellido o DNI)
+              </div>
+              <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">
+                Filtrado por: {{ tipoLiqSelected.name }}
+              </v-chip>
             </div>
             <v-row dense align="center">
               <v-col cols="12" sm="8" md="9">
@@ -836,6 +906,7 @@ async function ejecutarLiquidacion() {
                     <th class="text-left font-weight-bold">Agente</th>
                     <th class="text-center font-weight-bold">DNI</th>
                     <th class="text-center font-weight-bold">Cat</th>
+                    <th class="text-center font-weight-bold">Tipo Liq</th>
                     <th class="text-center font-weight-bold" style="width: 140px">Acción</th>
                   </tr>
                 </thead>
@@ -847,6 +918,11 @@ async function ejecutarLiquidacion() {
                     </td>
                     <td class="text-center">{{ c.PERSONADOCUMENTO || c.DOCUMENTO || '—' }}</td>
                     <td class="text-center font-weight-bold">{{ c.CATEGORIA || '—' }}</td>
+                    <td class="text-center">
+                      <v-chip size="x-small" variant="tonal" color="primary">
+                        {{ c.TIPOLIQUIDACIONDESCRIPCION || tipoLiqSelected.name }}
+                      </v-chip>
+                    </td>
                     <td class="text-center">
                       <v-btn
                         size="x-small"
