@@ -92,7 +92,19 @@ const getVto = (vto) => {
         </template>
       </v-data-table>
     </v-card>
-    <div v-else-if="error">No se puede obtener los datos solicitados.</div>
+    <v-alert
+      v-else-if="error"
+      type="error"
+      variant="tonal"
+      class="my-3"
+      closable
+      icon="mdi-alert-circle-outline"
+    >
+      <div class="font-weight-bold">No se pudieron obtener las liquidaciones</div>
+      <div class="text-caption text-medium-emphasis mt-1">
+        {{ error?.message || error || 'Error al conectar con el servidor o consultar los datos del período seleccionado.' }}
+      </div>
+    </v-alert>
   </v-container>
 </template>
 
