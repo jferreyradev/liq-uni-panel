@@ -385,7 +385,7 @@ describe("Módulo de Conceptos por Cargo", () => {
       await flushPromises();
 
       expect(mockEjecutarSP).toHaveBeenCalledWith(
-        "sp/conceptoliq_spiConceptoliq",
+        "sp/ConceptoLiqIns",
         expect.objectContaining({
           vIDCARGO: 301,
           vCODIGO: 102,
@@ -421,7 +421,7 @@ describe("Módulo de Conceptos por Cargo", () => {
       await flushPromises();
 
       expect(mockEjecutarSP).toHaveBeenCalledWith(
-        "sp/conceptoliq_spuConceptoliq",
+        "sp/ConceptoLiqUpd",
         expect.objectContaining({
           vIDCONCEPTOLIQ: 801,
           vIDCARGO: 301,
@@ -453,7 +453,7 @@ describe("Módulo de Conceptos por Cargo", () => {
       await flushPromises();
 
       expect(mockEjecutarSP).toHaveBeenCalledWith(
-        "sp/conceptoliq_spiConceptoliq",
+        "sp/ConceptoLiqIns",
         expect.objectContaining({
           vIDCARGO: 301,
           vCODIGO: 0,
@@ -488,7 +488,7 @@ describe("Módulo de Conceptos por Cargo", () => {
       await flushPromises();
 
       expect(mockEjecutarSP).toHaveBeenCalledWith(
-        "sp/conceptoliq_spiConceptoliq",
+        "sp/ConceptoLiqIns",
         expect.objectContaining({
           vIDCARGO: 301,
           vCODIGO: 105,
@@ -499,12 +499,12 @@ describe("Módulo de Conceptos por Cargo", () => {
       expect(wrapper.emitted("guardado")).toBeTruthy();
     });
 
-    it("ejecuta fallback a sp/ConceptoLiqIns si sp/conceptoliq_spiConceptoliq no se encuentra", async () => {
+    it("ejecuta fallback a sp/conceptoliq_spiConceptoliq si sp/ConceptoLiqIns falla", async () => {
       mockEjecutarSP
         .mockResolvedValueOnce({
           operacionOk: false,
           estado: 500,
-          errmsg: "Could not find stored procedure 'conceptoliq_spiConceptoliq'",
+          errmsg: "Could not find stored procedure 'ConceptoLiqIns'",
         })
         .mockResolvedValueOnce({
           operacionOk: true,
@@ -528,7 +528,7 @@ describe("Módulo de Conceptos por Cargo", () => {
       await flushPromises();
 
       expect(mockEjecutarSP).toHaveBeenCalledWith(
-        "sp/ConceptoLiqIns",
+        "sp/conceptoliq_spiConceptoliq",
         expect.objectContaining({
           vIDCARGO: 301,
           vCODIGO: 110,

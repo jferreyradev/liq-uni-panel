@@ -128,27 +128,18 @@ function cierraForm() {
 // funciones de agregado, modificación y eliminación
 async function grabarSP(item, id) {
   const isEdit = Boolean(id && id !== 0);
-  let primarySp = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
-  let fallbackSp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
+  let primarySp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
+  let fallbackSp = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
 
   try {
     let res = await ejecutarSP(primarySp, item);
     if (!res.operacionOk) {
-      const errMsg = (res.errmsg || res.errorMsg || "").toLowerCase();
+      const resFallback = await ejecutarSP(fallbackSp, item);
       if (
-        res.estado === 404 ||
-        errMsg.includes("could not find") ||
-        errMsg.includes("no se encontr") ||
-        errMsg.includes("not found") ||
-        errMsg.includes("procedure")
+        resFallback.operacionOk ||
+        (resFallback.valorError !== undefined && Number(resFallback.valorError) >= 0)
       ) {
-        const resFallback = await ejecutarSP(fallbackSp, item);
-        if (
-          resFallback.operacionOk ||
-          (resFallback.valorError !== undefined && Number(resFallback.valorError) >= 0)
-        ) {
-          res = resFallback;
-        }
+        res = resFallback;
       }
     }
 

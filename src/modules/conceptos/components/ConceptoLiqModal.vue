@@ -133,8 +133,8 @@ async function guardar() {
     vPENLEY: concepto.value.PENLEY ? 1 : 0,
   };
 
-  const primarySp = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
-  const fallbackSp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
+  const primarySp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
+  const fallbackSp = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
 
   if (isEdit) {
     payload = {
@@ -147,21 +147,12 @@ async function guardar() {
   try {
     let res = await ejecutarSP(primarySp, payload);
     if (!res.operacionOk) {
-      const errMsg = (res.errmsg || res.errorMsg || "").toLowerCase();
+      const resFallback = await ejecutarSP(fallbackSp, payload);
       if (
-        res.estado === 404 ||
-        errMsg.includes("could not find") ||
-        errMsg.includes("no se encontr") ||
-        errMsg.includes("not found") ||
-        errMsg.includes("procedure")
+        resFallback.operacionOk ||
+        (resFallback.valorError !== undefined && Number(resFallback.valorError) >= 0)
       ) {
-        const resFallback = await ejecutarSP(fallbackSp, payload);
-        if (
-          resFallback.operacionOk ||
-          (resFallback.valorError !== undefined && Number(resFallback.valorError) >= 0)
-        ) {
-          res = resFallback;
-        }
+        res = resFallback;
       }
     }
 

@@ -620,7 +620,7 @@ async function eliminarConcepto(id) {
     let res = await ejecutarSP("sp/conceptoliq_spdConceptoliq", {
       vIDCONCEPTOLIQ: idEliminar,
     });
-    if (!res.operacionOk && res.estado === 404) {
+    if (!res.operacionOk) {
       res = await ejecutarSP("sp/ConceptoLiqDel", {
         vIDCONCEPTOLIQ: idEliminar,
       });
