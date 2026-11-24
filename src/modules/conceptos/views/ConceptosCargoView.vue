@@ -764,8 +764,8 @@ const headersConceptos = [
   { title: "Subcód.", key: "SUBCODIGO", align: "end", width: "80px" },
   { title: "Parámetro 1", key: "PARAMETRO1", align: "end", width: "100px" },
   { title: "Parámetro 2", key: "PARAMETRO2", align: "end", width: "100px" },
-  { title: "Importe ($)", key: "IMPORTE", align: "end", width: "120px" },
   { title: "Vencimiento", key: "VENCIMIENTO", align: "center", width: "110px" },
+  { title: "Importe ($)", key: "IMPORTE", align: "end", width: "120px" },
   { title: "Período", key: "PERIODO", align: "center", width: "110px" },
   { title: "Grupo Adic.", key: "GRUPOADICIONALID", align: "center", width: "100px" },
   { title: "Es Ley", key: "PENLEY", align: "center", width: "80px" },
@@ -1133,8 +1133,8 @@ onMounted(async () => {
                   <td class="text-right pa-1">{{ item.SUBCODIGO }}</td>
                   <td class="text-right pa-1">{{ item.PARAMETRO1 }}</td>
                   <td class="text-right pa-1">{{ item.PARAMETRO2 }}</td>
-                  <td class="text-right pa-1 font-weight-bold">{{ financial(item.IMPORTE) }}</td>
                   <td class="text-center pa-1">{{ getVto(item.VENCIMIENTO) || '—' }}</td>
+                  <td class="text-right pa-1 font-weight-bold">{{ financial(item.IMPORTE) }}</td>
                   <td class="text-center pa-1">{{ getVto(item.PERIODO) || '—' }}</td>
                   <td class="text-center pa-1">{{ item.GRUPOADICIONALID }}</td>
                   <td class="text-center pa-1">

@@ -462,6 +462,81 @@ describe("Módulo de Conceptos por Cargo", () => {
       expect(wrapper.vm.errorMessage).toBe("");
       expect(wrapper.emitted("guardado")).toBeTruthy();
     });
+
+    it("trata el alta de concepto como éxito cuando el SP devuelve el ID insertado en valorError y envía null en vVTO vacío", async () => {
+      mockEjecutarSP.mockResolvedValueOnce({
+        operacionOk: true,
+        valorError: 850,
+      });
+
+      const wrapper = mount(ConceptoLiqModal, {
+        props: {
+          modelValue: true,
+          cargoId: 301,
+          periodoDefault: "05/2025",
+        },
+      });
+      await flushPromises();
+
+      wrapper.vm.concepto.CODIGO = "105";
+      wrapper.vm.concepto.IMPORTE = "25000.00";
+      wrapper.vm.periodo = "05/2025";
+      wrapper.vm.vencimiento = ""; // Sin vencimiento
+      await wrapper.vm.$nextTick();
+
+      await wrapper.vm.guardar();
+      await flushPromises();
+
+      expect(mockEjecutarSP).toHaveBeenCalledWith(
+        "sp/conceptoliq_spiConceptoliq",
+        expect.objectContaining({
+          vIDCARGO: 301,
+          vCODIGO: 105,
+          vVTO: null,
+        })
+      );
+      expect(wrapper.vm.errorMessage).toBe("");
+      expect(wrapper.emitted("guardado")).toBeTruthy();
+    });
+
+    it("ejecuta fallback a sp/ConceptoLiqIns si sp/conceptoliq_spiConceptoliq no se encuentra", async () => {
+      mockEjecutarSP
+        .mockResolvedValueOnce({
+          operacionOk: false,
+          estado: 500,
+          errmsg: "Could not find stored procedure 'conceptoliq_spiConceptoliq'",
+        })
+        .mockResolvedValueOnce({
+          operacionOk: true,
+          valorError: 0,
+        });
+
+      const wrapper = mount(ConceptoLiqModal, {
+        props: {
+          modelValue: true,
+          cargoId: 301,
+          periodoDefault: "05/2025",
+        },
+      });
+      await flushPromises();
+
+      wrapper.vm.concepto.CODIGO = "110";
+      wrapper.vm.concepto.IMPORTE = "30000.00";
+      await wrapper.vm.$nextTick();
+
+      await wrapper.vm.guardar();
+      await flushPromises();
+
+      expect(mockEjecutarSP).toHaveBeenCalledWith(
+        "sp/ConceptoLiqIns",
+        expect.objectContaining({
+          vIDCARGO: 301,
+          vCODIGO: 110,
+        })
+      );
+      expect(wrapper.vm.errorMessage).toBe("");
+      expect(wrapper.emitted("guardado")).toBeTruthy();
+    });
   });
 
   describe("ConceptosCargoView", () => {
@@ -779,6 +854,26 @@ describe("Módulo de Conceptos por Cargo", () => {
           query: expect.not.objectContaining({ limit: 50 }),
         })
       );
+    });
+
+    it("ubica la columna de vencimiento inmediatamente después del parámetro 2 en los conceptos", async () => {
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: "/conceptos", component: ConceptosCargoView }],
+      });
+
+      const wrapper = mount(ConceptosCargoView, {
+        global: { plugins: [router] },
+      });
+      await flushPromises();
+
+      const keys = wrapper.vm.headersConceptos.map((h) => h.key);
+      const idxParam2 = keys.indexOf("PARAMETRO2");
+      const idxVto = keys.indexOf("VENCIMIENTO");
+      const idxImporte = keys.indexOf("IMPORTE");
+
+      expect(idxVto).toBe(idxParam2 + 1);
+      expect(idxImporte).toBe(idxVto + 1);
     });
   });
 });
