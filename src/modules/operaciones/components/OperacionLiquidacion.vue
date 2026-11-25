@@ -523,19 +523,43 @@ async function ejecutarLiquidacion() {
         alertMensaje.value = `Se enviaron a procesar ${procesados} cargos seleccionados para el período ${periodo.value}.`;
         emit("proceso-iniciado", { tipo: "liquidacion", total: procesados });
       } else {
+        let finalCargoId = Number(cargoId.value) || 0;
+        let finalPersonaId = personaId.value || 0;
+
+        // Si el valor ingresado corresponde a un Nro de Orden/Boleta, resolver su ID real en la base de datos
+        if (finalCargoId > 0 && finalCargoId <= 99999) {
+          try {
+            const queryOrd = {
+              ...(repActual ? { ReparticionId: repActual } : {}),
+              Orden: finalCargoId,
+              ...(tipoLiqVal && tipoLiqVal !== -1 ? { TipoLiquidacionId: tipoLiqVal } : {}),
+            };
+            const resCargo = await leerDatos("view/cargo", { query: queryOrd });
+            if (resCargo.operacionOk && Array.isArray(resCargo.datos) && resCargo.datos.length > 0) {
+              const matched = resCargo.datos[0];
+              finalCargoId = Number(matched.ID ?? matched.Id ?? finalCargoId);
+              if (!finalPersonaId) {
+                finalPersonaId = Number(matched.PERSONAID ?? matched.PersonaId ?? 0);
+              }
+            }
+          } catch {
+            // fallback al ID ingresado
+          }
+        }
+
         const payload = {
           Periodo: fechaPeriodo,
           GrupoRep: 0,
           Rep: repActual,
-          IdPersona: personaId.value || 0,
-          CargoId: Number(cargoId.value) || 0,
+          IdPersona: finalPersonaId,
+          CargoId: finalCargoId,
           TipoLiq: tipoLiqVal,
           GrupoAdicional: grupoAdicionalVal,
         };
         const { salida } = await ejecutarSP_SinEspera("sp/liq", payload);
         if (salida === 0) {
           alertTipo.value = "success";
-          alertMensaje.value = `Liquidación del Cargo #${cargoId.value} enviada a procesar (Período: ${periodo.value}).`;
+          alertMensaje.value = `Liquidación del Cargo (ID #${finalCargoId}) enviada a procesar (Período: ${periodo.value}).`;
           emit("proceso-iniciado", { tipo: "liquidacion", payload });
         } else {
           alertTipo.value = "error";
@@ -962,13 +986,15 @@ async function ejecutarLiquidacion() {
             <v-col cols="12" sm="4">
               <v-text-field
                 v-model="cargoId"
-                label="ID de Cargo Específico"
+                label="Cargo (ID o N° Boleta/Orden)"
                 type="number"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-briefcase-check"
+                hint="Ingrese el N° de Boleta/Orden (ej: 63) o el ID del cargo"
+                persistent-hint
                 :rules="[
-                  (v) => (itemsSeleccionados.length > 0 ? true : (!!v || 'ID de Cargo requerido o agregue cargos a la bandeja')),
+                  (v) => (itemsSeleccionados.length > 0 ? true : (!!v || 'ID de Cargo o N° Boleta requerido o agregue cargos a la bandeja')),
                   (v) => (!v || Number(v) > 0 || 'Debe ser mayor a 0'),
                 ]"
               ></v-text-field>

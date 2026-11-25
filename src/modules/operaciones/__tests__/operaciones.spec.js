@@ -160,6 +160,37 @@ describe("Módulo de Operaciones", () => {
       );
     });
 
+    it("resuelve el ID de cargo real cuando el usuario ingresa un número de Boleta / Orden", async () => {
+      mockLeerDatos.mockImplementation(async (url, opts) => {
+        if (url.includes("view/periodo")) {
+          return { operacionOk: true, datos: [{ PERIODO: "2025-04-01" }] };
+        }
+        if (url === "view/cargo" && opts?.query?.Orden === 63) {
+          return {
+            operacionOk: true,
+            datos: [{ ID: 52341, ReparticionId: 400, Orden: 63, PERSONAID: 777 }],
+          };
+        }
+        return { operacionOk: false, datos: [] };
+      });
+
+      const wrapper = mount(OperacionLiquidacion);
+      await flushPromises();
+
+      wrapper.vm.formaLiquidarSelected = { name: "Por Cargo", value: 3 };
+      wrapper.vm.cargoId = 63; // Boleta 63
+      await wrapper.vm.ejecutarLiquidacion();
+      await flushPromises();
+
+      expect(mockEjecutarSP_SinEspera).toHaveBeenCalledWith(
+        "sp/liq",
+        expect.objectContaining({
+          CargoId: 52341,
+          IdPersona: 777,
+        })
+      );
+    });
+
     it("permite liquidar múltiples personas seleccionadas en lote", async () => {
       const wrapper = mount(OperacionLiquidacion);
       await flushPromises();

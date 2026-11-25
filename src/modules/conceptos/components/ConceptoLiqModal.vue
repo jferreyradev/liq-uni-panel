@@ -133,8 +133,14 @@ async function guardar() {
     vPENLEY: concepto.value.PENLEY ? 1 : 0,
   };
 
-  const primarySp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
-  const fallbackSp = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
+  if (!props.cargoId || Number(props.cargoId) <= 0) {
+    errorMessage.value = "No se pudo identificar el cargo ID para asociar el concepto.";
+    isSaving.value = false;
+    return;
+  }
+
+  const primarySp = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
+  const fallbackSp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
 
   if (isEdit) {
     payload = {

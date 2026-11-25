@@ -470,16 +470,34 @@ function cerrarModalConceptos() {
   modalConceptosAbierto.value = false;
 }
 
-// 4. Carga de Conceptos del Cargo (consulta view/conceptosLiq solo si se solicita)
+// 4. Carga de Conceptos del Cargo (consulta view/conceptoLiq solo si se solicita)
 async function cargarConceptos(cargoId) {
-  const idC = Number(cargoId) || getCargoId(cargoSeleccionado.value);
+  let idC = Number(cargoId) || getCargoId(cargoSeleccionado.value);
+  if (!idC && cargoSeleccionado.value) {
+    const rep = cargoSeleccionado.value.ReparticionId ?? cargoSeleccionado.value.REPARTICIONID;
+    const ord = cargoSeleccionado.value.Orden ?? cargoSeleccionado.value.ORDEN;
+    if (rep && ord) {
+      try {
+        const resC = await leerDatos("view/cargo", { query: { ReparticionId: rep, Orden: ord } });
+        if (resC.operacionOk && Array.isArray(resC.datos) && resC.datos.length > 0) {
+          idC = Number(resC.datos[0].ID ?? resC.datos[0].Id ?? 0);
+          if (cargoSeleccionado.value) {
+            cargoSeleccionado.value.ID = idC;
+            cargoSeleccionado.value.Id = idC;
+          }
+        }
+      } catch {
+        // fallback
+      }
+    }
+  }
   if (!idC) return;
   cargandoConceptos.value = true;
 
   try {
-    // Consultar view/conceptosLiq con el parámetro permitido idCargo, y conceptoLiq para asociar el ID del registro
+    // Consultar view/conceptoLiq con CargoId y conceptoLiq para asociar el ID del registro
     let [resView, resEntidad] = await Promise.all([
-      leerDatos("view/conceptosLiq", { query: { idCargo: idC } }),
+      leerDatos("view/conceptoLiq", { query: { CargoId: idC } }),
       leerDatos("conceptoLiq", { query: { CargoId: idC } }),
     ]);
 
@@ -891,7 +909,7 @@ onMounted(async () => {
           </span>
         </div>
         <div v-if="cargoSeleccionado" class="text-caption font-weight-bold text-primary">
-          Cargo activo: #{{ getCargoId(cargoSeleccionado) }} ({{ personaSeleccionada?.APELLIDOYNOMBRE || 'Agente' }})
+          Cargo activo: Boleta/Orden #{{ cargoSeleccionado.Orden ?? cargoSeleccionado.ORDEN }} (ID: {{ getCargoId(cargoSeleccionado) }}) — {{ personaSeleccionada?.APELLIDOYNOMBRE || 'Agente' }}
         </div>
       </v-card-title>
 
@@ -1059,7 +1077,7 @@ onMounted(async () => {
       </v-card-text>
     </v-card>
 
-    <!-- Ventana Flotante de Conceptos de Liquidación (Carga bajo demanda: view/conceptosLiq) -->
+    <!-- Ventana Flotante de Conceptos de Liquidación (Carga bajo demanda: view/conceptoLiq) -->
     <v-dialog
       v-model="modalConceptosAbierto"
       max-width="1200px"
@@ -1071,7 +1089,7 @@ onMounted(async () => {
             <v-icon icon="mdi-format-list-checks" class="me-2" />
             <div>
               <div class="text-subtitle-1 font-weight-bold">
-                Conceptos de Liquidación (CC) — Cargo #{{ getCargoId(cargoSeleccionado) }} (Orden {{ cargoSeleccionado.Orden ?? cargoSeleccionado.ORDEN }})
+                Conceptos de Liquidación (CC) — Boleta/Orden #{{ cargoSeleccionado.Orden ?? cargoSeleccionado.ORDEN }} (Cargo ID: {{ getCargoId(cargoSeleccionado) }})
               </div>
               <div class="text-caption text-white opacity-90">
                 Agente: {{ personaSeleccionada?.APELLIDOYNOMBRE || `${cargoSeleccionado.PersonaApellido ?? cargoSeleccionado.PERSONAAPELLIDO ?? cargoSeleccionado.APELLIDO ?? ''}, ${cargoSeleccionado.PersonaNombre ?? cargoSeleccionado.PERSONANOMBRE ?? cargoSeleccionado.NOMBRE ?? ''}` }}
@@ -1107,7 +1125,7 @@ onMounted(async () => {
         <v-card-text class="pa-4" style="max-height: 75vh;">
           <div v-if="cargandoConceptos" class="d-flex align-center justify-center pa-8">
             <v-progress-circular indeterminate color="primary" class="me-2"></v-progress-circular>
-            Consultando conceptos de liquidación en view/conceptosLiq...
+            Consultando conceptos de liquidación en view/conceptoLiq...
           </div>
 
           <div v-else>

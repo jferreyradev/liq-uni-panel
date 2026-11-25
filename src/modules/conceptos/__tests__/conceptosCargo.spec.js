@@ -365,7 +365,7 @@ describe("Módulo de Conceptos por Cargo", () => {
   });
 
   describe("ConceptoLiqModal", () => {
-    it("invoca sp/ConceptoLiqIns al guardar un concepto nuevo", async () => {
+    it("invoca sp/conceptoliq_spiConceptoliq al guardar un concepto nuevo", async () => {
       const wrapper = mount(ConceptoLiqModal, {
         props: {
           modelValue: true,
@@ -385,7 +385,7 @@ describe("Módulo de Conceptos por Cargo", () => {
       await flushPromises();
 
       expect(mockEjecutarSP).toHaveBeenCalledWith(
-        "sp/ConceptoLiqIns",
+        "sp/conceptoliq_spiConceptoliq",
         expect.objectContaining({
           vIDCARGO: 301,
           vCODIGO: 102,
@@ -395,7 +395,7 @@ describe("Módulo de Conceptos por Cargo", () => {
       expect(wrapper.emitted("guardado")).toBeTruthy();
     });
 
-    it("invoca sp/ConceptoLiqUpd al modificar un concepto existente", async () => {
+    it("invoca sp/conceptoliq_spuConceptoliq al modificar un concepto existente", async () => {
       const registro = {
         ID: 801,
         CODIGO: 101,
@@ -421,7 +421,7 @@ describe("Módulo de Conceptos por Cargo", () => {
       await flushPromises();
 
       expect(mockEjecutarSP).toHaveBeenCalledWith(
-        "sp/ConceptoLiqUpd",
+        "sp/conceptoliq_spuConceptoliq",
         expect.objectContaining({
           vIDCONCEPTOLIQ: 801,
           vIDCARGO: 301,
@@ -453,7 +453,7 @@ describe("Módulo de Conceptos por Cargo", () => {
       await flushPromises();
 
       expect(mockEjecutarSP).toHaveBeenCalledWith(
-        "sp/ConceptoLiqIns",
+        "sp/conceptoliq_spiConceptoliq",
         expect.objectContaining({
           vIDCARGO: 301,
           vCODIGO: 0,
@@ -488,7 +488,7 @@ describe("Módulo de Conceptos por Cargo", () => {
       await flushPromises();
 
       expect(mockEjecutarSP).toHaveBeenCalledWith(
-        "sp/ConceptoLiqIns",
+        "sp/conceptoliq_spiConceptoliq",
         expect.objectContaining({
           vIDCARGO: 301,
           vCODIGO: 105,
@@ -499,12 +499,12 @@ describe("Módulo de Conceptos por Cargo", () => {
       expect(wrapper.emitted("guardado")).toBeTruthy();
     });
 
-    it("ejecuta fallback a sp/conceptoliq_spiConceptoliq si sp/ConceptoLiqIns falla", async () => {
+    it("ejecuta fallback a sp/ConceptoLiqIns si sp/conceptoliq_spiConceptoliq falla", async () => {
       mockEjecutarSP
         .mockResolvedValueOnce({
           operacionOk: false,
           estado: 500,
-          errmsg: "Could not find stored procedure 'ConceptoLiqIns'",
+          errmsg: "Could not find stored procedure 'conceptoliq_spiConceptoliq'",
         })
         .mockResolvedValueOnce({
           operacionOk: true,
@@ -528,7 +528,7 @@ describe("Módulo de Conceptos por Cargo", () => {
       await flushPromises();
 
       expect(mockEjecutarSP).toHaveBeenCalledWith(
-        "sp/conceptoliq_spiConceptoliq",
+        "sp/ConceptoLiqIns",
         expect.objectContaining({
           vIDCARGO: 301,
           vCODIGO: 110,
@@ -578,8 +578,8 @@ describe("Módulo de Conceptos por Cargo", () => {
       await flushPromises();
 
       expect(mockLeerDatos).toHaveBeenCalledWith(
-        "view/conceptosLiq",
-        expect.objectContaining({ query: expect.objectContaining({ idCargo: 301 }) })
+        "view/conceptoLiq",
+        expect.objectContaining({ query: expect.objectContaining({ CargoId: 301 }) })
       );
       expect(wrapper.vm.modalConceptosAbierto).toBe(true);
       expect(wrapper.vm.listaConceptos.length).toBe(1);
@@ -818,14 +818,54 @@ describe("Módulo de Conceptos por Cargo", () => {
 
       expect(wrapper.vm.modalConceptosAbierto).toBe(true);
       expect(mockLeerDatos).toHaveBeenCalledWith(
-        "view/conceptosLiq",
-        expect.objectContaining({ query: expect.objectContaining({ idCargo: 301 }) })
+        "view/conceptoLiq",
+        expect.objectContaining({ query: expect.objectContaining({ CargoId: 301 }) })
       );
       expect(wrapper.vm.listaConceptos.length).toBe(1);
 
       // Cerrar ventana flotante
       wrapper.vm.cerrarModalConceptos();
       expect(wrapper.vm.modalConceptosAbierto).toBe(false);
+    });
+
+    it("resuelve el ID real del cargo desde view/cargo si el objeto seleccionado solo contiene Orden y ReparticionId", async () => {
+      mockLeerDatos.mockImplementation(async (url, opts) => {
+        if (url === "view/cargo" && opts?.query?.Orden === 63) {
+          return {
+            operacionOk: true,
+            datos: [{ ID: 52341, ReparticionId: 400, Orden: 63, PERSONAAPELLIDO: "MATIUSSI", PERSONANOMBRE: "ROSINA" }],
+          };
+        }
+        if (url.includes("conceptoLiq")) {
+          return {
+            operacionOk: true,
+            datos: [{ ID: 11, IDCARGO: 52341, CODIGO: 1119, SUBCODIGO: 0, IMPORTE: 70000 }],
+          };
+        }
+        return { operacionOk: true, datos: [] };
+      });
+
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: "/conceptos", component: ConceptosCargoView }],
+      });
+
+      const wrapper = mount(ConceptosCargoView, {
+        global: { plugins: [router] },
+      });
+      await flushPromises();
+
+      const cargoSinId = { ReparticionId: 400, Orden: 63, PersonaApellido: "MATIUSSI", PersonaNombre: "ROSINA" };
+      await wrapper.vm.seleccionarCargo(cargoSinId, false);
+      await wrapper.vm.cargarConceptos();
+      await flushPromises();
+
+      expect(mockLeerDatos).toHaveBeenCalledWith(
+        "view/conceptoLiq",
+        expect.objectContaining({ query: expect.objectContaining({ CargoId: 52341 }) })
+      );
+      expect(wrapper.vm.listaConceptos.length).toBe(1);
+      expect(wrapper.vm.listaConceptos[0].CODIGO).toBe(1119);
     });
 
     it("permite ordenar la grilla de cargos por sus columnas numéricas y de texto", async () => {

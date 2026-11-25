@@ -30,7 +30,7 @@ const lecturaListaRegs = ref(true);
 async function leerListaRegs() {
   isPending.value = true;
   let [resView, resEntidad] = await Promise.all([
-    leerDatos("view/conceptosLiq", { query: { idCargo: cargoId } }),
+    leerDatos("view/conceptoLiq", { query: { CargoId: cargoId } }),
     leerDatos("conceptoLiq", { query: { CargoId: cargoId } }),
   ]);
 
@@ -128,8 +128,8 @@ function cierraForm() {
 // funciones de agregado, modificación y eliminación
 async function grabarSP(item, id) {
   const isEdit = Boolean(id && id !== 0);
-  let primarySp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
-  let fallbackSp = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
+  let primarySp = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
+  let fallbackSp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
 
   try {
     let res = await ejecutarSP(primarySp, item);
