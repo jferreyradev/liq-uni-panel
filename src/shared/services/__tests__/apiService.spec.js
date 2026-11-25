@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-import { descargaArchivo, descargaBuffer, descargaTXT } from '../apiService.js'
+import { descargaArchivo, descargaBuffer, descargaTXT, actualizarCargo, ejecutarSP } from '../apiService.js'
 
 const ENDPOINTS = {
   apiBase: { value: 'https://api.test' },
@@ -124,6 +124,75 @@ describe('apiService - descargas binarias', () => {
 
       global.fetch.mockResolvedValue(respuestaBlob(null, { status: 500, ok: false }))
       expect(await descargaTXT('txt/archivoAcred')).toBeNull()
+    })
+  })
+
+  describe('actualizarCargo y puente cargos_spuCargo', () => {
+    it('actualizarCargo ejecuta PUT /api/cargo con los campos mapeados', async () => {
+      global.fetch.mockResolvedValue({
+        status: 200,
+        ok: true,
+        text: vi.fn().mockResolvedValue(JSON.stringify({ result: { rowsAffected: 1 }, status: 200, rows: [] })),
+      })
+
+      const res = await actualizarCargo({
+        vIDCARGO: 101,
+        vIDREP: 469,
+        vORDEN: 2,
+        vCATEGORIA: 18,
+        vIDESTADOCARGO: 1,
+        vFECHABAJA: null,
+      })
+
+      expect(res.operacionOk).toBe(true)
+      expect(res.valorError).toBe(0)
+      expect(res.valorSalida).toBe(101)
+
+      expect(global.fetch).toHaveBeenCalled()
+      const [url, init] = global.fetch.mock.calls[0]
+      expect(url).toBe('https://api.test/api/cargo')
+      expect(init.method).toBe('PUT')
+      const body = JSON.parse(init.body)
+      expect(body.Id).toBe(101)
+      expect(body.ReparticionId).toBe(469)
+      expect(body.Orden).toBe(2)
+      expect(body.Categoria).toBe(18)
+    })
+
+    it('actualizarCargo rechaza si no hay Id de cargo', async () => {
+      const res = await actualizarCargo({ Categoria: 18 })
+      expect(res.operacionOk).toBe(false)
+      expect(res.valorError).toBe(-1)
+      expect(res.errmsg).toMatch(/no se pudo identificar el id/i)
+    })
+
+    it('ejecutarSP("sp/cargos_spuCargo") delega transparentemente a actualizarCargo (PUT /api/cargo)', async () => {
+      global.fetch.mockResolvedValue({
+        status: 200,
+        ok: true,
+        text: vi.fn().mockResolvedValue(JSON.stringify({ result: { rowsAffected: 1 }, status: 200, rows: [] })),
+      })
+
+      const res = await ejecutarSP('sp/cargos_spuCargo', {
+        vIDCARGO: 202,
+        vIDREP: 469,
+        vORDEN: 3,
+        vCATEGORIA: 20,
+        vIDESTADOCARGO: 3,
+        vFECHABAJA: '2026-11-24',
+      })
+
+      expect(res.operacionOk).toBe(true)
+      expect(res.valorError).toBe(0)
+      expect(res.out.vError).toBe(0)
+
+      const [url, init] = global.fetch.mock.calls[0]
+      expect(url).toBe('https://api.test/api/cargo')
+      expect(init.method).toBe('PUT')
+      const body = JSON.parse(init.body)
+      expect(body.Id).toBe(202)
+      expect(body.EstadoCargoId).toBe(3)
+      expect(body.FechaBaja).toBe('2026-11-24')
     })
   })
 })

@@ -136,6 +136,56 @@ describe("Módulo de Conceptos por Cargo", () => {
       );
       expect(wrapper.emitted("baja-confirmada")).toBeTruthy();
     });
+
+    it("recupera el cargoId consultando view/cargo en BajaCargoDialog si el objeto no traía ID", async () => {
+      mockLeerDatos.mockImplementation(async (url) => {
+        if (url === "view/cargo") {
+          return {
+            operacionOk: true,
+            datos: [{ Id: 777, ReparticionId: 469, Orden: 3 }],
+          };
+        }
+        return { operacionOk: true, datos: [] };
+      });
+
+      const cargoSinId = {
+        ReparticionId: 469,
+        Orden: 3,
+        TipoEmpleoId: 1,
+        SituacionRevistaId: 1,
+        TipoObraSocialId: 1,
+        TipoLiquidacionId: 1,
+        EstadoCargoId: 1,
+        Categoria: 15,
+      };
+
+      const wrapper = mount(BajaCargoDialog, {
+        props: {
+          modelValue: true,
+          cargo: cargoSinId,
+        },
+      });
+      await flushPromises();
+
+      wrapper.vm.fechaBaja = "20/06/2025";
+      await wrapper.vm.confirmarBaja();
+      await flushPromises();
+
+      expect(mockLeerDatos).toHaveBeenCalledWith(
+        "view/cargo",
+        expect.objectContaining({
+          query: { ReparticionId: 469, Orden: 3 },
+        })
+      );
+      expect(mockEjecutarSP).toHaveBeenCalledWith(
+        "sp/cargos_spuCargo",
+        expect.objectContaining({
+          vIDCARGO: 777,
+          vIDESTADOCARGO: 3,
+        })
+      );
+      expect(wrapper.emitted("baja-confirmada")).toBeTruthy();
+    });
   });
 
   describe("EditarCargoModal", () => {
@@ -214,9 +264,9 @@ describe("Módulo de Conceptos por Cargo", () => {
       expect(wrapper.emitted("cargo-actualizado")).toBeTruthy();
     });
 
-    it("recupera el cargoId consultando la entidad base cargo si el objeto no traía ID", async () => {
+    it("recupera el cargoId consultando view/cargo si el objeto no traía ID", async () => {
       mockLeerDatos.mockImplementation(async (url) => {
-        if (url.includes("cargo")) {
+        if (url === "view/cargo") {
           return {
             operacionOk: true,
             datos: [{ ID: 999, ReparticionId: 469, Orden: 5 }],
@@ -247,6 +297,12 @@ describe("Módulo de Conceptos por Cargo", () => {
       await wrapper.vm.guardar();
       await flushPromises();
 
+      expect(mockLeerDatos).toHaveBeenCalledWith(
+        "view/cargo",
+        expect.objectContaining({
+          query: { ReparticionId: 469, Orden: 5 },
+        })
+      );
       expect(mockEjecutarSP).toHaveBeenCalledWith(
         "sp/cargos_spuCargo",
         expect.objectContaining({

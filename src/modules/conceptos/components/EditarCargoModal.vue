@@ -146,20 +146,27 @@ async function guardar() {
 
   let cargoId = resolveCargoId();
 
-  // Fallback: Si no viene en props.cargo, consultar la entidad base cargo por Reparticion y Orden
+  // Fallback: Si no viene en props.cargo, consultar la vista canónica view/cargo por Reparticion y Orden
   if (!cargoId) {
     const rep = props.cargo?.ReparticionId ?? props.cargo?.REPARTICIONID;
     const ord = props.cargo?.Orden ?? props.cargo?.ORDEN;
     if (rep && ord) {
       try {
-        const resCargo = await leerDatos("cargo", {
+        const resCargo = await leerDatos("view/cargo", {
           query: { ReparticionId: rep, Orden: ord },
         });
         if (resCargo.operacionOk && Array.isArray(resCargo.datos) && resCargo.datos.length > 0) {
-          cargoId = Number(resCargo.datos[0].ID ?? resCargo.datos[0].Id ?? 0);
+          cargoId = Number(
+            resCargo.datos[0].Id ??
+            resCargo.datos[0].ID ??
+            resCargo.datos[0].CargoId ??
+            resCargo.datos[0].CARGOID ??
+            resCargo.datos[0].idcargo ??
+            0
+          );
         }
       } catch (err) {
-        console.warn("No se pudo obtener el ID del cargo desde entidad cargo:", err);
+        console.warn("No se pudo obtener el ID del cargo desde view/cargo:", err);
       }
     }
   }

@@ -133,6 +133,82 @@ export async function leerDatos(url = "", options = {}) {
 }
 
 /**
+ * Actualiza un registro en la tabla CARGOS mediante la API REST (PUT /api/cargo).
+ * Soporta tanto la nomenclatura de parámetros de SP (vIDCARGO, vIDREP, vORDEN, etc.)
+ * como la nomenclatura de entidad/vista (Id, ReparticionId, Orden, etc.).
+ *
+ * @param {Object} cargoData
+ * @returns {Promise<{estado: number, operacionOk: boolean, valorError: number, valorSalida: number, errmsg: string, datos: any, out: Object}>}
+ */
+export async function actualizarCargo(cargoData = {}) {
+  const cargoId = Number(
+    cargoData.Id ?? cargoData.ID ?? cargoData.idcargo ?? cargoData.IdCargo ?? cargoData.vIDCARGO ?? 0
+  );
+  if (!cargoId) {
+    return {
+      estado: 400,
+      operacionOk: false,
+      valorError: -1,
+      valorSalida: 0,
+      errmsg: "No se pudo identificar el ID del cargo a actualizar",
+      datos: null,
+      out: {
+        vError: -1,
+        vErrorMsg: "No se pudo identificar el ID del cargo a actualizar",
+        vSalida: 0,
+      },
+    };
+  }
+
+  const rep = cargoData.ReparticionId ?? cargoData.REPARTICIONID ?? cargoData.vIDREP;
+  const ord = cargoData.Orden ?? cargoData.ORDEN ?? cargoData.vORDEN;
+  const af = cargoData.Afiliado ?? cargoData.AFILIADO ?? cargoData.vAFILIADO;
+  const ant = cargoData.Antiguedad ?? cargoData.ANTIGUEDAD ?? cargoData.vANTIG;
+  const vtoEsc = cargoData.VtoEscalafon ?? cargoData.vVTOESC;
+  const te = cargoData.TipoEmpleoId ?? cargoData.TIPOEMPLEOID ?? cargoData.vIDTE;
+  const sr = cargoData.SituacionRevistaId ?? cargoData.SITUACIONREVISTAID ?? cargoData.vIDSITREV;
+  const cat = cargoData.Categoria ?? cargoData.CATEGORIA ?? cargoData.vCATEGORIA;
+  const os = cargoData.TipoObraSocialId ?? cargoData.TIPOOBRASOCIALID ?? cargoData.vIDTIPOOS;
+  const tl = cargoData.TipoLiquidacionId ?? cargoData.TIPOLIQUIDACIONID ?? cargoData.vIDTIPOLIQ;
+  const ec = cargoData.EstadoCargoId ?? cargoData.ESTADOCARGOID ?? cargoData.vIDESTADOCARGO;
+  const fb = cargoData.FechaBaja ?? cargoData.FECHABAJA ?? cargoData.vFECHABAJA;
+  const sal = cargoData.Salario ?? cargoData.SALARIO;
+
+  const putBody = {
+    Id: cargoId,
+    ...(rep !== undefined && rep !== null ? { ReparticionId: Number(rep) } : {}),
+    ...(ord !== undefined && ord !== null ? { Orden: Number(ord) } : {}),
+    ...(af !== undefined && af !== null ? { Afiliado: Number(af) } : {}),
+    ...(ant !== undefined && ant !== null ? { Antiguedad: Number(ant) } : {}),
+    ...(vtoEsc !== undefined ? { VtoEscalafon: vtoEsc || null } : {}),
+    ...(te !== undefined && te !== null ? { TipoEmpleoId: Number(te) } : {}),
+    ...(sr !== undefined && sr !== null ? { SituacionRevistaId: Number(sr) } : {}),
+    ...(cat !== undefined && cat !== null ? { Categoria: Number(cat) } : {}),
+    ...(os !== undefined && os !== null ? { TipoObraSocialId: Number(os) } : {}),
+    ...(tl !== undefined && tl !== null ? { TipoLiquidacionId: Number(tl) } : {}),
+    ...(ec !== undefined && ec !== null ? { EstadoCargoId: Number(ec) } : {}),
+    ...(fb !== undefined ? { FechaBaja: fb || null } : {}),
+    ...(sal !== undefined && sal !== null ? { Salario: Number(sal) } : {}),
+  };
+
+  const res = await grabarRegistro("cargo", putBody, "PUT");
+  const esOk = res.operacionOk && res.estado >= 200 && res.estado < 300;
+  return {
+    estado: res.estado,
+    operacionOk: esOk,
+    valorError: esOk ? 0 : -1,
+    valorSalida: cargoId,
+    errmsg: esOk ? "" : (res.errmsg || "Error al actualizar el cargo"),
+    datos: res.datos,
+    out: {
+      vError: esOk ? 0 : -1,
+      vErrorMsg: esOk ? "" : (res.errmsg || "Error al actualizar el cargo"),
+      vSalida: cargoId,
+    },
+  };
+}
+
+/**
  * Ejecuta un Stored Procedure.
  *
  * @param {string} url ruta relativa al host de SP
@@ -141,6 +217,11 @@ export async function leerDatos(url = "", options = {}) {
  * @param {{signal?: AbortSignal, timeout?: number}} [options]
  */
 export async function ejecutarSP(url = "", data = {}, metodo = "POST", options = {}) {
+  const cleanUrl = String(url || "").replace(/^sp\//, "");
+  if (cleanUrl === "cargos_spuCargo") {
+    return actualizarCargo(data);
+  }
+
   let estado = 0;
   let operacionOk = false;
   let errmsg = "";
