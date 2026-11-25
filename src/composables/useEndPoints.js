@@ -19,6 +19,39 @@ const STORAGE_AUTH_TOKEN_KEY = 'liq_token'
 const STORAGE_API_KEY = 'liq_api_key'
 const STORAGE_ADMIN_KEY = 'liq_admin_key'
 
+function getStoredAuthToken() {
+  try {
+    if (typeof window !== 'undefined') {
+      if (window.sessionStorage) {
+        const sVal = window.sessionStorage.getItem(STORAGE_AUTH_TOKEN_KEY)
+        if (sVal) return sVal
+      }
+      if (window.localStorage) {
+        return window.localStorage.getItem(STORAGE_AUTH_TOKEN_KEY) || ''
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return ''
+}
+
+function setStoredAuthToken(val) {
+  try {
+    if (typeof window !== 'undefined') {
+      if (window.sessionStorage) {
+        if (val) window.sessionStorage.setItem(STORAGE_AUTH_TOKEN_KEY, val)
+        else window.sessionStorage.removeItem(STORAGE_AUTH_TOKEN_KEY)
+      }
+      if (window.localStorage) {
+        window.localStorage.removeItem(STORAGE_AUTH_TOKEN_KEY)
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
 function getStoredEnv() {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -106,7 +139,7 @@ const desaBoletasOverride = ref(getStoredValue(STORAGE_DESA_BOLETAS_KEY, ''))
 const desaSpOverride = ref(getStoredValue(STORAGE_DESA_SP_KEY, ''))
 const desaKeyOverride = ref(getStoredValue(STORAGE_DESA_KEY_HEADER, ''))
 const desaPortOverride = ref(getStoredValue(STORAGE_DESA_PORT_HEADER, ''))
-const authToken = ref(getStoredValue(STORAGE_AUTH_TOKEN_KEY, ''))
+const authToken = ref(getStoredAuthToken())
 const apiKeyOverride = ref(getStoredValue(STORAGE_API_KEY, defaultEnvApiKey))
 const adminKeyOverride = ref(getStoredValue(STORAGE_ADMIN_KEY, defaultEnvAdminKey))
 
@@ -177,7 +210,7 @@ export function useEndPoints() {
       ? (desaPortOverride.value || defaultPort)
       : defaultPort
 
-    const token = authToken.value || getStoredValue(STORAGE_AUTH_TOKEN_KEY, '')
+    const token = authToken.value || getStoredAuthToken()
     // Si el ambiente activo define su propia apiKey, se prioriza sobre el default
     const envApiKey =
       activeEnvironment.value?.apiKey ||
@@ -307,12 +340,12 @@ export function useEndPoints() {
 
   function setAuthToken(val) {
     authToken.value = val || ''
-    setStoredValue(STORAGE_AUTH_TOKEN_KEY, val || '')
+    setStoredAuthToken(val || '')
   }
 
   function clearAuthToken() {
     authToken.value = ''
-    setStoredValue(STORAGE_AUTH_TOKEN_KEY, '')
+    setStoredAuthToken('')
   }
 
   function setApiKey(val) {

@@ -58,10 +58,112 @@ async function pedir({
   }
 }
 
-function getStoredUser() {
+export const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutos de inactividad
+
+/**
+ * Obtiene el almacenamiento para credenciales y tokens.
+ * Prioriza sessionStorage (destruido al cerrar pestaña/navegador).
+ * Admite fallback seguro para entornos de prueba.
+ */
+function getAuthStorage() {
+  if (typeof sessionStorage !== 'undefined') {
+    try {
+      return sessionStorage
+    } catch {
+      // ignore
+    }
+  }
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      return window.sessionStorage
+    } catch {
+      // ignore
+    }
+  }
+  if (typeof localStorage !== 'undefined') {
+    try {
+      return localStorage
+    } catch {
+      // ignore
+    }
+  }
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      return window.localStorage
+    } catch {
+      // ignore
+    }
+  }
+  return null
+}
+
+/**
+ * Limpia claves legadas de localStorage para evitar sesiones persistentes indefinidas.
+ */
+function cleanLegacyLocalStorage() {
   try {
-    if (typeof localStorage !== 'undefined') {
-      const u = localStorage.getItem('liq_user')
+    const authStore = getAuthStorage()
+    if (typeof localStorage !== 'undefined' && localStorage !== authStore) {
+      localStorage.removeItem('liq_user')
+      localStorage.removeItem('liq_token')
+      localStorage.removeItem('liq_rol')
+      localStorage.removeItem('liq_last_activity')
+    }
+    if (typeof window !== 'undefined' && window.localStorage && window.localStorage !== authStore) {
+      window.localStorage.removeItem('liq_user')
+      window.localStorage.removeItem('liq_token')
+      window.localStorage.removeItem('liq_rol')
+      window.localStorage.removeItem('liq_last_activity')
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function getLastActivity() {
+  try {
+    const storage = getAuthStorage()
+    if (storage) {
+      const val = storage.getItem('liq_last_activity')
+      return val ? parseInt(val, 10) : null
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+function isSessionExpired() {
+  const last = getLastActivity()
+  if (!last) return false
+  return Date.now() - last > INACTIVITY_TIMEOUT_MS
+}
+
+function clearStoredAuth() {
+  cleanLegacyLocalStorage()
+  try {
+    const storage = getAuthStorage()
+    if (storage) {
+      storage.removeItem('liq_user')
+      storage.removeItem('liq_token')
+      storage.removeItem('liq_rol')
+      storage.removeItem('liq_last_activity')
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function getStoredUser() {
+  cleanLegacyLocalStorage()
+  if (isSessionExpired()) {
+    clearStoredAuth()
+    return null
+  }
+  try {
+    const storage = getAuthStorage()
+    if (storage) {
+      const u = storage.getItem('liq_user')
       if (u) return JSON.parse(u)
     }
   } catch {
@@ -71,9 +173,13 @@ function getStoredUser() {
 }
 
 function getStoredRol() {
+  if (isSessionExpired()) {
+    return []
+  }
   try {
-    if (typeof localStorage !== 'undefined') {
-      const r = localStorage.getItem('liq_rol')
+    const storage = getAuthStorage()
+    if (storage) {
+      const r = storage.getItem('liq_rol')
       if (r) return JSON.parse(r)
     }
   } catch {
@@ -83,9 +189,13 @@ function getStoredRol() {
 }
 
 function getStoredToken() {
+  if (isSessionExpired()) {
+    return ''
+  }
   try {
-    if (typeof localStorage !== 'undefined') {
-      return localStorage.getItem('liq_token') || ''
+    const storage = getAuthStorage()
+    if (storage) {
+      return storage.getItem('liq_token') || ''
     }
   } catch {
     // ignore
@@ -251,10 +361,13 @@ export const useUserStore = defineStore('userStore', {
           }
           this.auth = true
           this.success = true
-          if (typeof window !== 'undefined' && window.localStorage) {
-            window.localStorage.setItem('liq_user', JSON.stringify(this.user))
-            window.localStorage.setItem('liq_token', token)
+          const storage = getAuthStorage()
+          if (storage) {
+            storage.setItem('liq_user', JSON.stringify(this.user))
+            storage.setItem('liq_token', token)
+            storage.setItem('liq_last_activity', String(Date.now()))
           }
+          cleanLegacyLocalStorage()
           return
         }
 
@@ -274,10 +387,13 @@ export const useUserStore = defineStore('userStore', {
             this.token = fallbackToken
             const { setAuthToken } = useEndPoints()
             setAuthToken(fallbackToken)
-            if (typeof window !== 'undefined' && window.localStorage) {
-              window.localStorage.setItem('liq_user', JSON.stringify(this.user))
-              window.localStorage.setItem('liq_token', fallbackToken)
+            const storage = getAuthStorage()
+            if (storage) {
+              storage.setItem('liq_user', JSON.stringify(this.user))
+              storage.setItem('liq_token', fallbackToken)
+              storage.setItem('liq_last_activity', String(Date.now()))
             }
+            cleanLegacyLocalStorage()
           } else {
             this.auth = false
           }
@@ -289,16 +405,27 @@ export const useUserStore = defineStore('userStore', {
       }
     },
 
+    recordActivity() {
+      try {
+        const storage = getAuthStorage()
+        if (storage) {
+          storage.setItem('liq_last_activity', String(Date.now()))
+        }
+      } catch {
+        // ignore
+      }
+    },
+
+    checkSessionExpired() {
+      return isSessionExpired()
+    },
+
     logout() {
       this.user = null
       this.auth = false
       this.token = ''
       this.rol = null
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('liq_user')
-        localStorage.removeItem('liq_token')
-        localStorage.removeItem('liq_rol')
-      }
+      clearStoredAuth()
       const { clearAuthToken } = useEndPoints()
       clearAuthToken()
     },
@@ -317,11 +444,7 @@ export const useUserStore = defineStore('userStore', {
       this.rol = null
       this.users = []
       this.config = null
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem('liq_user')
-        window.localStorage.removeItem('liq_token')
-        window.localStorage.removeItem('liq_rol')
-      }
+      clearStoredAuth()
       const { clearAuthToken } = useEndPoints()
       clearAuthToken()
     },
@@ -544,9 +667,11 @@ export const useUserStore = defineStore('userStore', {
         }
 
         this.rol = uniqueData
-        if (typeof window !== 'undefined' && window.localStorage && uniqueData.length > 0) {
-          window.localStorage.setItem('liq_rol', JSON.stringify(uniqueData))
+        const storage = getAuthStorage()
+        if (storage && uniqueData.length > 0) {
+          storage.setItem('liq_rol', JSON.stringify(uniqueData))
         }
+        cleanLegacyLocalStorage()
         this.success = true
       } catch (error) {
         this.error = error.message

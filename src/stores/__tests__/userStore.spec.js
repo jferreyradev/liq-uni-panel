@@ -131,7 +131,7 @@ describe('userStore sobre el cliente HTTP unico', () => {
     expect(paths).not.toContain('/procesos')
   })
 
-  it('restaura sesion y rol desde localStorage y los limpia al hacer logout', async () => {
+  it('restaura sesion y rol desde storage y los limpia al hacer logout', async () => {
     const storeMap = new Map()
     const mockStorage = {
       getItem: (k) => storeMap.get(k) ?? null,
@@ -140,12 +140,15 @@ describe('userStore sobre el cliente HTTP unico', () => {
       clear: () => storeMap.clear(),
     }
     const originalStorage = globalThis.localStorage
+    const originalSession = globalThis.sessionStorage
     globalThis.localStorage = mockStorage
+    globalThis.sessionStorage = mockStorage
 
     try {
       mockStorage.setItem('liq_user', JSON.stringify({ USERNAME: 'testuser', ROL: 5 }))
       mockStorage.setItem('liq_token', 'jwt-token-123')
       mockStorage.setItem('liq_rol', JSON.stringify([{ IDMENU: 1, PATH: '/operaciones' }]))
+      mockStorage.setItem('liq_last_activity', String(Date.now()))
 
       const store = useUserStore()
 
@@ -162,8 +165,95 @@ describe('userStore sobre el cliente HTTP unico', () => {
       expect(mockStorage.getItem('liq_user')).toBe(null)
       expect(mockStorage.getItem('liq_token')).toBe(null)
       expect(mockStorage.getItem('liq_rol')).toBe(null)
+      expect(mockStorage.getItem('liq_last_activity')).toBe(null)
     } finally {
       globalThis.localStorage = originalStorage
+      globalThis.sessionStorage = originalSession
+    }
+  })
+
+  it('detecta sesión expirada si la inactividad supera los 30 minutos', async () => {
+    const storeMap = new Map()
+    const mockStorage = {
+      getItem: (k) => storeMap.get(k) ?? null,
+      setItem: (k, v) => storeMap.set(k, String(v)),
+      removeItem: (k) => storeMap.delete(k),
+      clear: () => storeMap.clear(),
+    }
+    const originalStorage = globalThis.localStorage
+    const originalSession = globalThis.sessionStorage
+    globalThis.localStorage = mockStorage
+    globalThis.sessionStorage = mockStorage
+
+    try {
+      mockStorage.setItem('liq_user', JSON.stringify({ USERNAME: 'testuser', ROL: 5 }))
+      mockStorage.setItem('liq_token', 'jwt-token-123')
+      mockStorage.setItem('liq_last_activity', String(Date.now()))
+
+      const store = useUserStore()
+      expect(store.auth).toBe(true)
+
+      // Simular que pasaron 31 minutos
+      const hace31Min = Date.now() - 31 * 60 * 1000
+      mockStorage.setItem('liq_last_activity', String(hace31Min))
+
+      expect(store.checkSessionExpired()).toBe(true)
+    } finally {
+      globalThis.localStorage = originalStorage
+      globalThis.sessionStorage = originalSession
+    }
+  })
+
+  it('no restaura la sesión al inicializar si el timestamp expiró', async () => {
+    const storeMap = new Map()
+    const mockStorage = {
+      getItem: (k) => storeMap.get(k) ?? null,
+      setItem: (k, v) => storeMap.set(k, String(v)),
+      removeItem: (k) => storeMap.delete(k),
+      clear: () => storeMap.clear(),
+    }
+    const originalStorage = globalThis.localStorage
+    const originalSession = globalThis.sessionStorage
+    globalThis.localStorage = mockStorage
+    globalThis.sessionStorage = mockStorage
+
+    try {
+      const hace31Min = Date.now() - 31 * 60 * 1000
+      mockStorage.setItem('liq_user', JSON.stringify({ USERNAME: 'testuser', ROL: 5 }))
+      mockStorage.setItem('liq_last_activity', String(hace31Min))
+
+      const store = useUserStore()
+      expect(store.auth).toBe(false)
+      expect(store.user).toBe(null)
+      expect(mockStorage.getItem('liq_user')).toBe(null)
+    } finally {
+      globalThis.localStorage = originalStorage
+      globalThis.sessionStorage = originalSession
+    }
+  })
+
+  it('recordActivity actualiza el timestamp de última actividad', async () => {
+    const storeMap = new Map()
+    const mockStorage = {
+      getItem: (k) => storeMap.get(k) ?? null,
+      setItem: (k, v) => storeMap.set(k, String(v)),
+      removeItem: (k) => storeMap.delete(k),
+      clear: () => storeMap.clear(),
+    }
+    const originalStorage = globalThis.localStorage
+    const originalSession = globalThis.sessionStorage
+    globalThis.localStorage = mockStorage
+    globalThis.sessionStorage = mockStorage
+
+    try {
+      const store = useUserStore()
+      const antes = Date.now()
+      store.recordActivity()
+      const grabado = Number(mockStorage.getItem('liq_last_activity'))
+      expect(grabado).toBeGreaterThanOrEqual(antes)
+    } finally {
+      globalThis.localStorage = originalStorage
+      globalThis.sessionStorage = originalSession
     }
   })
 })

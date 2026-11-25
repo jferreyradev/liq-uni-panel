@@ -194,5 +194,51 @@ describe('apiService - descargas binarias', () => {
       expect(body.EstadoCargoId).toBe(3)
       expect(body.FechaBaja).toBe('2026-11-24')
     })
+
+    it('ejecutarSP("sp/persUpd") ejecuta fallback a actualizarPersona (PUT /api/persona) si el SP falla por PKG_PERSONAS', async () => {
+      // 1er llamada (POST sp/persUpd): falla con error de Oracle ORA-06550 / PLS-00201
+      // 2da llamada (PUT api/persona): fallback exitoso
+      global.fetch
+        .mockResolvedValueOnce({
+          status: 500,
+          ok: false,
+          text: vi.fn().mockResolvedValue(
+            JSON.stringify({
+              error: "ORA-06550: line 1, column 7: PLS-00201: identifier 'PKG_PERSONAS.SPU_PERSONA' must be declared",
+              status: 500,
+            })
+          ),
+        })
+        .mockResolvedValueOnce({
+          status: 200,
+          ok: true,
+          text: vi.fn().mockResolvedValue(
+            JSON.stringify({ result: { rowsAffected: 1 }, status: 200, rows: [] })
+          ),
+        })
+
+      const res = await ejecutarSP('sp/persUpd', {
+        vIDPERS: 10,
+        vDNI: '30123456',
+        vAPELLIDO: 'Perez',
+        vNOMBRE: 'Juan',
+        vCUIL: '20301234568',
+        vCBU: '0110123400000012345678',
+        vCUENTA: '1234567890',
+      })
+
+      expect(res.operacionOk).toBe(true)
+      expect(res.valorError).toBe(0)
+      expect(res.out.vError).toBe(0)
+
+      expect(global.fetch).toHaveBeenCalledTimes(2)
+      const [fallbackUrl, fallbackInit] = global.fetch.mock.calls[1]
+      expect(fallbackUrl).toBe('https://api.test/api/persona')
+      expect(fallbackInit.method).toBe('PUT')
+      const body = JSON.parse(fallbackInit.body)
+      expect(body.Id).toBe(10)
+      expect(body.CBU).toBe('0110123400000012345678')
+      expect(body.Cuenta).toBe('1234567890')
+    })
   })
 })

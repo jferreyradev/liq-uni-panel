@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useTheme } from 'vuetify'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
@@ -170,11 +170,49 @@ function toggleTheme() {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
 }
 
-function handleLogout() {
-  store.$reset()
+let inactivityTimer = null
+let lastRecordedActivity = Date.now()
+
+function handleUserActivity() {
+  if (!store.auth) return
+  const now = Date.now()
+  if (now - lastRecordedActivity > 30000) {
+    lastRecordedActivity = now
+    store.recordActivity()
+  }
+}
+
+function checkInactivity() {
+  if (store.auth && store.checkSessionExpired()) {
+    handleLogout(true)
+  }
+}
+
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart']
+    events.forEach((evt) => window.addEventListener(evt, handleUserActivity, { passive: true }))
+    inactivityTimer = setInterval(checkInactivity, 60000)
+  }
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart']
+    events.forEach((evt) => window.removeEventListener(evt, handleUserActivity))
+    if (inactivityTimer) clearInterval(inactivityTimer)
+  }
+})
+
+function handleLogout(expired = false) {
+  store.logout()
   storeFilter.serverConfig = {}
   storeFilter.serverConfigError = null
-  router.push('/login')
+  if (expired) {
+    router.push({ path: '/login', query: { expired: '1' } })
+  } else {
+    router.push('/login')
+  }
 }
 </script>
 
