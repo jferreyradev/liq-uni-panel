@@ -133,6 +133,185 @@ export async function leerDatos(url = "", options = {}) {
 }
 
 /**
+ * Actualiza un registro en la tabla CARGOS mediante la API REST (PUT /api/cargo).
+ * Soporta tanto la nomenclatura de parámetros de SP (vIDCARGO, vIDREP, vORDEN, etc.)
+ * como la nomenclatura de entidad/vista (Id, ReparticionId, Orden, etc.).
+ *
+ * @param {Object} cargoData
+ * @returns {Promise<{estado: number, operacionOk: boolean, valorError: number, valorSalida: number, errmsg: string, datos: any, out: Object}>}
+ */
+export async function actualizarCargo(cargoData = {}) {
+  const cargoId = Number(
+    cargoData.Id ?? cargoData.ID ?? cargoData.idcargo ?? cargoData.IdCargo ?? cargoData.vIDCARGO ?? 0
+  );
+  if (!cargoId) {
+    return {
+      estado: 400,
+      operacionOk: false,
+      valorError: -1,
+      valorSalida: 0,
+      errmsg: "No se pudo identificar el ID del cargo a actualizar",
+      datos: null,
+      out: {
+        vError: -1,
+        vErrorMsg: "No se pudo identificar el ID del cargo a actualizar",
+        vSalida: 0,
+      },
+    };
+  }
+
+  const rep = cargoData.ReparticionId ?? cargoData.REPARTICIONID ?? cargoData.vIDREP;
+  const ord = cargoData.Orden ?? cargoData.ORDEN ?? cargoData.vORDEN;
+  const af = cargoData.Afiliado ?? cargoData.AFILIADO ?? cargoData.vAFILIADO;
+  const ant = cargoData.Antiguedad ?? cargoData.ANTIGUEDAD ?? cargoData.vANTIG;
+  const vtoEsc = cargoData.VtoEscalafon ?? cargoData.vVTOESC;
+  const te = cargoData.TipoEmpleoId ?? cargoData.TIPOEMPLEOID ?? cargoData.vIDTE;
+  const sr = cargoData.SituacionRevistaId ?? cargoData.SITUACIONREVISTAID ?? cargoData.vIDSITREV;
+  const cat = cargoData.Categoria ?? cargoData.CATEGORIA ?? cargoData.vCATEGORIA;
+  const os = cargoData.TipoObraSocialId ?? cargoData.TIPOOBRASOCIALID ?? cargoData.vIDTIPOOS;
+  const tl = cargoData.TipoLiquidacionId ?? cargoData.TIPOLIQUIDACIONID ?? cargoData.vIDTIPOLIQ;
+  const ec = cargoData.EstadoCargoId ?? cargoData.ESTADOCARGOID ?? cargoData.vIDESTADOCARGO;
+  const fb = cargoData.FechaBaja ?? cargoData.FECHABAJA ?? cargoData.vFECHABAJA;
+  const sal = cargoData.Salario ?? cargoData.SALARIO;
+
+  const putBody = {
+    Id: cargoId,
+    ...(rep !== undefined && rep !== null ? { ReparticionId: Number(rep) } : {}),
+    ...(ord !== undefined && ord !== null ? { Orden: Number(ord) } : {}),
+    ...(af !== undefined && af !== null ? { Afiliado: Number(af) } : {}),
+    ...(ant !== undefined && ant !== null ? { Antiguedad: Number(ant) } : {}),
+    ...(vtoEsc !== undefined ? { VtoEscalafon: vtoEsc || null } : {}),
+    ...(te !== undefined && te !== null ? { TipoEmpleoId: Number(te) } : {}),
+    ...(sr !== undefined && sr !== null ? { SituacionRevistaId: Number(sr) } : {}),
+    ...(cat !== undefined && cat !== null ? { Categoria: Number(cat) } : {}),
+    ...(os !== undefined && os !== null ? { TipoObraSocialId: Number(os) } : {}),
+    ...(tl !== undefined && tl !== null ? { TipoLiquidacionId: Number(tl) } : {}),
+    ...(ec !== undefined && ec !== null ? { EstadoCargoId: Number(ec) } : {}),
+    ...(fb !== undefined ? { FechaBaja: fb || null } : {}),
+    ...(sal !== undefined && sal !== null ? { Salario: Number(sal) } : {}),
+  };
+
+  const res = await grabarRegistro("cargo", putBody, "PUT");
+  const esOk = res.operacionOk && res.estado >= 200 && res.estado < 300;
+  return {
+    estado: res.estado,
+    operacionOk: esOk,
+    valorError: esOk ? 0 : -1,
+    valorSalida: cargoId,
+    errmsg: esOk ? "" : (res.errmsg || "Error al actualizar el cargo"),
+    datos: res.datos,
+    out: {
+      vError: esOk ? 0 : -1,
+      vErrorMsg: esOk ? "" : (res.errmsg || "Error al actualizar el cargo"),
+      vSalida: cargoId,
+    },
+  };
+}
+
+/**
+ * Actualiza un registro en la tabla PERSONAS mediante la API REST (PUT /api/persona).
+ * Se utiliza como fallback resiliente cuando el Stored Procedure `sp/persUpd` falla en Oracle
+ * (por ejemplo si el paquete PKG_PERSONAS.SPU_PERSONA no está declarado o compilado en la BD).
+ *
+ * @param {Object} personaData
+ * @returns {Promise<{estado: number, operacionOk: boolean, valorError: number, valorSalida: number, errmsg: string, datos: any, out: Object}>}
+ */
+export async function actualizarPersona(personaData = {}) {
+  const persId = Number(
+    personaData.Id ?? personaData.ID ?? personaData.vIDPERS ?? personaData.IdPersona ?? 0
+  );
+  if (!persId) {
+    return {
+      estado: 400,
+      operacionOk: false,
+      valorError: -1,
+      valorSalida: 0,
+      errmsg: "No se pudo identificar el ID de la persona a actualizar",
+      datos: null,
+      out: {
+        vError: -1,
+        vErrorMsg: "No se pudo identificar el ID de la persona a actualizar",
+        vSalida: 0,
+      },
+    };
+  }
+
+  const putBody = {
+    Id: persId,
+    ...(personaData.vDNI !== undefined || personaData.Documento !== undefined
+      ? { Documento: personaData.Documento ?? personaData.DOCUMENTO ?? personaData.vDNI }
+      : {}),
+    ...(personaData.vAPELLIDO !== undefined || personaData.Apellido !== undefined
+      ? { Apellido: personaData.Apellido ?? personaData.APELLIDO ?? personaData.vAPELLIDO }
+      : {}),
+    ...(personaData.vNOMBRE !== undefined || personaData.Nombre !== undefined
+      ? { Nombre: personaData.Nombre ?? personaData.NOMBRE ?? personaData.vNOMBRE }
+      : {}),
+    ...(personaData.vCUIL !== undefined || personaData.Cuil !== undefined
+      ? { Cuil: personaData.Cuil ?? personaData.CUIL ?? personaData.vCUIL }
+      : {}),
+    ...(personaData.vSEXO !== undefined || personaData.Sexo !== undefined
+      ? { Sexo: personaData.Sexo ?? personaData.SEXO ?? personaData.vSEXO }
+      : {}),
+    ...(personaData.vFECHANAC !== undefined || personaData.FechaNacimiento !== undefined
+      ? { FechaNacimiento: personaData.FechaNacimiento ?? personaData.FECHANACIMIENTO ?? personaData.vFECHANAC }
+      : {}),
+    ...(personaData.vFECHAINGRESO !== undefined || personaData.FechaIngreso !== undefined
+      ? { FechaIngreso: personaData.FechaIngreso ?? personaData.FECHAINGRESO ?? personaData.vFECHAINGRESO }
+      : {}),
+    ...(personaData.vDOMICILIO !== undefined || personaData.DomicilioCalle !== undefined
+      ? { DomicilioCalle: personaData.DomicilioCalle ?? personaData.DOMICILIOCALLE ?? personaData.vDOMICILIO }
+      : {}),
+    ...(personaData.vNRO !== undefined || personaData.DomicilioNumero !== undefined
+      ? { DomicilioNumero: personaData.DomicilioNumero ?? personaData.DOMICILIONUMERO ?? personaData.vNRO }
+      : {}),
+    ...(personaData.vPISO !== undefined || personaData.Piso !== undefined
+      ? { Piso: personaData.Piso ?? personaData.PISO ?? personaData.vPISO }
+      : {}),
+    ...(personaData.vDPTO !== undefined || personaData.Departamento !== undefined
+      ? { Departamento: personaData.Departamento ?? personaData.DEPARTAMENTO ?? personaData.vDPTO }
+      : {}),
+    ...(personaData.vTELEFONO !== undefined || personaData.Telefono !== undefined
+      ? { Telefono: personaData.Telefono ?? personaData.TELEFONO ?? personaData.vTELEFONO }
+      : {}),
+    ...(personaData.vEMAIL !== undefined || personaData.Email !== undefined
+      ? { Email: personaData.Email ?? personaData.EMAIL ?? personaData.vEMAIL }
+      : {}),
+    ...(personaData.vIDTIPODOC !== undefined || personaData.TipoDocumentoId !== undefined
+      ? { TipoDocumentoId: personaData.TipoDocumentoId ?? personaData.TIPODOCUMENTOID ?? personaData.vIDTIPODOC }
+      : {}),
+    ...(personaData.vIDESTCIVIL !== undefined || personaData.EstadoCivilId !== undefined
+      ? { EstadoCivilId: personaData.EstadoCivilId ?? personaData.ESTADOCIVILID ?? personaData.vIDESTCIVIL }
+      : {}),
+    ...(personaData.vLOCALIDAD_ID !== undefined || personaData.LocalidadId !== undefined
+      ? { LocalidadId: personaData.LocalidadId ?? personaData.LOCALIDADID ?? personaData.vLOCALIDAD_ID }
+      : {}),
+    ...(personaData.vCBU !== undefined || personaData.CBU !== undefined
+      ? { CBU: personaData.CBU ?? personaData.vCBU }
+      : {}),
+    ...(personaData.vCUENTA !== undefined || personaData.Cuenta !== undefined
+      ? { Cuenta: personaData.Cuenta ?? personaData.CUENTA ?? personaData.vCUENTA }
+      : {}),
+  };
+
+  const res = await grabarRegistro("persona", putBody, "PUT");
+  const esOk = res.operacionOk && res.estado >= 200 && res.estado < 300;
+  return {
+    estado: res.estado,
+    operacionOk: esOk,
+    valorError: esOk ? 0 : -1,
+    valorSalida: persId,
+    errmsg: esOk ? "" : (res.errmsg || "Error al actualizar la persona"),
+    datos: res.datos,
+    out: {
+      vError: esOk ? 0 : -1,
+      vErrorMsg: esOk ? "" : (res.errmsg || "Error al actualizar la persona"),
+      vSalida: persId,
+    },
+  };
+}
+
+/**
  * Ejecuta un Stored Procedure.
  *
  * @param {string} url ruta relativa al host de SP
@@ -141,6 +320,11 @@ export async function leerDatos(url = "", options = {}) {
  * @param {{signal?: AbortSignal, timeout?: number}} [options]
  */
 export async function ejecutarSP(url = "", data = {}, metodo = "POST", options = {}) {
+  const cleanUrl = String(url || "").replace(/^sp\//, "");
+  if (cleanUrl === "cargos_spuCargo") {
+    return actualizarCargo(data);
+  }
+
   let estado = 0;
   let operacionOk = false;
   let errmsg = "";
@@ -216,6 +400,21 @@ export async function ejecutarSP(url = "", data = {}, metodo = "POST", options =
     errmsg = "Error en la Red";
     errorMsg = "Error en la Red";
     datos = null;
+  }
+
+  // Fallback: si el SP de personas falló en Oracle (ej: PKG_PERSONAS no declarado), intentar PUT /api/persona
+  const mensajeFallo = String(errorMsg || errmsg || "").toLowerCase();
+  const esFalloPkgPersonas =
+    !operacionOk ||
+    valorError !== 0 ||
+    mensajeFallo.includes("pkg_personas") ||
+    mensajeFallo.includes("pls-00201");
+
+  if (cleanUrl === "persUpd" && esFalloPkgPersonas) {
+    const fallbackRes = await actualizarPersona(data);
+    if (fallbackRes.operacionOk) {
+      return fallbackRes;
+    }
   }
 
   return {

@@ -37,9 +37,21 @@ router.beforeEach((to, from, next) => {
   const publicPages = ["/login"];
   const authRequired = !publicPages.includes(to.path);
 
+  // Si la sesión expiró por inactividad, forzar cierre de sesión
+  if (store.auth && store.checkSessionExpired()) {
+    store.logout();
+    return next({ path: "/login", query: { expired: "1" } });
+  }
+
   if (authRequired && !store.auth) {
     return next("/login");
   }
+
+  // Si el usuario está autenticado, refrescar la última actividad registrada
+  if (store.auth) {
+    store.recordActivity();
+  }
+
   next();
 });
 

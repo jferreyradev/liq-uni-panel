@@ -82,6 +82,7 @@ const tipoOSId = ref(null);
 const tipoLiqId = ref(null);
 const estadoCargoId = ref(null);
 const fechaBaja = ref("");
+const observacion = ref("");
 
 watch(
   () => props.modelValue,
@@ -108,6 +109,8 @@ watch(
       estadoCargoId.value = rawEC != null ? Number(rawEC) : null;
       const rawBaja = props.cargo.FechaBaja || props.cargo.FECHABAJA || "";
       fechaBaja.value = rawBaja ? getFechaDMY(rawBaja) : "";
+      const rawObs = props.cargo.Observacion ?? props.cargo.OBSERVACION ?? props.cargo.observacion ?? props.cargo.OBS ?? "";
+      observacion.value = rawObs || "";
     }
   },
   { immediate: true }
@@ -143,20 +146,27 @@ async function guardar() {
 
   let cargoId = resolveCargoId();
 
-  // Fallback: Si no viene en props.cargo, consultar la entidad base cargo por Reparticion y Orden
+  // Fallback: Si no viene en props.cargo, consultar la vista canónica view/cargo por Reparticion y Orden
   if (!cargoId) {
     const rep = props.cargo?.ReparticionId ?? props.cargo?.REPARTICIONID;
     const ord = props.cargo?.Orden ?? props.cargo?.ORDEN;
     if (rep && ord) {
       try {
-        const resCargo = await leerDatos("cargo", {
+        const resCargo = await leerDatos("view/cargo", {
           query: { ReparticionId: rep, Orden: ord },
         });
         if (resCargo.operacionOk && Array.isArray(resCargo.datos) && resCargo.datos.length > 0) {
-          cargoId = Number(resCargo.datos[0].ID ?? resCargo.datos[0].Id ?? 0);
+          cargoId = Number(
+            resCargo.datos[0].Id ??
+            resCargo.datos[0].ID ??
+            resCargo.datos[0].CargoId ??
+            resCargo.datos[0].CARGOID ??
+            resCargo.datos[0].idcargo ??
+            0
+          );
         }
       } catch (err) {
-        console.warn("No se pudo obtener el ID del cargo desde entidad cargo:", err);
+        console.warn("No se pudo obtener el ID del cargo desde view/cargo:", err);
       }
     }
   }
@@ -167,8 +177,8 @@ async function guardar() {
     return;
   }
 
-  const fecBajaApi = fechaBaja.value ? getFechaToAPIFromDDMMYYYY(fechaBaja.value) : "";
-  const vtoEscApi = vtoEscalafon.value ? getFechaToAPIFromDDMMYYYY(vtoEscalafon.value) : "";
+  const fecBajaApi = fechaBaja.value ? getFechaToAPIFromDDMMYYYY(fechaBaja.value) : null;
+  const vtoEscApi = vtoEscalafon.value ? getFechaToAPIFromDDMMYYYY(vtoEscalafon.value) : null;
 
   const payload = {
     vIDCARGO: Number(cargoId),
@@ -186,6 +196,9 @@ async function guardar() {
     vIDTIPOLIQ: Number(tipoLiqId.value),
     vIDESTADOCARGO: Number(estadoCargoId.value),
     vFECHABAJA: fecBajaApi,
+    vOBSERVACION: observacion.value ? String(observacion.value).trim() : "",
+    vOBSERVACIONES: observacion.value ? String(observacion.value).trim() : "",
+    Observacion: observacion.value ? String(observacion.value).trim() : "",
   };
 
   try {
@@ -301,7 +314,7 @@ async function guardar() {
               ></v-text-field>
             </v-col>
 
-            <!-- Tipo de Empleo -->
+            <!-- Tipo de Empleo (No editable por regla de negocio) -->
             <v-col cols="12" sm="4">
               <v-select
                 v-model="tipoEmpleoId"
@@ -311,6 +324,8 @@ async function guardar() {
                 item-value="value"
                 variant="outlined"
                 density="compact"
+                disabled
+                messages="No se permite modificar el tipo de empleo"
                 :rules="[reglaRequerido]"
               ></v-select>
             </v-col>
@@ -379,7 +394,7 @@ async function guardar() {
               ></v-select>
             </v-col>
 
-            <!-- Tipo de Liquidación -->
+            <!-- Tipo de Liquidación (No editable por regla de negocio) -->
             <v-col cols="12" sm="4">
               <v-select
                 v-model="tipoLiqId"
@@ -389,6 +404,8 @@ async function guardar() {
                 item-value="value"
                 variant="outlined"
                 density="compact"
+                disabled
+                messages="No se permite modificar el tipo de liquidación"
                 :rules="[reglaRequerido]"
               ></v-select>
             </v-col>
@@ -417,6 +434,20 @@ async function guardar() {
                 density="compact"
                 :rules="[reglaFechaDMY]"
               ></v-text-field>
+            </v-col>
+
+            <!-- Observación -->
+            <v-col cols="12">
+              <v-textarea
+                v-model="observacion"
+                label="Observación"
+                rows="2"
+                auto-grow
+                variant="outlined"
+                density="compact"
+                hide-details="auto"
+                placeholder="Observaciones adicionales sobre el cargo"
+              ></v-textarea>
             </v-col>
           </v-row>
         </v-form>

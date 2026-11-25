@@ -102,41 +102,81 @@ async function guardar() {
   isSaving.value = true;
   errorMessage.value = "";
 
-  const fecVto = vencimiento.value ? getFechaToAPIFromMMYYYY(vencimiento.value) : "";
-  const fecPer = periodo.value ? getFechaToAPIFromMMYYYY(periodo.value) : "";
+  const fecVto = vencimiento.value && String(vencimiento.value).trim()
+    ? getFechaToAPIFromMMYYYY(vencimiento.value) || null
+    : null;
+  const fecPer = periodo.value && String(periodo.value).trim()
+    ? getFechaToAPIFromMMYYYY(periodo.value) || null
+    : null;
+
+  const isEdit = Boolean(concepto.value.ID && concepto.value.ID !== 0);
 
   let payload = {
     vIDCARGO: Number(props.cargoId),
+    idcargo: Number(props.cargoId),
+    IdCargo: Number(props.cargoId),
     vCODIGO: Number(concepto.value.CODIGO),
+    vCOD: Number(concepto.value.CODIGO),
     vSUBCOD: Number(concepto.value.SUBCODIGO) || 0,
+    vSUBCODIGO: Number(concepto.value.SUBCODIGO) || 0,
     vPARM1: Number(concepto.value.PARAMETRO1) || 0,
+    vPARAM1: Number(concepto.value.PARAMETRO1) || 0,
+    vP1: Number(concepto.value.PARAMETRO1) || 0,
     vPARM2: Number(concepto.value.PARAMETRO2) || 0,
+    vPARAM2: Number(concepto.value.PARAMETRO2) || 0,
+    vP2: Number(concepto.value.PARAMETRO2) || 0,
     vVTO: fecVto,
     vIMPORTE: getDecimalToAPI(concepto.value.IMPORTE),
+    vIMP: getDecimalToAPI(concepto.value.IMPORTE),
     vPERIODO: fecPer,
     vIDGRUPOADI: Number(concepto.value.GRUPOADICIONALID) || 0,
     vPENLEY: concepto.value.PENLEY ? 1 : 0,
   };
 
-  const isEdit = Boolean(concepto.value.ID && concepto.value.ID !== 0);
-  let spUrl = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
+  if (!props.cargoId || Number(props.cargoId) <= 0) {
+    errorMessage.value = "No se pudo identificar el cargo ID para asociar el concepto.";
+    isSaving.value = false;
+    return;
+  }
+
+  const primarySp = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
+  const fallbackSp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
 
   if (isEdit) {
     payload = {
       vIDCONCEPTOLIQ: Number(concepto.value.ID),
+      idconceptoliq: Number(concepto.value.ID),
       ...payload,
     };
   }
 
   try {
-    let res = await ejecutarSP(spUrl, payload);
-    if (!res.operacionOk && res.estado === 404) {
-      // Fallback a nombre de SP legacy si el endpoint con prefijo no estuviera
-      const legacySp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
-      res = await ejecutarSP(legacySp, payload);
+    let res = await ejecutarSP(primarySp, payload);
+    if (!res.operacionOk) {
+      const resFallback = await ejecutarSP(fallbackSp, payload);
+      if (
+        resFallback.operacionOk ||
+        (resFallback.valorError !== undefined && Number(resFallback.valorError) >= 0)
+      ) {
+        res = resFallback;
+      }
     }
+
     const errCode = resolveSpErrorCode(res);
-    const esExito = res.operacionOk && (errCode === SP_OK || Number(res.valorError) === 0);
+    const msgError = extractSpMessage(res, "");
+    const tieneMensajeRechazo =
+      Boolean(msgError) &&
+      msgError.trim() !== "0" &&
+      msgError.trim().toUpperCase() !== "OK";
+
+    const esExito =
+      res.operacionOk &&
+      !tieneMensajeRechazo &&
+      (errCode === SP_OK ||
+        Number(res.valorError) === 0 ||
+        (!isEdit && Number(res.valorError) > 0) ||
+        res.out?.vError === 0 ||
+        Number(res.out?.vError) === 0);
 
     if (esExito) {
       emit("guardado", { isEdit, payload });
@@ -227,6 +267,17 @@ async function guardar() {
           <v-row>
             <v-col cols="12" sm="6">
               <v-text-field
+                v-model="vencimiento"
+                label="Vencimiento (MM/AAAA, opcional)"
+                placeholder="MM/AAAA"
+                variant="outlined"
+                density="compact"
+                clearable
+              ></v-text-field>
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-text-field
                 v-model="concepto.IMPORTE"
                 label="Importe ($)"
                 placeholder="0.00"
@@ -236,7 +287,9 @@ async function guardar() {
                 :rules="[(v) => v !== '' && v !== null || 'Importe requerido']"
               ></v-text-field>
             </v-col>
+          </v-row>
 
+          <v-row>
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model="periodo"
@@ -248,19 +301,6 @@ async function guardar() {
                   (v) => !!v || 'Período requerido',
                   ...rules.mmyyyy,
                 ]"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-
-          <v-row>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="vencimiento"
-                label="Vencimiento (MM/AAAA, opcional)"
-                placeholder="MM/AAAA"
-                variant="outlined"
-                density="compact"
-                clearable
               ></v-text-field>
             </v-col>
 

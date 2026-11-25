@@ -96,7 +96,10 @@ export const useFilterStore = defineStore('filter', {
     },
     async setPer() {
       try {
-        const res = await leerDatos('view/periodo', { query: { Activo: 1 } })
+        let res = await leerDatos('view/periodo', { query: { Activo: 1 } })
+        if (!res.operacionOk || !res.datos?.length) {
+          res = await leerDatos('view/periodo')
+        }
         if (!res.operacionOk) {
           throw new Error(res.errmsg || `Error ${res.estado} al obtener período`)
         }

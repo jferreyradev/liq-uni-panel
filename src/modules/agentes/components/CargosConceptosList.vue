@@ -30,7 +30,7 @@ const lecturaListaRegs = ref(true);
 async function leerListaRegs() {
   isPending.value = true;
   let [resView, resEntidad] = await Promise.all([
-    leerDatos("view/conceptosLiq", { query: { idCargo: cargoId } }),
+    leerDatos("view/conceptoLiq", { query: { CargoId: cargoId } }),
     leerDatos("conceptoLiq", { query: { CargoId: cargoId } }),
   ]);
 
@@ -127,16 +127,37 @@ function cierraForm() {
 
 // funciones de agregado, modificación y eliminación
 async function grabarSP(item, id) {
-  let url = id == 0 ? "sp/conceptoliq_spiConceptoliq" : "sp/conceptoliq_spuConceptoliq";
+  const isEdit = Boolean(id && id !== 0);
+  let primarySp = isEdit ? "sp/conceptoliq_spuConceptoliq" : "sp/conceptoliq_spiConceptoliq";
+  let fallbackSp = isEdit ? "sp/ConceptoLiqUpd" : "sp/ConceptoLiqIns";
 
   try {
-    let res = await ejecutarSP(url, item);
-    if (!res.operacionOk && res.estado === 404) {
-      const legacySp = id == 0 ? "sp/ConceptoLiqIns" : "sp/ConceptoLiqUpd";
-      res = await ejecutarSP(legacySp, item);
+    let res = await ejecutarSP(primarySp, item);
+    if (!res.operacionOk) {
+      const resFallback = await ejecutarSP(fallbackSp, item);
+      if (
+        resFallback.operacionOk ||
+        (resFallback.valorError !== undefined && Number(resFallback.valorError) >= 0)
+      ) {
+        res = resFallback;
+      }
     }
+
     const errCode = resolveSpErrorCode(res);
-    const esExito = res.operacionOk && (errCode === SP_OK || Number(res.valorError) === 0);
+    const msgError = extractSpMessage(res, "");
+    const tieneMensajeRechazo =
+      Boolean(msgError) &&
+      msgError.trim() !== "0" &&
+      msgError.trim().toUpperCase() !== "OK";
+
+    const esExito =
+      res.operacionOk &&
+      !tieneMensajeRechazo &&
+      (errCode === SP_OK ||
+        Number(res.valorError) === 0 ||
+        (!isEdit && Number(res.valorError) > 0) ||
+        res.out?.vError === 0 ||
+        Number(res.out?.vError) === 0);
 
     if (esExito) {
       Promise.resolve(leerListaRegs()).catch((e) => {

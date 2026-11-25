@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useTenantStore } from "@/stores/tenantStore";
+import { useFilterStore } from "@/stores/filterStore";
 import { RepoHeader, ConfirmacionDialog, TooltipButton } from "@/shared/components";
 import { usePII } from "@/composables/usePII";
 import { getVto, getFechaDMY, financial } from "@/utils/formatos";
@@ -13,6 +14,7 @@ import ConceptoLiqModal from "../components/ConceptoLiqModal.vue";
 import EditarCargoModal from "../components/EditarCargoModal.vue";
 
 const tenantStore = useTenantStore();
+const filterStore = useFilterStore();
 const { documento } = usePII();
 
 // Filtros y Búsqueda
@@ -56,6 +58,7 @@ function normalizarCargo(cargo) {
   const tipoLiqDesc = cargo.TipoLiquidacionDescripcion ?? cargo.TIPOLIQUIDACIONDESCRIPCION ?? getName(tipoLiq, tipoLiqId) ?? "";
   const salario = cargo.Salario ?? cargo.SALARIO;
   const uniOrg = cargo.UniOrg ?? cargo.UNIORG ?? cargo.UniOrgId ?? cargo.UNIORGID ?? "";
+  const observacion = cargo.Observacion ?? cargo.OBSERVACION ?? cargo.observacion ?? cargo.OBS ?? "";
 
   return {
     ...cargo,
@@ -96,6 +99,8 @@ function normalizarCargo(cargo) {
     SALARIO: salario,
     UniOrg: uniOrg,
     UNIORG: uniOrg,
+    Observacion: observacion,
+    OBSERVACION: observacion,
   };
 }
 const personaSeleccionada = ref(null);
@@ -253,11 +258,16 @@ async function cargarCargos() {
       query.TipoLiquidacionId = tipoLiqSeleccionado.value;
     }
 
+    const repActiva = filterStore.serverIdRep || filterStore.serverConfig?.IDREP;
+    if (repActiva) {
+      query.ReparticionId = repActiva;
+    }
+
     const q = (busquedaTexto.value || "").trim();
     if (q) {
       if (/^\d+$/.test(q)) {
         if (q.length <= 6) {
-          query.Id = q;
+          query.Orden = q;
         } else {
           query.PersonaDocumento = q;
         }
@@ -277,6 +287,8 @@ async function cargarCargos() {
         if (q) {
           mostrarMensaje("No se encontraron cargos con el criterio ingresado.", "info");
         }
+      } else if (q && /^\d+$/.test(q) && q.length <= 6 && datos.length === 1) {
+        seleccionarCargo(listaCargos.value[0], false);
       }
     } else {
       listaCargos.value = [];
@@ -458,16 +470,34 @@ function cerrarModalConceptos() {
   modalConceptosAbierto.value = false;
 }
 
-// 4. Carga de Conceptos del Cargo (consulta view/conceptosLiq solo si se solicita)
+// 4. Carga de Conceptos del Cargo (consulta view/conceptoLiq solo si se solicita)
 async function cargarConceptos(cargoId) {
-  const idC = Number(cargoId) || getCargoId(cargoSeleccionado.value);
+  let idC = Number(cargoId) || getCargoId(cargoSeleccionado.value);
+  if (!idC && cargoSeleccionado.value) {
+    const rep = cargoSeleccionado.value.ReparticionId ?? cargoSeleccionado.value.REPARTICIONID;
+    const ord = cargoSeleccionado.value.Orden ?? cargoSeleccionado.value.ORDEN;
+    if (rep && ord) {
+      try {
+        const resC = await leerDatos("view/cargo", { query: { ReparticionId: rep, Orden: ord } });
+        if (resC.operacionOk && Array.isArray(resC.datos) && resC.datos.length > 0) {
+          idC = Number(resC.datos[0].ID ?? resC.datos[0].Id ?? 0);
+          if (cargoSeleccionado.value) {
+            cargoSeleccionado.value.ID = idC;
+            cargoSeleccionado.value.Id = idC;
+          }
+        }
+      } catch {
+        // fallback
+      }
+    }
+  }
   if (!idC) return;
   cargandoConceptos.value = true;
 
   try {
-    // Consultar view/conceptosLiq con el parámetro permitido idCargo, y conceptoLiq para asociar el ID del registro
+    // Consultar view/conceptoLiq con CargoId y conceptoLiq para asociar el ID del registro
     let [resView, resEntidad] = await Promise.all([
-      leerDatos("view/conceptosLiq", { query: { idCargo: idC } }),
+      leerDatos("view/conceptoLiq", { query: { CargoId: idC } }),
       leerDatos("conceptoLiq", { query: { CargoId: idC } }),
     ]);
 
@@ -617,7 +647,7 @@ async function eliminarConcepto(id) {
     let res = await ejecutarSP("sp/conceptoliq_spdConceptoliq", {
       vIDCONCEPTOLIQ: idEliminar,
     });
-    if (!res.operacionOk && res.estado === 404) {
+    if (!res.operacionOk) {
       res = await ejecutarSP("sp/ConceptoLiqDel", {
         vIDCONCEPTOLIQ: idEliminar,
       });
@@ -637,6 +667,7 @@ async function eliminarConcepto(id) {
 }
 
 const headersCargos = [
+  { title: "Acciones", key: "ACCIONES", width: "150px", align: "center", sortable: false },
   {
     title: "Rep.",
     key: "ReparticionId",
@@ -747,7 +778,6 @@ const headersCargos = [
     align: "center",
     width: "95px",
   },
-  { title: "CC", key: "ACCIONES", width: "135px", align: "center", sortable: false },
 ];
 
 const totalImporteConceptos = computed(() => {
@@ -761,8 +791,8 @@ const headersConceptos = [
   { title: "Subcód.", key: "SUBCODIGO", align: "end", width: "80px" },
   { title: "Parámetro 1", key: "PARAMETRO1", align: "end", width: "100px" },
   { title: "Parámetro 2", key: "PARAMETRO2", align: "end", width: "100px" },
-  { title: "Importe ($)", key: "IMPORTE", align: "end", width: "120px" },
   { title: "Vencimiento", key: "VENCIMIENTO", align: "center", width: "110px" },
+  { title: "Importe ($)", key: "IMPORTE", align: "end", width: "120px" },
   { title: "Período", key: "PERIODO", align: "center", width: "110px" },
   { title: "Grupo Adic.", key: "GRUPOADICIONALID", align: "center", width: "100px" },
   { title: "Es Ley", key: "PENLEY", align: "center", width: "80px" },
@@ -836,8 +866,8 @@ onMounted(async () => {
           <v-col cols="12" md="8" sm="8">
             <v-text-field
               v-model="busquedaTexto"
-              label="Buscar por DNI, Apellido o Nro. de Cargo"
-              placeholder="Ej: 28920504, PEREZ o 753"
+              label="Buscar por DNI, Apellido u Orden del Cargo"
+              placeholder="Ej: 63, PEREZ o 28920504"
               prepend-inner-icon="mdi-magnify"
               variant="outlined"
               density="compact"
@@ -879,7 +909,7 @@ onMounted(async () => {
           </span>
         </div>
         <div v-if="cargoSeleccionado" class="text-caption font-weight-bold text-primary">
-          Cargo activo: #{{ getCargoId(cargoSeleccionado) }} ({{ personaSeleccionada?.APELLIDOYNOMBRE || 'Agente' }})
+          Cargo activo: Boleta/Orden #{{ cargoSeleccionado.Orden ?? cargoSeleccionado.ORDEN }} (ID: {{ getCargoId(cargoSeleccionado) }}) — {{ personaSeleccionada?.APELLIDOYNOMBRE || 'Agente' }}
         </div>
       </v-card-title>
 
@@ -897,7 +927,7 @@ onMounted(async () => {
           density="compact"
           hover
           class="border rounded text-caption"
-          no-data-text="No se encontraron cargos para mostrar. Ingrese un DNI, Apellido o Cargo # para buscar."
+          no-data-text="No se encontraron cargos para mostrar. Ingrese un DNI, Apellido u Orden del Cargo para buscar."
         >
           <template #item="{ item }">
             <tr
@@ -905,6 +935,50 @@ onMounted(async () => {
               :class="{ 'bg-blue-lighten-5': (getCargoId(cargoSeleccionado) === getCargoId(item)) }"
               @click="seleccionarCargo(item)"
             >
+              <!-- Acciones (al inicio) -->
+              <td class="text-center pa-1 sticky-col">
+                <div class="d-flex align-center justify-center ga-1">
+                  <v-btn
+                    size="x-small"
+                    color="primary"
+                    variant="flat"
+                    prepend-icon="mdi-format-list-checks"
+                    class="font-weight-bold"
+                    @click.stop="abrirConceptosLiq(item)"
+                  >
+                    Conceptos Liq
+                  </v-btn>
+                  <v-tooltip location="top" text="Actualizar datos del cargo">
+                    <template #activator="{ props: tooltipProps }">
+                      <v-btn
+                        v-bind="tooltipProps"
+                        size="x-small"
+                        icon="mdi-pencil"
+                        color="primary"
+                        variant="tonal"
+                        @click.stop="abrirEditarCargo(item)"
+                      />
+                    </template>
+                  </v-tooltip>
+                  <v-tooltip
+                    v-if="(item.EstadoCargoId ?? item.ESTADOCARGOID) === 1"
+                    location="top"
+                    text="Dar de baja al cargo"
+                  >
+                    <template #activator="{ props: tooltipProps }">
+                      <v-btn
+                        v-bind="tooltipProps"
+                        size="x-small"
+                        icon="mdi-account-arrow-down"
+                        color="error"
+                        variant="tonal"
+                        @click.stop="abrirBajaCargo(item)"
+                      />
+                    </template>
+                  </v-tooltip>
+                </div>
+              </td>
+
               <!-- 1. ReparticionId -->
               <td class="text-center pa-1">{{ item.ReparticionId ?? item.REPARTICIONID }}</td>
 
@@ -997,57 +1071,13 @@ onMounted(async () => {
               <td class="text-center pa-1">
                 {{ item.UniOrg ?? item.UNIORG ?? item.UniOrgId ?? item.UNIORGID ?? '—' }}
               </td>
-
-              <!-- CC (Conceptos / Acciones) -->
-              <td class="text-center pa-1 sticky">
-                <div class="d-flex align-center justify-center ga-1">
-                  <v-btn
-                    size="x-small"
-                    color="primary"
-                    variant="flat"
-                    prepend-icon="mdi-format-list-checks"
-                    class="font-weight-bold"
-                    @click.stop="abrirConceptosLiq(item)"
-                  >
-                    Conceptos Liq
-                  </v-btn>
-                  <v-tooltip location="top" text="Actualizar datos del cargo">
-                    <template #activator="{ props: tooltipProps }">
-                      <v-btn
-                        v-bind="tooltipProps"
-                        size="x-small"
-                        icon="mdi-pencil"
-                        color="primary"
-                        variant="tonal"
-                        @click.stop="abrirEditarCargo(item)"
-                      />
-                    </template>
-                  </v-tooltip>
-                  <v-tooltip
-                    v-if="(item.EstadoCargoId ?? item.ESTADOCARGOID) === 1"
-                    location="top"
-                    text="Dar de baja al cargo"
-                  >
-                    <template #activator="{ props: tooltipProps }">
-                      <v-btn
-                        v-bind="tooltipProps"
-                        size="x-small"
-                        icon="mdi-account-arrow-down"
-                        color="error"
-                        variant="tonal"
-                        @click.stop="abrirBajaCargo(item)"
-                      />
-                    </template>
-                  </v-tooltip>
-                </div>
-              </td>
             </tr>
           </template>
         </v-data-table>
       </v-card-text>
     </v-card>
 
-    <!-- Ventana Flotante de Conceptos de Liquidación (Carga bajo demanda: view/conceptosLiq) -->
+    <!-- Ventana Flotante de Conceptos de Liquidación (Carga bajo demanda: view/conceptoLiq) -->
     <v-dialog
       v-model="modalConceptosAbierto"
       max-width="1200px"
@@ -1059,7 +1089,7 @@ onMounted(async () => {
             <v-icon icon="mdi-format-list-checks" class="me-2" />
             <div>
               <div class="text-subtitle-1 font-weight-bold">
-                Conceptos de Liquidación (CC) — Cargo #{{ getCargoId(cargoSeleccionado) }} (Orden {{ cargoSeleccionado.Orden ?? cargoSeleccionado.ORDEN }})
+                Conceptos de Liquidación (CC) — Boleta/Orden #{{ cargoSeleccionado.Orden ?? cargoSeleccionado.ORDEN }} (Cargo ID: {{ getCargoId(cargoSeleccionado) }})
               </div>
               <div class="text-caption text-white opacity-90">
                 Agente: {{ personaSeleccionada?.APELLIDOYNOMBRE || `${cargoSeleccionado.PersonaApellido ?? cargoSeleccionado.PERSONAAPELLIDO ?? cargoSeleccionado.APELLIDO ?? ''}, ${cargoSeleccionado.PersonaNombre ?? cargoSeleccionado.PERSONANOMBRE ?? cargoSeleccionado.NOMBRE ?? ''}` }}
@@ -1095,7 +1125,7 @@ onMounted(async () => {
         <v-card-text class="pa-4" style="max-height: 75vh;">
           <div v-if="cargandoConceptos" class="d-flex align-center justify-center pa-8">
             <v-progress-circular indeterminate color="primary" class="me-2"></v-progress-circular>
-            Consultando conceptos de liquidación en view/conceptosLiq...
+            Consultando conceptos de liquidación en view/conceptoLiq...
           </div>
 
           <div v-else>
@@ -1130,8 +1160,8 @@ onMounted(async () => {
                   <td class="text-right pa-1">{{ item.SUBCODIGO }}</td>
                   <td class="text-right pa-1">{{ item.PARAMETRO1 }}</td>
                   <td class="text-right pa-1">{{ item.PARAMETRO2 }}</td>
-                  <td class="text-right pa-1 font-weight-bold">{{ financial(item.IMPORTE) }}</td>
                   <td class="text-center pa-1">{{ getVto(item.VENCIMIENTO) || '—' }}</td>
+                  <td class="text-right pa-1 font-weight-bold">{{ financial(item.IMPORTE) }}</td>
                   <td class="text-center pa-1">{{ getVto(item.PERIODO) || '—' }}</td>
                   <td class="text-center pa-1">{{ item.GRUPOADICIONALID }}</td>
                   <td class="text-center pa-1">
@@ -1212,5 +1242,11 @@ onMounted(async () => {
 <style scoped>
 .cursor-pointer {
   cursor: pointer;
+}
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background-color: inherit;
+  z-index: 2;
 }
 </style>

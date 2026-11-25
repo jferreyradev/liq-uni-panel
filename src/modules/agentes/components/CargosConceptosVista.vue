@@ -96,33 +96,43 @@ async function grabaRegistro() {
     return;
   }
 
-  let fecVencimiento = "";
+  let fecVencimiento = null;
   if (vencimiento.value !== null && vencimiento.value !== undefined) {
     if (String(vencimiento.value).trim().length > 0)
-      fecVencimiento = getFechaToAPIFromMMYYYY(vencimiento.value);
+      fecVencimiento = getFechaToAPIFromMMYYYY(vencimiento.value) || null;
   }
 
-  let fecPeriodo = "";
+  let fecPeriodo = null;
   if (periodo.value !== null && periodo.value !== undefined) {
     if (String(periodo.value).trim().length > 0)
-      fecPeriodo = getFechaToAPIFromMMYYYY(periodo.value);
+      fecPeriodo = getFechaToAPIFromMMYYYY(periodo.value) || null;
   }
 
   let registroGrabar = {
-    vIDCARGO: cargoId,
-    vCODIGO: registroActual.value.CODIGO,
-    vSUBCOD: registroActual.value.SUBCODIGO,
-    vPARM1: registroActual.value.PARAMETRO1,
-    vPARM2: registroActual.value.PARAMETRO2,
+    vIDCARGO: Number(cargoId),
+    idcargo: Number(cargoId),
+    IdCargo: Number(cargoId),
+    vCODIGO: Number(registroActual.value.CODIGO),
+    vCOD: Number(registroActual.value.CODIGO),
+    vSUBCOD: Number(registroActual.value.SUBCODIGO) || 0,
+    vSUBCODIGO: Number(registroActual.value.SUBCODIGO) || 0,
+    vPARM1: Number(registroActual.value.PARAMETRO1) || 0,
+    vPARAM1: Number(registroActual.value.PARAMETRO1) || 0,
+    vP1: Number(registroActual.value.PARAMETRO1) || 0,
+    vPARM2: Number(registroActual.value.PARAMETRO2) || 0,
+    vPARAM2: Number(registroActual.value.PARAMETRO2) || 0,
+    vP2: Number(registroActual.value.PARAMETRO2) || 0,
     vVTO: fecVencimiento,
     vIMPORTE: getDecimalToAPI(registroActual.value.IMPORTE),
+    vIMP: getDecimalToAPI(registroActual.value.IMPORTE),
     vPERIODO: fecPeriodo,
-    vIDGRUPOADI: registroActual.value.GRUPOADICIONALID,
+    vIDGRUPOADI: Number(registroActual.value.GRUPOADICIONALID) || 0,
     vPENLEY: registroActual.value.PENLEY ? 1 : 0,
   };
   if (registroActual.value.ID && registroActual.value.ID !== 0) {
     registroGrabar = {
-      vIDCONCEPTOLIQ: registroActual.value.ID,
+      vIDCONCEPTOLIQ: Number(registroActual.value.ID),
+      idconceptoliq: Number(registroActual.value.ID),
       ...registroGrabar,
     };
   }

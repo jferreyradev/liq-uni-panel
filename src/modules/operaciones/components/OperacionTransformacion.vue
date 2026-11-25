@@ -1,19 +1,26 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { tipoLiq } from "@/utils/tipos";
 import { getVto, getFechaToAPIFromMMYYYY, getVtoActual } from "@/utils/formatos";
 import { rules } from "@/utils/reglasValidacion";
 import { leerDatos, ejecutarSP_SinEspera } from "@/shared/services/apiService";
+import { useFilterStore } from "@/stores/filterStore";
 import { ConfirmacionDialog } from "@/shared/components";
 
 const emit = defineEmits(["proceso-iniciado"]);
+
+const filterStore = useFilterStore();
+const repId = computed(() => Number(filterStore.serverIdRep || filterStore.serverConfig?.IDREP) || 0);
+const repNombre = computed(
+  () =>
+    filterStore.serverDescripcion ||
+    (repId.value ? `Repartición #${repId.value}` : "General (Todas las reparticiones)")
+);
 
 const form = ref(null);
 const formValido = ref(false);
 const isRunning = ref(false);
 
-const gruposRep = [{ name: "Municipios", value: 1 }];
-const grupoRepSelected = ref(gruposRep[0]);
 const tipoLiqSelected = ref(tipoLiq[0]);
 const periodo = ref("");
 const adicional = ref(0);
@@ -54,7 +61,8 @@ async function ejecutarTransformacion() {
 
   const payload = {
     Periodo: getFechaToAPIFromMMYYYY(periodo.value),
-    GrupoRep: grupoRepSelected.value.value,
+    GrupoRep: repId.value ? 0 : 1,
+    Rep: repId.value,
     TipoLiq: tipoLiqSelected.value.value,
     GrupoAdicional: Number(adicional.value) || 0,
   };
@@ -151,16 +159,13 @@ async function ejecutarTransformacion() {
           </v-col>
 
           <v-col cols="12" sm="6" md="3">
-            <v-select
-              v-model="grupoRepSelected"
-              label="Grupo de Repartición"
-              :items="gruposRep"
-              item-title="name"
-              item-value="value"
-              return-object
-              variant="outlined"
-              density="compact"
-            ></v-select>
+            <div class="border rounded px-3 py-2 bg-grey-lighten-5 h-100 d-flex flex-column justify-center">
+              <div class="text-caption text-medium-emphasis">Repartición Activa</div>
+              <div class="text-body-2 font-weight-bold text-primary d-flex align-center text-truncate">
+                <v-icon icon="mdi-domain" size="small" class="me-1"></v-icon>
+                {{ repNombre }}
+              </div>
+            </div>
           </v-col>
         </v-row>
 

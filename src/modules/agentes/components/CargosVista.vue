@@ -30,6 +30,8 @@ const tipoOSSelected = ref(tiposOS[0]);
 const estadoCargoSelected = ref(estadosCargo[0]);
 const sitRevSelect = ref(sitRev[0]);
 const salario = ref(false);
+const observacion = ref("");
+const esEdicion = ref(false);
 
 const registroVacio = ref({
   PERSONAID: 0,
@@ -64,8 +66,12 @@ if (registroOrigen) {
     registroOrigen.TIPOLIQUIDACIONID,
   );
   salario.value = registroOrigen.SALARIO === 1;
+  observacion.value = registroOrigen.OBSERVACION ?? registroOrigen.Observacion ?? registroOrigen.observacion ?? "";
+  esEdicion.value = Boolean(registroOrigen.ID && registroOrigen.ID !== 0);
 } else {
   registroActual.value = registroVacio.value;
+  observacion.value = "";
+  esEdicion.value = false;
 }
 
 const mostrarAlert = ref(false);
@@ -105,14 +111,15 @@ async function grabaRegistro() {
     vORDEN: registroActual.value.ORDEN,
     vAFILIADO: registroActual.value.AFILIADO,
     vANTIG: registroActual.value.ANTIGUEDAD,
-    vVTOESC: vtoEsc,
+    vVTOESC: vtoEsc || null,
     vIDTE: getVal(tipoEmpleoSelected.value),
     vIDSITREV: getVal(sitRevSelect.value),
     vIDTIPOOS: getVal(tipoOSSelected.value),
     vCATEGORIA: registroActual.value.CATEGORIA,
     vIDTIPOLIQ: getVal(tipoLiqSelected.value),
     vIDESTADOCARGO: getVal(estadoCargoSelected.value),
-    vFECHABAJA: fecBaja,
+    vFECHABAJA: fecBaja || null,
+    vOBSERVACION: observacion.value ? String(observacion.value).trim() : "",
   };
   if (registroActual.value.ID && registroActual.value.ID !== 0) {
     registroGrabar = {
@@ -244,6 +251,8 @@ function validarRegistro() {
                   item-value="value"
                   return-object
                   :readonly="soloLectura"
+                  :disabled="soloLectura || esEdicion"
+                  :messages="esEdicion ? 'No se permite modificar el tipo de empleo' : ''"
                 >
                 </v-select>
               </v-col>
@@ -342,6 +351,8 @@ function validarRegistro() {
                   item-value="value"
                   return-object
                   :readonly="soloLectura"
+                  :disabled="soloLectura || esEdicion"
+                  :messages="esEdicion ? 'No se permite modificar el tipo de liquidación' : ''"
                 >
                 </v-select>
               </v-col>
@@ -355,6 +366,19 @@ function validarRegistro() {
                   hide-details
                   readonly
                 ></v-checkbox>
+              </v-col>
+              <v-col cols="8">
+                <v-textarea
+                  v-model="observacion"
+                  label="Observación"
+                  rows="2"
+                  auto-grow
+                  variant="outlined"
+                  density="compact"
+                  hide-details="auto"
+                  :readonly="soloLectura"
+                  placeholder="Observaciones adicionales sobre el cargo"
+                ></v-textarea>
               </v-col>
             </v-row>
           </v-container>

@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/userStore";
 import { useFilterStore } from "@/stores/filterStore";
 import { useItemsMenu } from "@/composables/useItemsMenu";
@@ -20,7 +20,9 @@ if (!activeEnvId.value && apiEnvironments.value && apiEnvironments.value.length 
 
 const user = useUserStore();
 const router = useRouter();
+const route = useRoute();
 const filterStore = useFilterStore();
+const sessionExpired = computed(() => route.query?.expired === "1");
 
 onMounted(async () => {
   try {
@@ -131,6 +133,17 @@ function openDiagnosticsFromError() {
       </div>
 
       <v-card-text class="pa-5">
+        <v-alert
+          v-if="sessionExpired"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mb-4"
+          closable
+        >
+          Su sesión ha expirado por inactividad. Por favor, vuelva a ingresar.
+        </v-alert>
+
         <div class="d-flex align-center justify-space-between mb-4 pa-2 bg-grey-lighten-4 rounded border">
           <div class="d-flex align-center text-truncate me-2">
             <v-icon icon="mdi-server-network" class="me-2" color="primary" size="small"></v-icon>
