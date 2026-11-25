@@ -240,5 +240,94 @@ describe('apiService - descargas binarias', () => {
       expect(body.CBU).toBe('0110123400000012345678')
       expect(body.Cuenta).toBe('1234567890')
     })
+
+    it('ejecutarSP("sp/NovHaberesUpd") redirige a PUT /api/novhaberes?Id=... evitando error 404', async () => {
+      global.fetch.mockResolvedValueOnce({
+        status: 200,
+        ok: true,
+        text: vi.fn().mockResolvedValue(
+          JSON.stringify({ result: { rowsAffected: 1 }, status: 200 })
+        ),
+      })
+
+      const item = {
+        Id: 55,
+        NroReparticion: 101,
+        NroBoleta: 1,
+        Codigo: 10,
+        Subcodigo: 0,
+        Importe: 15000.5,
+      }
+
+      const res = await ejecutarSP('sp/NovHaberesUpd', item)
+
+      expect(res.operacionOk).toBe(true)
+      expect(res.valorError).toBe(0)
+      expect(res.valorSalida).toBe(55)
+      expect(res.out.vError).toBe(0)
+
+      expect(global.fetch).toHaveBeenCalledTimes(1)
+      const [url, init] = global.fetch.mock.calls[0]
+      expect(url).toBe('https://api.test/api/novhaberes?Id=55')
+      expect(init.method).toBe('PUT')
+      const body = JSON.parse(init.body)
+      expect(body.Id).toBe(55)
+      expect(body.NroReparticion).toBe(101)
+      expect(body.Importe).toBe(15000.5)
+    })
+
+    it('ejecutarSP("sp/NovHaberesIns") redirige a POST /api/novhaberes', async () => {
+      global.fetch.mockResolvedValueOnce({
+        status: 201,
+        ok: true,
+        text: vi.fn().mockResolvedValue(
+          JSON.stringify({ Id: 99, status: 201 })
+        ),
+      })
+
+      const item = {
+        Id: 0,
+        NroReparticion: 102,
+        NroBoleta: 2,
+        Codigo: 20,
+        Importe: 20000,
+      }
+
+      const res = await ejecutarSP('sp/NovHaberesIns', item)
+
+      expect(res.operacionOk).toBe(true)
+      expect(res.valorError).toBe(0)
+      expect(res.valorSalida).toBe(99)
+      expect(res.out.vError).toBe(0)
+
+      expect(global.fetch).toHaveBeenCalledTimes(1)
+      const [url, init] = global.fetch.mock.calls[0]
+      expect(url).toBe('https://api.test/api/novhaberes')
+      expect(init.method).toBe('POST')
+      const body = JSON.parse(init.body)
+      expect(body.NroReparticion).toBe(102)
+    })
+
+    it('ejecutarSP("sp/NovHaberesDel") redirige a DELETE /api/novhaberes?Id=...', async () => {
+      global.fetch.mockResolvedValueOnce({
+        status: 200,
+        ok: true,
+        text: vi.fn().mockResolvedValue(
+          JSON.stringify({ result: { rowsAffected: 1 }, status: 200 })
+        ),
+      })
+
+      const res = await ejecutarSP('sp/NovHaberesDel', { vIDNOVHAB: 88 })
+
+      expect(res.operacionOk).toBe(true)
+      expect(res.valorError).toBe(0)
+      expect(res.valorSalida).toBe(88)
+      expect(res.out.vError).toBe(0)
+
+      expect(global.fetch).toHaveBeenCalledTimes(1)
+      const [url, init] = global.fetch.mock.calls[0]
+      expect(url).toBe('https://api.test/api/novhaberes?Id=88')
+      expect(init.method).toBe('DELETE')
+    })
   })
 })

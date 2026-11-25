@@ -312,6 +312,58 @@ export async function actualizarPersona(personaData = {}) {
 }
 
 /**
+ * Procesa la creación, modificación o eliminación de un registro de novedades de haberes
+ * a través de la API REST (/api/novhaberes).
+ * Esto permite que componentes como NovHaberesList sigan el contrato arquitectónico
+ * de invocar `useSpGrabar` / `ejecutarSP('sp/NovHaberes...')` sin provocar un error 404
+ * dado que el backend expone el recurso REST `novhaberes` y no Stored Procedures.
+ *
+ * @param {Object} data
+ * @param {"PUT" | "POST" | "DELETE"} accion
+ * @returns {Promise<{estado: number, operacionOk: boolean, valorError: number, valorSalida: number, errmsg: string, errorMsg: string, datos: any, out: Object}>}
+ */
+export async function actualizarNovHaberes(data = {}, accion = "PUT") {
+  const id = Number(
+    data.Id ?? data.ID ?? data.vIDNOVHAB ?? data.vIDNOVHABER ?? data.id ?? 0
+  );
+
+  let res;
+  let errorFallbackMsg = "Error al procesar la novedad de haberes";
+
+  if (accion === "DELETE") {
+    errorFallbackMsg = "Error al eliminar la novedad de haberes";
+    const path = id ? `novhaberes?Id=${id}` : "novhaberes";
+    res = await eliminarRegistro(path, "DELETE");
+  } else if (accion === "POST") {
+    errorFallbackMsg = "Error al crear la novedad de haberes";
+    res = await grabarRegistro("novhaberes", data, "POST");
+  } else {
+    errorFallbackMsg = "Error al actualizar la novedad de haberes";
+    const path = id ? `novhaberes?Id=${id}` : "novhaberes";
+    res = await grabarRegistro(path, data, "PUT");
+  }
+
+  const esOk = res.operacionOk && res.estado >= 200 && res.estado < 300;
+  const salida = id || Number(res.datos?.Id ?? res.datos?.ID ?? 0);
+  const errMsg = esOk ? "" : (res.errmsg || errorFallbackMsg);
+
+  return {
+    estado: res.estado,
+    operacionOk: esOk,
+    valorError: esOk ? 0 : -1,
+    valorSalida: salida,
+    errmsg: errMsg,
+    errorMsg: errMsg,
+    datos: res.datos,
+    out: {
+      vError: esOk ? 0 : -1,
+      vErrorMsg: errMsg,
+      vSalida: salida,
+    },
+  };
+}
+
+/**
  * Ejecuta un Stored Procedure.
  *
  * @param {string} url ruta relativa al host de SP
@@ -323,6 +375,16 @@ export async function ejecutarSP(url = "", data = {}, metodo = "POST", options =
   const cleanUrl = String(url || "").replace(/^sp\//, "");
   if (cleanUrl === "cargos_spuCargo") {
     return actualizarCargo(data);
+  }
+  const cleanLower = cleanUrl.toLowerCase();
+  if (cleanLower === "novhaberesupd") {
+    return actualizarNovHaberes(data, "PUT");
+  }
+  if (cleanLower === "novhaberesins") {
+    return actualizarNovHaberes(data, "POST");
+  }
+  if (cleanLower === "novhaberesdel") {
+    return actualizarNovHaberes(data, "DELETE");
   }
 
   let estado = 0;
