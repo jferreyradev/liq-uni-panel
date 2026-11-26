@@ -183,21 +183,32 @@ async function ejecutarAcreditacion() {
 
         <v-divider class="my-3"></v-divider>
 
-        <div class="d-flex justify-space-between align-center">
+        <div class="d-flex justify-space-between align-center flex-wrap ga-2">
           <div class="text-caption text-medium-emphasis">
             <v-icon icon="mdi-information-outline" size="small" class="me-1"></v-icon>
             Invoca <code>sp/generaArchivoAcred</code> con <code>[vPERIODO, vIDTIPOLIQ, vIDGRUPOADI, vLEY]</code>.
           </div>
 
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-bank-transfer-out"
-            :loading="isRunning"
-            :disabled="isRunning"
-            @click="solicitarConfirmacion"
-          >
-            Generar Acreditaciones
-          </v-btn>
+          <div class="d-flex align-center ga-2">
+            <v-btn
+              variant="outlined"
+              color="warning"
+              prepend-icon="mdi-shield-lock"
+              @click="router.push('/acredit?tab=bloqueo')"
+            >
+              Bloquear Liquidaciones
+            </v-btn>
+
+            <v-btn
+              color="primary"
+              prepend-icon="mdi-bank-transfer-out"
+              :loading="isRunning"
+              :disabled="isRunning"
+              @click="solicitarConfirmacion"
+            >
+              Generar Acreditaciones
+            </v-btn>
+          </div>
         </div>
       </v-form>
     </v-card-text>
