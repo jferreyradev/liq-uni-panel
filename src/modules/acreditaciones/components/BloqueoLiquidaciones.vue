@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useFilterStore } from "@/stores/filterStore";
 import { useEndPoints } from "@/composables/useEndPoints";
 import { useFetch } from "@/composables/useFetch";
@@ -9,8 +9,9 @@ const { apiBase, getBoletasHeaders, buildApiHeaders } = useEndPoints();
 const store = useFilterStore();
 const refreshTrigger = ref(0);
 
-// Búsqueda en grilla de liquidaciones
+// Búsqueda y Filtros en grilla de liquidaciones
 const busquedaCargo = ref("");
+const filtroReparticion = ref(null);
 
 // Búsqueda directa alternativa en view/cargo (por si se busca un cargo puntual)
 const busquedaDirectaTexto = ref("");
@@ -18,11 +19,41 @@ const buscandoCargoDirecto = ref(false);
 const cargoDirectoEncontrado = ref(null);
 const cargoDirectoMensaje = ref("");
 
+// Modo de Bloqueo: 0 = Efectivo, 1 = Ley Especial, 2 = Ambos
+const modoBloqueoEsLey = ref(store.ley ? 1 : 0);
+
+// Sincronizar reactivamente con store.ley
+watch(
+  () => store.ley,
+  (val) => {
+    modoBloqueoEsLey.value = Number(val) === 1 ? 1 : 0;
+  },
+  { immediate: true }
+);
+
+function cambiarModoBloqueo(nuevoModo) {
+  modoBloqueoEsLey.value = nuevoModo;
+  if (nuevoModo === 0 || nuevoModo === 1) {
+    store.ley = nuevoModo;
+  }
+}
+
+const descripcionModoBloqueo = computed(() => {
+  if (modoBloqueoEsLey.value === 1) return "Ley Especial (vESLEY = 1)";
+  if (modoBloqueoEsLey.value === 2) return "Ambos (Efectivo y Ley)";
+  return "Efectivo / General (vESLEY = 0)";
+});
+
+const colorModoBloqueo = computed(() => {
+  if (modoBloqueoEsLey.value === 1) return "purple-darken-1";
+  if (modoBloqueoEsLey.value === 2) return "indigo-darken-1";
+  return "warning";
+});
+
 // Selección y Modal de Bloqueo
 const seleccionados = ref([]);
 const mostrarDialogoBloqueo = ref(false);
 const itemsABloquear = ref([]);
-const modoBloqueoEsLey = ref(store.ley ? 1 : 0); // 0: Efectivo, 1: Ley, 2: Ambos
 const isBloqueando = ref(false);
 const bloqueandoId = ref(null);
 
@@ -38,15 +69,7 @@ function useLiquidaciones() {
     () => {
       // Registrar dependencia reactiva para refrescar sin enviar campos extra a la API
       void refreshTrigger.value;
-
-      const m = String(Number(store.month) || (new Date().getMonth() + 1)).padStart(2, "0");
-      const y = store.year || new Date().getFullYear();
-      const per = `01/${m}/${y}`;
-      let q = `Periodo=${per}&TipoLiquidacionId=${store.tipoliq}&GrupoAdicionalId=${store.nroadi}`;
-      if (store.serverIdRep) {
-        q += `&ReparticionId=${store.serverIdRep}`;
-      }
-      return `${apiBase.value}/api/view/liq?${q}`;
+      return `${apiBase.value}/api/view/liq?${store.filterString}&sort={"Orden":"asc"}`;
     },
     () => ({ headers: headersFn() })
   );
@@ -83,19 +106,33 @@ const headers = [
 
 const itemsLiquidacion = computed(() => {
   if (!data.value || !Array.isArray(data.value)) return [];
+  if (filtroReparticion.value !== null && filtroReparticion.value !== "") {
+    return data.value.filter(
+      (item) => String(item.REPARTICIONID) === String(filtroReparticion.value)
+    );
+  }
   return data.value;
+});
+
+const listaReparticiones = computed(() => {
+  if (!data.value || !Array.isArray(data.value)) return [];
+  const setRep = new Set();
+  for (const item of data.value) {
+    if (item.REPARTICIONID !== undefined && item.REPARTICIONID !== null) {
+      setRep.add(item.REPARTICIONID);
+    }
+  }
+  return Array.from(setRep).sort((a, b) => Number(a) - Number(b));
 });
 
 function abrirConfirmacionIndividual(item) {
   itemsABloquear.value = [item];
-  modoBloqueoEsLey.value = store.ley ? 1 : 0;
   mostrarDialogoBloqueo.value = true;
 }
 
 function abrirConfirmacionMultiple() {
   if (seleccionados.value.length === 0) return;
   itemsABloquear.value = [...seleccionados.value];
-  modoBloqueoEsLey.value = store.ley ? 1 : 0;
   mostrarDialogoBloqueo.value = true;
 }
 
@@ -110,9 +147,6 @@ async function buscarCargoDirecto() {
 
   try {
     const query = { EstadoCargoId: 1 };
-    if (store.serverIdRep) {
-      query.ReparticionId = store.serverIdRep;
-    }
     if (/^\d+$/.test(q)) {
       if (q.length <= 6) {
         query.Orden = q;
@@ -200,7 +234,7 @@ async function ejecutarBloqueoCtaBco() {
   isBloqueando.value = false;
   mostrarDialogoBloqueo.value = false;
 
-  const descTipo = modoBloqueoEsLey.value === 1 ? "Ley Especial" : modoBloqueoEsLey.value === 2 ? "Efectivo y Ley" : "Efectivo";
+  const descTipo = modoBloqueoEsLey.value === 1 ? "Ley Especial (vESLEY: 1)" : modoBloqueoEsLey.value === 2 ? "Efectivo y Ley (vESLEY: 0 y 1)" : "Efectivo (vESLEY: 0)";
 
   if (exitosos > 0) {
     alertTipo.value = fallidos > 0 ? "warning" : "success";
@@ -228,12 +262,15 @@ async function ejecutarBloqueoCtaBco() {
       <v-avatar color="warning" size="36" class="me-3 text-white">
         <v-icon icon="mdi-shield-lock" size="small"></v-icon>
       </v-avatar>
-      <div>
+      <div class="flex-grow-1">
         <div class="text-h6 font-weight-bold">Bloqueo de Liquidaciones para Acreditación Bancaria</div>
         <div class="text-caption text-medium-emphasis">
-          Seleccione liquidaciones de la vista previa para bloquear su acreditación bancaria <strong>antes de generar el archivo del banco</strong>. Procedimiento: <code>sp/acred_bloquearCtaBco</code>.
+          Seleccione liquidaciones para bloquear su acreditación bancaria <strong>antes de generar el archivo del banco</strong>. Procedimiento: <code>sp/acred_bloquearCtaBco</code>.
         </div>
       </div>
+      <v-chip :color="colorModoBloqueo" variant="flat" class="font-weight-bold text-caption ms-2">
+        Modo actual: {{ descripcionModoBloqueo }}
+      </v-chip>
     </v-card-title>
 
     <v-card-text class="pa-4">
@@ -249,12 +286,60 @@ async function ejecutarBloqueoCtaBco() {
         {{ alertMensaje }}
       </v-alert>
 
-      <!-- Panel de Búsqueda Rápida de Cargo y Acciones -->
+      <!-- Panel de Control: Selección de Modo (Efectivo/Ley), Búsqueda y Acciones -->
       <v-card class="mb-4 border" rounded="lg" variant="outlined">
         <v-card-text class="py-3 px-3 bg-grey-lighten-5">
           <v-row align="center" dense>
-            <!-- Buscador en Grilla de Liquidaciones -->
-            <v-col cols="12" sm="6" md="5">
+            <!-- Selector Destacado de Modo de Bloqueo (Efectivo vs Ley) -->
+            <v-col cols="12" md="6" class="d-flex align-center flex-wrap ga-2">
+              <span class="text-caption font-weight-bold text-medium-emphasis me-1">
+                Bloquear como:
+              </span>
+              <v-btn-toggle
+                :model-value="modoBloqueoEsLey"
+                mandatory
+                density="compact"
+                color="warning"
+                variant="outlined"
+                divided
+                @update:model-value="cambiarModoBloqueo"
+              >
+                <v-btn :value="0" size="small" prepend-icon="mdi-cash">
+                  Efectivo (0)
+                </v-btn>
+                <v-btn :value="1" size="small" prepend-icon="mdi-scale-balance">
+                  Ley (1)
+                </v-btn>
+                <v-btn :value="2" size="small" prepend-icon="mdi-checkbox-multiple-marked">
+                  Ambos (0 y 1)
+                </v-btn>
+              </v-btn-toggle>
+            </v-col>
+
+            <!-- Total de Liquidaciones Disponibles -->
+            <v-col cols="12" sm="6" md="3" class="d-flex align-center">
+              <v-chip color="primary" variant="tonal" class="font-weight-medium">
+                <v-icon start icon="mdi-calculator-variant" size="small" />
+                {{ itemsLiquidacion.length }} liquidaciones
+              </v-chip>
+            </v-col>
+
+            <!-- Botón Acción Masiva Bloquear -->
+            <v-col cols="12" sm="6" md="3" class="d-flex justify-end align-center ga-2">
+              <v-btn
+                :color="colorModoBloqueo"
+                variant="flat"
+                prepend-icon="mdi-lock-outline"
+                :disabled="seleccionados.length === 0 || isBloqueando"
+                :loading="isBloqueando"
+                @click="abrirConfirmacionMultiple"
+              >
+                Bloquear ({{ seleccionados.length }})
+              </v-btn>
+            </v-col>
+
+            <!-- Filtros de Búsqueda y Repartición -->
+            <v-col cols="12" sm="8" md="9" class="mt-2">
               <v-text-field
                 v-model="busquedaCargo"
                 prepend-inner-icon="mdi-magnify"
@@ -267,29 +352,23 @@ async function ejecutarBloqueoCtaBco() {
               />
             </v-col>
 
-            <!-- Total de Liquidaciones Disponibles -->
-            <v-col cols="12" sm="6" md="3" class="d-flex align-center">
-              <v-chip color="primary" variant="tonal" class="font-weight-medium">
-                <v-icon start icon="mdi-calculator-variant" size="small" />
-                {{ itemsLiquidacion.length }} liquidaciones calculadas
-              </v-chip>
-            </v-col>
-
-            <!-- Botón Acción Masiva Bloquear -->
-            <v-col cols="12" sm="12" md="4" class="d-flex justify-end align-center ga-2">
-              <span v-if="seleccionados.length > 0" class="text-caption font-weight-bold text-primary">
-                {{ seleccionados.length }} seleccionada(s)
-              </span>
-              <v-btn
-                color="warning"
-                variant="flat"
-                prepend-icon="mdi-lock-outline"
-                :disabled="seleccionados.length === 0 || isBloqueando"
-                :loading="isBloqueando"
-                @click="abrirConfirmacionMultiple"
+            <v-col v-if="listaReparticiones.length > 1" cols="12" sm="4" md="3" class="mt-2">
+              <v-select
+                v-model="filtroReparticion"
+                :items="['', ...listaReparticiones]"
+                label="Repartición"
+                variant="outlined"
+                density="compact"
+                hide-details
+                clearable
               >
-                Bloquear Selección ({{ seleccionados.length }})
-              </v-btn>
+                <template #item="{ item, props }">
+                  <v-list-item v-bind="props" :title="item.raw ? `Repartición ${item.raw}` : 'Todas'" />
+                </template>
+                <template #selection="{ item }">
+                  <span>{{ item.raw ? `Rep. ${item.raw}` : 'Todas' }}</span>
+                </template>
+              </v-select>
             </v-col>
           </v-row>
         </v-card-text>
@@ -321,13 +400,13 @@ async function ejecutarBloqueoCtaBco() {
         >
           <!-- Acciones individuales -->
           <template #[`item.acciones`]="{ item }">
-            <v-tooltip text="Bloquear cuenta bancaria de esta liquidación" location="top">
+            <v-tooltip :text="`Bloquear cuenta bancaria (${descripcionModoBloqueo})`" location="top">
               <template #activator="{ props: tooltipProps }">
                 <v-btn
                   v-bind="tooltipProps"
                   icon="mdi-lock"
                   size="x-small"
-                  color="warning"
+                  :color="colorModoBloqueo"
                   variant="text"
                   :loading="bloqueandoId === item.LIQUIDACIONID"
                   @click.stop="abrirConfirmacionIndividual(item)"
@@ -363,7 +442,7 @@ async function ejecutarBloqueoCtaBco() {
         <v-expansion-panel elevation="0" class="border rounded">
           <v-expansion-panel-title class="text-caption text-medium-emphasis py-2">
             <v-icon icon="mdi-account-search" size="small" class="me-2" />
-            ¿Desea buscar un cargo puntual por N° de Orden que no figura arriba?
+            ¿Desea buscar un cargo puntual por N° de Orden o DNI que no figura arriba?
           </v-expansion-panel-title>
           <v-expansion-panel-text class="pt-2">
             <v-row dense align="center">
@@ -406,7 +485,7 @@ async function ejecutarBloqueoCtaBco() {
                   </div>
                 </div>
                 <v-btn
-                  color="warning"
+                  :color="colorModoBloqueo"
                   size="small"
                   prepend-icon="mdi-lock"
                   @click="bloquearCargoDirecto"
@@ -442,7 +521,7 @@ async function ejecutarBloqueoCtaBco() {
           <!-- Selector de Modo de Bloqueo (Ley vs Efectivo) -->
           <div class="border rounded pa-3 mb-3 bg-grey-lighten-5">
             <div class="text-caption font-weight-bold text-medium-emphasis mb-2">
-              Seleccione la porción de liquidación a bloquear:
+              Especificar medio de acreditación a bloquear:
             </div>
             <v-radio-group v-model="modoBloqueoEsLey" density="compact" hide-details>
               <v-radio label="Liquidación General / Efectivo (vESLEY = 0)" :value="0" />
@@ -487,7 +566,7 @@ async function ejecutarBloqueoCtaBco() {
             Cancelar
           </v-btn>
           <v-btn
-            color="warning"
+            :color="colorModoBloqueo"
             variant="flat"
             :loading="isBloqueando"
             prepend-icon="mdi-lock"

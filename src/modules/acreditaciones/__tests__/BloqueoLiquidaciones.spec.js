@@ -105,6 +105,34 @@ describe("BloqueoLiquidaciones - Componente Principal de Bloqueo", () => {
     expect(wrapper.text()).toContain("Bloqueo de Liquidaciones para Acreditación Bancaria");
     expect(wrapper.text()).toContain("sp/acred_bloquearCtaBco");
     expect(wrapper.text()).toContain("Buscar cargo");
+    expect(wrapper.text()).toContain("Bloquear como:");
+  });
+
+  it("consulta view/liq usando store.filterString sin imponer ReparticionId en la URL", async () => {
+    mount(BloqueoLiquidaciones);
+    await flushPromises();
+
+    expect(mockUseFetch).toHaveBeenCalled();
+    const getUrlFn = mockUseFetch.mock.calls[0][0];
+    const generatedUrl = getUrlFn();
+    expect(generatedUrl).toBe(
+      "https://api.test/api/view/liq?Periodo=01/09/2026&TipoLiquidacionId=1&GrupoAdicionalId=0&sort={\"Orden\":\"asc\"}"
+    );
+    expect(generatedUrl).not.toContain("ReparticionId=");
+  });
+
+  it("permite cambiar el modo de bloqueo entre Efectivo (0), Ley (1) y Ambos (2)", async () => {
+    const wrapper = mount(BloqueoLiquidaciones);
+    await flushPromises();
+
+    expect(wrapper.vm.modoBloqueoEsLey).toBe(0);
+    wrapper.vm.cambiarModoBloqueo(1);
+    expect(wrapper.vm.modoBloqueoEsLey).toBe(1);
+    expect(wrapper.vm.descripcionModoBloqueo).toBe("Ley Especial (vESLEY = 1)");
+
+    wrapper.vm.cambiarModoBloqueo(2);
+    expect(wrapper.vm.modoBloqueoEsLey).toBe(2);
+    expect(wrapper.vm.descripcionModoBloqueo).toBe("Ambos (Efectivo y Ley)");
   });
 
   it("permite bloquear una liquidación individual vía sp/acred_bloquearCtaBco", async () => {
