@@ -33,7 +33,10 @@ const alertTipo = ref("success");
 function useResumenAcred(getId) {
   const headersFn = buildApiHeaders || getBoletasHeaders || (() => ({}));
   return useFetch(
-    () => `${apiBase.value}/api/view/detalleAcred?${getId()}&_r=${refreshTrigger.value}`,
+    () => {
+      void refreshTrigger.value;
+      return `${apiBase.value}/api/view/detalleAcred?${getId()}`;
+    },
     () => ({ headers: headersFn() })
   );
 }

@@ -36,6 +36,9 @@ function useLiquidaciones() {
   const headersFn = buildApiHeaders || getBoletasHeaders || (() => ({}));
   return useFetch(
     () => {
+      // Registrar dependencia reactiva para refrescar sin enviar campos extra a la API
+      void refreshTrigger.value;
+
       const m = String(Number(store.month) || (new Date().getMonth() + 1)).padStart(2, "0");
       const y = store.year || new Date().getFullYear();
       const per = `01/${m}/${y}`;
@@ -43,7 +46,7 @@ function useLiquidaciones() {
       if (store.serverIdRep) {
         q += `&ReparticionId=${store.serverIdRep}`;
       }
-      return `${apiBase.value}/api/view/liq?${q}&_r=${refreshTrigger.value}`;
+      return `${apiBase.value}/api/view/liq?${q}`;
     },
     () => ({ headers: headersFn() })
   );
