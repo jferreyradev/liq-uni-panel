@@ -129,9 +129,9 @@ const handleClick = () => {
 </script>
 
 <template>
-  <v-container>
-    <v-row class="pa-0 ma-0">
-      <v-col v-if="props.tipoliq" align-self="center">
+  <v-container fluid class="pa-0 ma-0">
+    <v-row align="center" dense class="pa-0 ma-0">
+      <v-col v-if="props.tipoliq" cols="12" sm="6" md="3">
         <v-select
           v-model="liqSelected"
           label="Liquidación"
@@ -139,40 +139,61 @@ const handleClick = () => {
           item-title="name"
           item-value="value"
           return-object
-        >
-        </v-select>
+          density="compact"
+          variant="outlined"
+          hide-details
+        />
       </v-col>
-      <v-col v-if="props.nroadi">
+      <v-col v-if="props.nroadi" cols="12" sm="6" md="2">
         <v-text-field
           v-model="nroAdi"
           label="Nro. Adicional"
-          required
-        ></v-text-field>
+          type="number"
+          density="compact"
+          variant="outlined"
+          hide-details
+        />
       </v-col>
-      <v-col>
-        <v-select v-model="month" label="Mes" :items="months"></v-select>
+      <v-col cols="12" sm="6" md="2">
+        <v-select
+          v-model="month"
+          label="Mes"
+          :items="months"
+          density="compact"
+          variant="outlined"
+          hide-details
+        />
       </v-col>
-      <v-col>
+      <v-col cols="12" sm="6" md="2">
         <v-text-field
           v-model="year"
           label="Año"
-          required
           type="number"
-        ></v-text-field>
+          density="compact"
+          variant="outlined"
+          hide-details
+        />
       </v-col>
-      <v-col v-if="props.esley" align-self="center">
+      <v-col v-if="props.esley" cols="auto" class="d-flex align-center">
         <v-checkbox
           v-model="esLey"
           label="Es Ley"
           density="compact"
           hide-details
-        ></v-checkbox>
+        />
       </v-col>
-      <v-col v-if="$slots.default" align-self="center">
+      <v-col v-if="$slots.default" cols="auto" class="d-flex align-center">
         <slot></slot>
       </v-col>
-      <v-col align-self="center">
-        <v-btn color="primary" @click="handleClick"> enviar </v-btn>
+      <v-col cols="auto" class="d-flex align-center ms-auto">
+        <v-btn
+          color="primary"
+          variant="flat"
+          prepend-icon="mdi-filter-check-outline"
+          @click="handleClick"
+        >
+          Aplicar
+        </v-btn>
       </v-col>
     </v-row>
   </v-container>

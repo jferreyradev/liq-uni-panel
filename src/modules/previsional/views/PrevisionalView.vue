@@ -12,24 +12,35 @@ const setVerParam = (nuevoVal) => {
 
 <template>
   <v-container>
-    <v-row justify="space-around" class="bg-primary">
-      <v-col cols="10"><h3>Previsional</h3></v-col>
-      <v-col cols="2">
+    <!-- Encabezado Principal -->
+    <v-card class="elevation-1 border mb-4" rounded="lg">
+      <v-card-title class="d-flex align-center justify-space-between flex-wrap py-3 px-4 bg-primary text-white">
+        <div class="d-flex align-center">
+          <v-icon icon="mdi-shield-account-outline" class="me-2"></v-icon>
+          <span class="text-h6 font-weight-bold">Régimen Previsional — DDJJ</span>
+        </div>
         <v-btn
           v-if="!verParam"
-          color="primary"
-          elevation="3"
-          class="mx-2"
+          color="white"
+          variant="elevated"
+          class="text-primary font-weight-bold"
+          prepend-icon="mdi-cog-outline"
           @click="setVerParam(true)"
-          >Ver Parámetros</v-btn
         >
+          Ver Parámetros
+        </v-btn>
+      </v-card-title>
+    </v-card>
+
+    <v-row v-if="!verParam">
+      <v-col cols="12" class="px-0">
+        <DDJJMarco />
       </v-col>
     </v-row>
-    <v-row v-if="!verParam">
-      <DDJJMarco></DDJJMarco>
-    </v-row>
     <v-row v-if="verParam">
-      <ParametrosDDJJ_List :cerrar="setVerParam"></ParametrosDDJJ_List>
+      <v-col cols="12" class="px-0">
+        <ParametrosDDJJ_List :cerrar="setVerParam" />
+      </v-col>
     </v-row>
   </v-container>
 </template>

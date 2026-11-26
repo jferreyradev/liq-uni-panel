@@ -60,49 +60,78 @@ watch(
 
 <template>
   <v-container>
-    <v-row justify="space-around" class="bg-primary">
-      <h3>Planillas y Reportes</h3>
-    </v-row>
-    <v-row>
-      <LiqInputPanel></LiqInputPanel>
-    </v-row>
-    <v-row align="center">
-      <v-col cols="12" md="8">
-        <v-select
-          v-model="repo"
-          label="Reportes"
-          :items="reportes"
-          item-title="title"
-          item-value="value"
-        ></v-select>
-      </v-col>
-      <v-col cols="12" md="4" class="d-flex align-center">
-        <v-switch
-          v-model="showAllReports"
-          color="primary"
-          density="compact"
-          hide-details
-          label="Mostrar todos los reportes"
-        ></v-switch>
-      </v-col>
-    </v-row>
-    <v-row v-if="repo">
-      <RepoResumenLiq v-if="repo == 1"></RepoResumenLiq>
-      <RepoCod153 v-if="repo == 2"></RepoCod153>
-      <RepoResumenCod v-if="repo == 4"></RepoResumenCod>
-      <RepoResumenLiqFDO v-if="repo == 5"></RepoResumenLiqFDO>
-      <RepoApoPatronales v-if="repo == 6"></RepoApoPatronales>
-      <RepoPlanillaDetLiq v-if="repo == 7"></RepoPlanillaDetLiq>
-      <RepoPlanillaRet v-if="repo == 8"></RepoPlanillaRet>
-      <RepoPlanillaLey v-if="repo == 9"></RepoPlanillaLey>
-      <RepoPlanillaResSueldo v-if="repo == 10"></RepoPlanillaResSueldo>
-      <RepoPlanillaRetencionesCPA
-        v-if="repo == 11"
-      ></RepoPlanillaRetencionesCPA>
-      <RepoPlanillaRetCargo v-if="repo == 12"></RepoPlanillaRetCargo>
-      <RepoBajasLey v-if="repo == 13"></RepoBajasLey>
-      <RepoPlanillaResSueldoComp v-if="repo == 14"></RepoPlanillaResSueldoComp>
-      <RepoPlanillaResumenCargos v-if="repo == 15"></RepoPlanillaResumenCargos>
-    </v-row>
+    <!-- Tarjeta Principal con Título, Filtros de Liquidación y Selector de Reporte -->
+    <v-card class="elevation-1 border mb-4" rounded="lg">
+      <v-card-title class="d-flex align-center py-3 px-4 bg-primary text-white">
+        <v-icon icon="mdi-file-chart-outline" class="me-2"></v-icon>
+        <span class="text-h6 font-weight-bold">Planillas y Reportes</span>
+      </v-card-title>
+
+      <!-- Panel de Filtros de Período y Liquidación -->
+      <v-card-text class="pt-3 pb-1">
+        <LiqInputPanel />
+      </v-card-text>
+
+      <!-- Barra de Selección de Reporte -->
+      <div class="px-4 py-3 bg-grey-lighten-4 border-t">
+        <v-row align="center" dense>
+          <v-col cols="12" sm="8" md="7">
+            <v-select
+              v-model="repo"
+              label="Seleccione el Reporte o Planilla"
+              placeholder="Elija una opción para consultar..."
+              :items="reportes"
+              item-title="title"
+              item-value="value"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              prepend-inner-icon="mdi-file-document-outline"
+            />
+          </v-col>
+          <v-col cols="12" sm="4" md="5" class="d-flex align-center justify-sm-end mt-2 mt-sm-0">
+            <v-switch
+              v-model="showAllReports"
+              color="primary"
+              density="compact"
+              hide-details
+              label="Mostrar todos los reportes"
+            />
+          </v-col>
+        </v-row>
+      </div>
+    </v-card>
+
+    <!-- Contenido del Reporte Seleccionado -->
+    <v-card v-if="repo" class="elevation-1 border" rounded="lg">
+      <v-card-text class="pa-4">
+        <RepoResumenLiq v-if="repo == 1" />
+        <RepoCod153 v-if="repo == 2" />
+        <RepoResumenCod v-if="repo == 4" />
+        <RepoResumenLiqFDO v-if="repo == 5" />
+        <RepoApoPatronales v-if="repo == 6" />
+        <RepoPlanillaDetLiq v-if="repo == 7" />
+        <RepoPlanillaRet v-if="repo == 8" />
+        <RepoPlanillaLey v-if="repo == 9" />
+        <RepoPlanillaResSueldo v-if="repo == 10" />
+        <RepoPlanillaRetencionesCPA v-if="repo == 11" />
+        <RepoPlanillaRetCargo v-if="repo == 12" />
+        <RepoBajasLey v-if="repo == 13" />
+        <RepoPlanillaResSueldoComp v-if="repo == 14" />
+        <RepoPlanillaResumenCargos v-if="repo == 15" />
+      </v-card-text>
+    </v-card>
+
+    <!-- Estado vacío cuando no hay reporte seleccionado -->
+    <v-card v-else class="elevation-0 border rounded-lg text-center py-10 bg-grey-lighten-5">
+      <v-icon icon="mdi-file-chart-outline" size="56" color="grey-lighten-1" class="mb-3" />
+      <div class="text-subtitle-1 font-weight-medium text-medium-emphasis">
+        No hay ningún reporte seleccionado
+      </div>
+      <div class="text-caption text-disabled mt-1">
+        Seleccione un reporte del menú desplegable superior para visualizar sus datos y exportarlos a Excel.
+      </div>
+    </v-card>
   </v-container>
 </template>

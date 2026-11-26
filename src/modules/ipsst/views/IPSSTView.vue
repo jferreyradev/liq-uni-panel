@@ -6,13 +6,17 @@ import ArchIPSST from '../components/ArchIPSST.vue'
 
 <template>
   <v-container>
-    <v-row justify="space-around" class="bg-primary">
-      <h3>Exportación de Archivos — Obra Social IPSST</h3>
-    </v-row>
+    <!-- Tarjeta Principal con Título y Filtros -->
+    <v-card class="elevation-1 border mb-4" rounded="lg">
+      <v-card-title class="d-flex align-center py-3 px-4 bg-primary text-white">
+        <v-icon icon="mdi-hospital-box-outline" class="me-2"></v-icon>
+        <span class="text-h6 font-weight-bold">Exportación de Archivos — Obra Social IPSST</span>
+      </v-card-title>
 
-    <v-row>
-      <LiqInputPanel :tipoliq="false" :nroadi="false" />
-    </v-row>
+      <v-card-text class="pt-3 pb-1">
+        <LiqInputPanel :tipoliq="false" :nroadi="false" />
+      </v-card-text>
+    </v-card>
 
     <!-- Planilla de Retenciones IPSST -->
     <v-row>

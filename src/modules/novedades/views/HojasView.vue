@@ -34,9 +34,14 @@ let filtros = {
 
 <template>
   <v-container>
-    <v-row justify="space-around" class="bg-primary">
-      <h3>{{ titulo }}</h3>
-    </v-row>
+    <!-- Encabezado Principal de Hojas de Novedades -->
+    <v-card class="elevation-1 border mb-4" rounded="lg">
+      <v-card-title class="d-flex align-center py-3 px-4 bg-primary text-white">
+        <v-icon icon="mdi-notebook-edit-outline" class="me-2"></v-icon>
+        <span class="text-h6 font-weight-bold">{{ titulo }}</span>
+      </v-card-title>
+    </v-card>
+
     <v-row>
       <HojasList
         v-if="tipoHoja == -1"
