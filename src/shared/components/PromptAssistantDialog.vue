@@ -3,7 +3,6 @@ import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useFilterStore } from '@/stores/filterStore'
 import { useLogStore } from '@/stores/logStore'
-import { useTenantStore } from '@/stores/tenantStore'
 import { useEndPoints } from '@/composables/useEndPoints'
 
 const props = defineProps({
@@ -18,7 +17,6 @@ const emit = defineEmits(['update:modelValue'])
 const route = useRoute()
 const filterStore = useFilterStore()
 const logStore = useLogStore()
-const tenantStore = useTenantStore()
 const { apiBase, activeEnvId } = useEndPoints()
 
 const isOpen = computed({
@@ -26,20 +24,14 @@ const isOpen = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-// Tipos de requerimiento
+// Pestañas basadas exactamente en docs/PLANTILLAS_DESARROLLO.md
 const tipos = [
-  { text: '✨ Cambio / Función', value: 'cambio', icon: 'mdi-auto-fix' },
-  { text: '🐛 Reporte de Error', value: 'error', icon: 'mdi-bug-outline' },
-  { text: '📦 Nuevo Módulo', value: 'modulo', icon: 'mdi-package-variant-closed' }
+  { text: '1. Cambio / Función', value: 'cambio', icon: 'mdi-auto-fix' },
+  { text: '2. Reporte de Error', value: 'error', icon: 'mdi-bug-outline' },
+  { text: '3. Nuevo Módulo', value: 'modulo', icon: 'mdi-package-variant-closed' }
 ]
 
 const tipoSeleccionado = ref('cambio')
-const descripcion = ref('')
-const comportamientoEsperado = ref('')
-const incluirContextoTecnico = ref(true)
-const incluirUltimoError = ref(false)
-const accionFinal = ref('deploy') // 'deploy' | 'local' | 'plan'
-
 const copiado = ref(false)
 
 // Mapeo automático de ruta a nombre de módulo
@@ -59,17 +51,61 @@ const moduloDetectado = computed(() => {
   return route.name ? String(route.name) : 'General'
 })
 
-const ultimoError = computed(() => logStore.lastError)
+// --- Campos Plantilla 1: Solicitud de Cambio / Nueva Función ---
+const p1Modulo = ref('')
+const p1Objetivo = ref('')
+const p1UbicacionUI = ref('')
+const p1SP = ref('')
+const p1Endpoint = ref('')
+const p1Parametros = ref('')
+const p1Comportamiento = ref('')
+const p1Accion = ref('build y deploy a main y api-rpi')
 
-// Auto-seleccionar modo error si el diálogo se abre y hay un error HTTP reciente
+// --- Campos Plantilla 2: Reporte de Error (Bug) ---
+const p2DondeOcurre = ref('')
+const p2QueHacias = ref('')
+const p2MensajeError = ref('')
+const p2DatosPrueba = ref('')
+const p2QueDeberiaPasar = ref('')
+const p2Accion = ref('corregir, probar y desplegar')
+
+// --- Campos Plantilla 3: Nuevo Módulo desde Cero ---
+const p3NombreModulo = ref('')
+const p3UbicacionMenu = ref('')
+const p3Ruta = ref('')
+const p3Vistas = ref('')
+const p3Endpoints = ref('')
+const p3Permisos = ref('General / Administradores')
+const p3Accion = ref('crear módulo con rutas, vistas, tests unitarios y registrar en router')
+
+// Auto-completar contexto al abrir o navegar
+function actualizarContextoAuto() {
+  const ruta = route.path || '/'
+  const repNombre = filterStore.serverDescripcion || `Repartición #${filterStore.serverIdRep || 'General'}`
+  const repId = filterStore.serverIdRep || 'N/A'
+  const periodo = filterStore.periodoDMY || filterStore.periodoString || 'N/A'
+
+  p1Modulo.value = `${moduloDetectado.value} (${ruta})`
+  p1Parametros.value = `Periodo: ${periodo}, ReparticionId: ${repId}`
+
+  p2DondeOcurre.value = `${ruta} (${moduloDetectado.value})`
+  p2DatosPrueba.value = `Período: ${periodo}, Repartición: ${repNombre} (ID: ${repId})`
+
+  if (logStore.hasErrors && logStore.lastError) {
+    const err = logStore.lastError
+    const errTexto = typeof err.error === 'object'
+      ? JSON.stringify(err.error)
+      : String(err.error || err.responseBody || err.statusText || 'Error')
+    p2MensajeError.value = `[HTTP ${err.status || 500}] ${err.method || 'GET'} ${err.url || ''} -> ${errTexto}`
+    tipoSeleccionado.value = 'error'
+  }
+}
+
 watch(
   () => props.modelValue,
   (abierto) => {
     if (abierto) {
-      if (logStore.hasErrors && ultimoError.value) {
-        tipoSeleccionado.value = 'error'
-        incluirUltimoError.value = true
-      }
+      actualizarContextoAuto()
     } else {
       copiado.value = false
     }
@@ -77,71 +113,55 @@ watch(
   { immediate: true }
 )
 
-const textoAccionFinal = computed(() => {
-  if (accionFinal.value === 'deploy') return 'Probar con tests unitarios, compilar y desplegar a main y api-rpi.'
-  if (accionFinal.value === 'local') return 'Ejecutar pruebas unitarias y verificar en entorno local (sin desplegar todavía).'
-  return 'Analizar la arquitectura, formular preguntas de diseño y proponer un plan antes de modificar código (/plan).'
-})
-
-// Generación del Prompt Markdown de Alta Eficiencia
+// Generación exacta del Markdown de acuerdo con docs/PLANTILLAS_DESARROLLO.md
 const promptGenerado = computed(() => {
-  const lineas = []
+  if (tipoSeleccionado.value === 'cambio') {
+    return [
+      '### SOLICITUD DE CAMBIO / NUEVA FUNCIÓN',
+      '',
+      `* **Módulo o Pantalla:** ${p1Modulo.value || moduloDetectado.value}`,
+      `* **Objetivo:** ${p1Objetivo.value.trim() || '(Describir objetivo o qué problema resuelve)'}`,
+      `* **Dónde se ubica en la UI:** ${p1UbicacionUI.value.trim() || '(ej. botón en la barra / columna en tabla / nueva pestaña)'}`,
+      '* **Datos / Backend involucrado:**',
+      `  - Procedimiento (SP): ${p1SP.value.trim() || 'no aplica'}`,
+      `  - Vista o Endpoint: ${p1Endpoint.value.trim() || 'no aplica'}`,
+      `  - Parámetros clave: ${p1Parametros.value.trim() || 'Periodo, ReparticionId'}`,
+      '* **Comportamiento esperado:**',
+      p1Comportamiento.value.trim()
+        ? `  ${p1Comportamiento.value.trim().replace(/\n/g, '\n  ')}`
+        : '  1. El usuario hace clic en...\n  2. Se valida que...\n  3. Al confirmar, debe...',
+      `* **Acción final:** ${p1Accion.value}`
+    ].join('\n')
+  }
 
   if (tipoSeleccionado.value === 'error') {
-    lineas.push('### 🐛 REPORTE DE ERROR / CORRECCIÓN TÉCNICA')
-  } else if (tipoSeleccionado.value === 'modulo') {
-    lineas.push('### 📦 REQUERIMIENTO DE NUEVO MÓDULO')
-  } else {
-    lineas.push('### 📋 SOLICITUD DE CAMBIO / NUEVA FUNCIÓN')
-  }
-  lineas.push('')
-
-  lineas.push(`* **Módulo:** ${moduloDetectado.value}`)
-  lineas.push(`* **Ruta UI:** \`${route.path || '/'}\``)
-
-  if (incluirContextoTecnico.value) {
-    const rep = filterStore.serverDescripcion
-      ? `${filterStore.serverDescripcion} (ID: ${filterStore.serverIdRep || 'N/A'})`
-      : `Repartición #${filterStore.serverIdRep || 'General'}`
-    const per = filterStore.periodoDMY || filterStore.periodoString || 'No especificado'
-    const env = apiBase.value || activeEnvId.value || 'api-desa'
-
-    lineas.push('* **Contexto Operativo Activo:**')
-    lineas.push(`  - Repartición activa: ${rep}`)
-    lineas.push(`  - Período activo: ${per}`)
-    lineas.push(`  - Backend / Ambiente: \`${env}\``)
+    return [
+      '### REPORTE DE ERROR',
+      '',
+      `* **Dónde ocurre:** ${p2DondeOcurre.value || route.path || '/'}`,
+      `* **Qué estabas haciendo:** ${p2QueHacias.value.trim() || '(ej. al hacer clic en Ejecutar después de cambiar los filtros)'}`,
+      `* **Mensaje o Error exacto:** ${p2MensajeError.value.trim() || '(ej. error 404 en consola / ORA-06550... / se queda cargando)'}`,
+      `* **Datos de prueba:** ${p2DatosPrueba.value.trim() || 'Período, Repartición, DNI'}`,
+      `* **Qué debería haber pasado:** ${p2QueDeberiaPasar.value.trim() || '(ej. mostrar alerta verde de éxito y refrescar la tabla)'}`,
+      `* **Acción final:** ${p2Accion.value}`
+    ].join('\n')
   }
 
-  if (incluirUltimoError.value && ultimoError.value) {
-    lineas.push('* **Último Error Registrado en Consola HTTP:**')
-    lineas.push(`  - Método y URL: \`${ultimoError.value.method || 'GET'} ${ultimoError.value.url || ''}\``)
-    lineas.push(`  - Código HTTP: \`${ultimoError.value.status || 'Error'} ${ultimoError.value.statusText || ''}\``)
-    if (ultimoError.value.error || ultimoError.value.responseBody) {
-      const errTexto = typeof ultimoError.value.error === 'object'
-        ? JSON.stringify(ultimoError.value.error)
-        : String(ultimoError.value.error || ultimoError.value.responseBody)
-      lineas.push(`  - Detalle Error: \`${errTexto.substring(0, 300)}\``)
-    }
-  }
-
-  lineas.push('')
-  lineas.push('* **Descripción de lo solicitado:**')
-  if (descripcion.value.trim()) {
-    lineas.push(`  ${descripcion.value.trim().replace(/\n/g, '\n  ')}`)
-  } else {
-    lineas.push('  [Describir aquí el cambio o requerimiento puntual]')
-  }
-
-  if (comportamientoEsperado.value.trim()) {
-    lineas.push('')
-    lineas.push('* **Comportamiento esperado:**')
-    lineas.push(`  ${comportamientoEsperado.value.trim().replace(/\n/g, '\n  ')}`)
-  }
-
-  lineas.push('')
-  lineas.push(`* **Acción requerida:** ${textoAccionFinal.value}`)
-
-  return lineas.join('\n')
+  // Nuevo Módulo
+  return [
+    '### NUEVO MÓDULO',
+    '',
+    `* **Nombre del Módulo:** ${p3NombreModulo.value.trim() || '(ej. embargos / licencias)'}`,
+    `* **Ubicación en el Menú:** ${p3UbicacionMenu.value.trim() || '(ej. debajo de Liquidaciones en la barra lateral)'}`,
+    `* **Ruta deseada:** ${p3Ruta.value.trim() || (p3NombreModulo.value ? `/${p3NombreModulo.value.toLowerCase().trim()}` : '/nuevo-modulo')}`,
+    '* **Vistas principales:**',
+    p3Vistas.value.trim()
+      ? `  ${p3Vistas.value.trim().replace(/\n/g, '\n  ')}`
+      : '  - Listado: tabla con búsqueda y filtros\n  - Formulario/Edición: diálogo modal para alta/modificación/baja',
+    `* **Endpoints / SPs previstos:** ${p3Endpoints.value.trim() || 'view/... y sp/...' }`,
+    `* **Permisos/Roles:** ${p3Permisos.value.trim() || 'General / Administradores'}`,
+    `* **Acción final:** ${p3Accion.value}`
+  ].join('\n')
 })
 
 async function copiarPrompt() {
@@ -149,7 +169,6 @@ async function copiarPrompt() {
     if (navigator?.clipboard?.writeText) {
       await navigator.clipboard.writeText(promptGenerado.value)
     } else {
-      // Fallback
       const input = document.createElement('textarea')
       input.value = promptGenerado.value
       document.body.appendChild(input)
@@ -168,116 +187,276 @@ async function copiarPrompt() {
 </script>
 
 <template>
-  <v-dialog v-model="isOpen" max-width="850px" scrollable>
+  <v-dialog v-model="isOpen" max-width="920px" scrollable>
     <v-card class="elevation-3" rounded="lg">
       <v-card-title class="d-flex align-center py-3 px-4 bg-primary text-white">
-        <v-icon icon="mdi-robot-outline" class="me-2"></v-icon>
-        <span class="text-h6 font-weight-bold">Asistente de Prompts para Antigravity</span>
+        <v-icon icon="mdi-file-document-edit-outline" class="me-2"></v-icon>
+        <span class="text-h6 font-weight-bold">Generador de Prompts (Basado en Plantillas)</span>
         <v-spacer></v-spacer>
         <v-btn icon="mdi-close" variant="text" density="compact" color="white" @click="isOpen = false"></v-btn>
       </v-card-title>
 
       <v-card-text class="pa-4 bg-grey-lighten-5">
+        <!-- Selector de Plantilla Estándar -->
+        <div class="d-flex align-center justify-space-between mb-2">
+          <span class="text-caption font-weight-bold text-medium-emphasis">SELECCIONAR PLANTILLA ESTÁNDAR:</span>
+          <span class="text-caption text-primary">Fuente: <code>docs/PLANTILLAS_DESARROLLO.md</code></span>
+        </div>
+
+        <v-btn-toggle
+          v-model="tipoSeleccionado"
+          color="primary"
+          mandatory
+          density="comfortable"
+          class="w-100 mb-3"
+        >
+          <v-btn
+            v-for="t in tipos"
+            :key="t.value"
+            :value="t.value"
+            class="flex-grow-1 text-body-2 text-none font-weight-medium"
+            :prepend-icon="t.icon"
+          >
+            {{ t.text }}
+          </v-btn>
+        </v-btn-toggle>
+
         <v-row dense>
-          <!-- Columna Izquierda: Formulario -->
+          <!-- Columna Izquierda: Formulario según la Plantilla Activa -->
           <v-col cols="12" md="6">
-            <div class="text-caption font-weight-bold text-medium-emphasis mb-1">
-              1. TIPO DE REQUERIMIENTO
-            </div>
-            <v-btn-toggle
-              v-model="tipoSeleccionado"
-              color="primary"
-              mandatory
-              density="compact"
-              class="w-100 mb-3"
-            >
-              <v-btn
-                v-for="t in tipos"
-                :key="t.value"
-                :value="t.value"
-                class="flex-grow-1 text-caption text-none"
-                :prepend-icon="t.icon"
-              >
-                {{ t.text }}
-              </v-btn>
-            </v-btn-toggle>
+            <!-- PLANTILLA 1: CAMBIO / NUEVA FUNCIÓN -->
+            <div v-if="tipoSeleccionado === 'cambio'">
+              <v-text-field
+                v-model="p1Modulo"
+                label="Módulo o Pantalla"
+                density="compact"
+                variant="outlined"
+                class="mb-1"
+              ></v-text-field>
 
-            <!-- Contexto Auto-detectado -->
-            <v-card variant="outlined" class="pa-2 mb-3 bg-white">
-              <div class="d-flex justify-space-between align-center mb-1">
-                <span class="text-caption font-weight-bold text-primary">Contexto Auto-detectado:</span>
-                <v-chip size="x-small" color="primary" variant="tonal">
-                  {{ moduloDetectado }}
-                </v-chip>
-              </div>
-              <div class="text-caption text-medium-emphasis">
-                Ruta: <code>{{ route.path || '/' }}</code> |
-                Período: <strong>{{ filterStore.periodoDMY || 'N/A' }}</strong> |
-                Rep: <strong>{{ filterStore.serverIdRep || 'General' }}</strong>
-              </div>
-              <div v-if="ultimoError" class="mt-2 pt-1 border-t d-flex align-center justify-space-between">
-                <span class="text-caption text-error font-weight-bold">
-                  ⚠️ Error HTTP detectado ({{ ultimoError.status }})
-                </span>
-                <v-checkbox-btn
-                  v-model="incluirUltimoError"
-                  label="Adjuntar error"
-                  density="compact"
-                  color="error"
-                  class="ma-0 pa-0"
-                ></v-checkbox-btn>
-              </div>
-            </v-card>
+              <v-textarea
+                v-model="p1Objetivo"
+                label="Objetivo (¿Qué debe hacer o resolver?)"
+                placeholder="Ej: Agregar botón de exportación Excel a la grilla de novedades..."
+                density="compact"
+                variant="outlined"
+                rows="2"
+                auto-grow
+                class="mb-1"
+              ></v-textarea>
 
-            <div class="text-caption font-weight-bold text-medium-emphasis mb-1">
-              2. DESCRIPCIÓN DEL CAMBIO / ERROR
-            </div>
-            <v-textarea
-              v-model="descripcion"
-              rows="4"
-              variant="outlined"
-              density="compact"
-              placeholder="¿Qué necesitas que haga el asistente? Ej: 'En la pestaña Transformación, al ejecutar el SP salta un 404...'"
-              auto-grow
-              class="mb-2"
-            ></v-textarea>
+              <v-text-field
+                v-model="p1UbicacionUI"
+                label="Dónde se ubica en la UI"
+                placeholder="Ej: Botón en barra superior / nueva columna / diálogo modal"
+                density="compact"
+                variant="outlined"
+                class="mb-1"
+              ></v-text-field>
 
-            <div class="text-caption font-weight-bold text-medium-emphasis mb-1">
-              3. COMPORTAMIENTO ESPERADO (OPCIONAL)
-            </div>
-            <v-text-field
-              v-model="comportamientoEsperado"
-              variant="outlined"
-              density="compact"
-              placeholder="Ej: Debe mostrar alerta verde de éxito y permitir descargar Excel"
-              class="mb-2"
-            ></v-text-field>
+              <v-row dense>
+                <v-col cols="6">
+                  <v-text-field
+                    v-model="p1SP"
+                    label="Procedimiento (SP)"
+                    placeholder="Ej: sp/transform o no aplica"
+                    density="compact"
+                    variant="outlined"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field
+                    v-model="p1Endpoint"
+                    label="Vista o Endpoint"
+                    placeholder="Ej: view/novhaberes"
+                    density="compact"
+                    variant="outlined"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
 
-            <div class="text-caption font-weight-bold text-medium-emphasis mb-1">
-              4. ACCIÓN REQUERIDA
+              <v-text-field
+                v-model="p1Parametros"
+                label="Parámetros clave"
+                density="compact"
+                variant="outlined"
+                class="mb-1"
+              ></v-text-field>
+
+              <v-textarea
+                v-model="p1Comportamiento"
+                label="Comportamiento esperado (Pasos)"
+                placeholder="1. El usuario hace clic en...&#10;2. Se valida que...&#10;3. Al confirmar, debe..."
+                density="compact"
+                variant="outlined"
+                rows="3"
+                auto-grow
+                class="mb-1"
+              ></v-textarea>
+
+              <v-select
+                v-model="p1Accion"
+                label="Acción final requerida"
+                :items="[
+                  'build y deploy a main y api-rpi',
+                  'solo probar en local con tests unitarios',
+                  'analizar y presentar plan de diseño (/plan)'
+                ]"
+                density="compact"
+                variant="outlined"
+              ></v-select>
             </div>
-            <v-radio-group v-model="accionFinal" density="compact" inline class="mt-0">
-              <v-radio label="Desplegar a producción" value="deploy" color="primary"></v-radio>
-              <v-radio label="Solo local" value="local" color="primary"></v-radio>
-              <v-radio label="Plan (/plan)" value="plan" color="primary"></v-radio>
-            </v-radio-group>
+
+            <!-- PLANTILLA 2: REPORTE DE ERROR -->
+            <div v-else-if="tipoSeleccionado === 'error'">
+              <v-text-field
+                v-model="p2DondeOcurre"
+                label="Dónde ocurre (URL o pantalla)"
+                density="compact"
+                variant="outlined"
+                class="mb-1"
+              ></v-text-field>
+
+              <v-textarea
+                v-model="p2QueHacias"
+                label="Qué estabas haciendo"
+                placeholder="Ej: Al hacer clic en 'Ejecutar Transformación' luego de cambiar el período..."
+                density="compact"
+                variant="outlined"
+                rows="2"
+                auto-grow
+                class="mb-1"
+              ></v-textarea>
+
+              <v-textarea
+                v-model="p2MensajeError"
+                label="Mensaje o Error exacto (Consola / Red / Oracle)"
+                placeholder="Ej: ORA-06550 / Failed to load resource: 404 / Error 500..."
+                density="compact"
+                variant="outlined"
+                rows="3"
+                auto-grow
+                class="mb-1 text-error font-monospace"
+              ></v-textarea>
+
+              <v-text-field
+                v-model="p2DatosPrueba"
+                label="Datos de prueba (DNI, Período, Repartición)"
+                density="compact"
+                variant="outlined"
+                class="mb-1"
+              ></v-text-field>
+
+              <v-text-field
+                v-model="p2QueDeberiaPasar"
+                label="Qué debería haber pasado"
+                placeholder="Ej: Mostrar alerta verde de éxito y refrescar la tabla"
+                density="compact"
+                variant="outlined"
+                class="mb-1"
+              ></v-text-field>
+
+              <v-select
+                v-model="p2Accion"
+                label="Acción final requerida"
+                :items="[
+                  'corregir, probar y desplegar',
+                  'solo corregir y probar en local',
+                  'investigar causa raíz e informar (/plan)'
+                ]"
+                density="compact"
+                variant="outlined"
+              ></v-select>
+            </div>
+
+            <!-- PLANTILLA 3: NUEVO MÓDULO -->
+            <div v-else>
+              <v-text-field
+                v-model="p3NombreModulo"
+                label="Nombre del Módulo"
+                placeholder="Ej: embargos, licencias, ganancias"
+                density="compact"
+                variant="outlined"
+                class="mb-1"
+              ></v-text-field>
+
+              <v-row dense>
+                <v-col cols="6">
+                  <v-text-field
+                    v-model="p3UbicacionMenu"
+                    label="Ubicación en el Menú"
+                    placeholder="Ej: debajo de Liquidaciones"
+                    density="compact"
+                    variant="outlined"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field
+                    v-model="p3Ruta"
+                    label="Ruta deseada"
+                    placeholder="Ej: /embargos"
+                    density="compact"
+                    variant="outlined"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+
+              <v-textarea
+                v-model="p3Vistas"
+                label="Vistas principales"
+                placeholder="- Listado: tabla con búsqueda por DNI y filtros&#10;- Formulario: diálogo modal para alta/edición"
+                density="compact"
+                variant="outlined"
+                rows="3"
+                auto-grow
+                class="mb-1"
+              ></v-textarea>
+
+              <v-text-field
+                v-model="p3Endpoints"
+                label="Endpoints / SPs previstos"
+                placeholder="Lectura: view/embargos | Grabación: sp/embargos_spi"
+                density="compact"
+                variant="outlined"
+                class="mb-1"
+              ></v-text-field>
+
+              <v-text-field
+                v-model="p3Permisos"
+                label="Permisos / Roles"
+                density="compact"
+                variant="outlined"
+                class="mb-1"
+              ></v-text-field>
+
+              <v-select
+                v-model="p3Accion"
+                label="Acción final requerida"
+                :items="[
+                  'crear módulo con rutas, vistas, tests unitarios y registrar en router',
+                  'diseñar arquitectura y presentar plan (/plan)'
+                ]"
+                density="compact"
+                variant="outlined"
+              ></v-select>
+            </div>
           </v-col>
 
-          <!-- Columna Derecha: Vista Previa y Botón Copiar -->
+          <!-- Columna Derecha: Previsualización Markdown en vivo -->
           <v-col cols="12" md="6" class="d-flex flex-column">
             <div class="d-flex justify-space-between align-center mb-1">
-              <div class="text-caption font-weight-bold text-medium-emphasis">
-                PREVISUALIZACIÓN DEL PROMPT
-              </div>
+              <span class="text-caption font-weight-bold text-medium-emphasis">
+                PREVISUALIZACIÓN DE LA PLANTILLA EN MARKDOWN
+              </span>
               <v-chip size="x-small" color="success" variant="flat" v-if="copiado">
                 <v-icon icon="mdi-check" start size="x-small"></v-icon>
-                ¡Copiado!
+                ¡Plantilla Copiada!
               </v-chip>
             </div>
 
             <v-sheet
               class="pa-3 flex-grow-1 border rounded bg-white text-caption font-monospace overflow-y-auto"
-              style="max-height: 420px; white-space: pre-wrap; font-family: monospace;"
+              style="max-height: 480px; min-height: 380px; white-space: pre-wrap; font-family: monospace;"
             >
               {{ promptGenerado }}
             </v-sheet>
@@ -289,7 +468,7 @@ async function copiarPrompt() {
               prepend-icon="mdi-content-copy"
               @click="copiarPrompt"
             >
-              {{ copiado ? '¡Prompt Copiado al Portapapeles!' : 'Copiar Prompt para Antigravity' }}
+              {{ copiado ? '¡Plantilla Copiada al Portapapeles!' : 'Copiar Plantilla para Antigravity' }}
             </v-btn>
           </v-col>
         </v-row>

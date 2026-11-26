@@ -32,18 +32,20 @@ const globalConfig = (pinia) => ({
     'v-btn-toggle': { template: '<div><slot /></div>' },
     'v-sheet': { template: '<div><slot /></div>' },
     'v-textarea': {
-      props: ['modelValue'],
+      props: ['modelValue', 'label'],
       emits: ['update:modelValue'],
-      template: '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)"></textarea>'
+      template: '<textarea :value="modelValue" :placeholder="label" @input="$emit(\'update:modelValue\', $event.target.value)"></textarea>'
     },
     'v-text-field': {
+      props: ['modelValue', 'label'],
+      emits: ['update:modelValue'],
+      template: '<input :value="modelValue" :placeholder="label" @input="$emit(\'update:modelValue\', $event.target.value)" />'
+    },
+    'v-select': {
       props: ['modelValue'],
       emits: ['update:modelValue'],
-      template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />'
-    },
-    'v-radio-group': { template: '<div><slot /></div>' },
-    'v-radio': { template: '<div><slot /></div>' },
-    'v-checkbox-btn': { template: '<div><slot /></div>' }
+      template: '<select :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><option value="build y deploy a main y api-rpi">deploy</option></select>'
+    }
   }
 })
 
@@ -59,7 +61,7 @@ describe('PromptAssistantDialog', () => {
     logStore = useLogStore()
   })
 
-  it('renderiza correctamente el diálogo y detecta el contexto del módulo y período', async () => {
+  it('renderiza correctamente el diálogo y basa el formato en las plantillas estándar', async () => {
     filterStore.serverConfig = { IDREP: 400, DESCRIPCION: 'Municipalidad de Concepción' }
 
     const wrapper = mount(PromptAssistantDialog, {
@@ -70,33 +72,16 @@ describe('PromptAssistantDialog', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Asistente de Prompts para Antigravity')
-    expect(wrapper.text()).toContain('Operaciones (Transformación, Liquidación, Boletas)')
-    expect(wrapper.text()).toContain('Municipalidad de Concepción')
+    expect(wrapper.text()).toContain('Generador de Prompts (Basado en Plantillas)')
+    expect(wrapper.text()).toContain('docs/PLANTILLAS_DESARROLLO.md')
+    expect(wrapper.text()).toContain('### SOLICITUD DE CAMBIO / NUEVA FUNCIÓN')
+    expect(wrapper.text()).toContain('Módulo o Pantalla:')
+    expect(wrapper.text()).toContain('Dónde se ubica en la UI:')
+    expect(wrapper.text()).toContain('Procedimiento (SP):')
+    expect(wrapper.text()).toContain('Vista o Endpoint:')
   })
 
-  it('genera el prompt en formato markdown con los datos ingresados', async () => {
-    filterStore.serverConfig = { IDREP: 400, DESCRIPCION: 'Concepción' }
-
-    const wrapper = mount(PromptAssistantDialog, {
-      props: {
-        modelValue: true
-      },
-      global: globalConfig(pinia)
-    })
-    await flushPromises()
-
-    // Cambiar descripción
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Revisar proceso de transformación para evitar ORA-06550')
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('### 📋 SOLICITUD DE CAMBIO / NUEVA FUNCIÓN')
-    expect(wrapper.text()).toContain('Revisar proceso de transformación para evitar ORA-06550')
-    expect(wrapper.text()).toContain('Probar con tests unitarios, compilar y desplegar a main y api-rpi')
-  })
-
-  it('adjunta el último error HTTP si se detecta uno en el logStore', async () => {
+  it('genera la Plantilla 2 (REPORTE DE ERROR) cuando se detecta un fallo en el logStore', async () => {
     logStore.addLog({
       type: 'error',
       method: 'POST',
@@ -114,7 +99,11 @@ describe('PromptAssistantDialog', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Error HTTP detectado (500)')
-    expect(wrapper.text()).toContain('POST https://api-desa.liqsysonline.com/api/sp/transform')
+    expect(wrapper.text()).toContain('### REPORTE DE ERROR')
+    expect(wrapper.text()).toContain('Dónde ocurre:')
+    expect(wrapper.text()).toContain('Qué estabas haciendo:')
+    expect(wrapper.text()).toContain('Mensaje o Error exacto:')
+    expect(wrapper.text()).toContain('PLS-00201: identifier PKG_TRANSFORM must be declared')
+    expect(wrapper.text()).toContain('Acción final:')
   })
 })
