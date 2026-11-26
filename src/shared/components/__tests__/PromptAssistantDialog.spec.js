@@ -79,6 +79,8 @@ describe('PromptAssistantDialog', () => {
     expect(wrapper.text()).toContain('Dónde se ubica en la UI:')
     expect(wrapper.text()).toContain('Procedimiento (SP):')
     expect(wrapper.text()).toContain('Vista o Endpoint:')
+    expect(wrapper.text()).toContain('Descargar Plantilla (.md)')
+    expect(wrapper.text()).toContain('Copiar Plantilla')
   })
 
   it('genera la Plantilla 2 (REPORTE DE ERROR) cuando se detecta un fallo en el logStore', async () => {

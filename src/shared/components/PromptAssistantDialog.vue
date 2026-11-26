@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useFilterStore } from '@/stores/filterStore'
 import { useLogStore } from '@/stores/logStore'
 import { useEndPoints } from '@/composables/useEndPoints'
+import { descargarDesdeBlob } from '@/utils/descargas'
 
 const props = defineProps({
   modelValue: {
@@ -183,6 +184,20 @@ async function copiarPrompt() {
   } catch (e) {
     console.error('Error al copiar al portapapeles:', e)
   }
+}
+
+function descargarPlantilla() {
+  const blob = new Blob([promptGenerado.value], { type: 'text/markdown;charset=utf-8' })
+  const fecha = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  const tipo = tipoSeleccionado.value.toUpperCase()
+  const slug = (moduloDetectado.value || 'requerimiento')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '_')
+    .slice(0, 20)
+  const nombre = `PLANTILLA_${tipo}_${fecha}_${slug}.md`
+  descargarDesdeBlob(blob, nombre)
 }
 </script>
 
@@ -461,15 +476,28 @@ async function copiarPrompt() {
               {{ promptGenerado }}
             </v-sheet>
 
-            <v-btn
-              color="primary"
-              size="large"
-              class="mt-3 text-none font-weight-bold shadow-1"
-              prepend-icon="mdi-content-copy"
-              @click="copiarPrompt"
-            >
-              {{ copiado ? '¡Plantilla Copiada al Portapapeles!' : 'Copiar Plantilla para Antigravity' }}
-            </v-btn>
+            <div class="d-flex ga-2 mt-3">
+              <v-btn
+                variant="outlined"
+                color="primary"
+                size="large"
+                class="flex-grow-1 text-none font-weight-bold"
+                prepend-icon="mdi-download"
+                @click="descargarPlantilla"
+              >
+                Descargar Plantilla (.md)
+              </v-btn>
+
+              <v-btn
+                color="primary"
+                size="large"
+                class="flex-grow-1 text-none font-weight-bold shadow-1"
+                prepend-icon="mdi-content-copy"
+                @click="copiarPrompt"
+              >
+                {{ copiado ? '¡Copiado!' : 'Copiar Plantilla' }}
+              </v-btn>
+            </div>
           </v-col>
         </v-row>
       </v-card-text>
