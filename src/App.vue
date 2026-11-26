@@ -7,13 +7,15 @@ import { useItemsMenu } from '@/composables/useItemsMenu'
 import { useFilterStore } from '@/stores/filterStore'
 import { useTenantStore } from '@/stores/tenantStore'
 import { useLogStore } from '@/stores/logStore'
-import { TenantSelector, ApiEnvSelector, DiagnosticDialog } from '@/shared/components'
+import { TenantSelector, ApiEnvSelector, DiagnosticDialog, PromptAssistantDialog } from '@/shared/components'
 
 const storeFilter = useFilterStore()
 const tenantStore = useTenantStore()
 const store = useUserStore()
 const logStore = useLogStore()
 const { itemsMenu, setItemsMenu } = useItemsMenu()
+
+const mostrarPromptAssistant = ref(false)
 
 // El logo del municipio es un recurso remoto: si no carga, se cae al ícono.
 const logoFallo = ref(false)
@@ -375,6 +377,18 @@ function handleLogout(expired = false) {
           <v-tooltip activator="parent" location="bottom">Diagnóstico y Logs</v-tooltip>
         </v-btn>
 
+        <!-- Botón Asistente de Prompts Antigravity -->
+        <v-btn
+          icon="mdi-robot-outline"
+          size="small"
+          density="compact"
+          variant="text"
+          color="white"
+          @click="mostrarPromptAssistant = true"
+        >
+          <v-tooltip activator="parent" location="bottom">Asistente de Prompts (Antigravity)</v-tooltip>
+        </v-btn>
+
         <!-- Botón Salir Rápido -->
         <v-btn
           v-if="store.isAuth"
@@ -560,6 +574,9 @@ function handleLogout(expired = false) {
 
     <!-- Componente Global de Diagnóstico -->
     <DiagnosticDialog />
+
+    <!-- Asistente de Prompts y Requerimientos -->
+    <PromptAssistantDialog v-model="mostrarPromptAssistant" />
   </v-layout>
 </template>
 

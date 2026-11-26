@@ -13,3 +13,4 @@ export { default as LiqInputPanel } from "./LiqInputPanel.vue";
 export { default as TenantSelector } from "./TenantSelector.vue";
 export { default as ApiEnvSelector } from "./ApiEnvSelector.vue";
 export { default as DiagnosticDialog } from "./DiagnosticDialog.vue";
+export { default as PromptAssistantDialog } from "./PromptAssistantDialog.vue";
