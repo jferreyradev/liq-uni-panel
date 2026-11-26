@@ -102,9 +102,11 @@ describe('Reportes Endpoints - Verificación de URLs de API para cada componente
     expect(fetchUrls.some((u) => u.includes('/api/view/planillaRet'))).toBe(true)
   })
 
-  it('RepoPlanillaLey (Reporte 9) consulta /api/view/planillaLey', () => {
+  it('RepoPlanillaLey (Reporte 9) consulta /api/view/planillaLey sin parametro sort', () => {
     shallowMount(RepoPlanillaLey, { global: { stubs: stubsVuetify } })
-    expect(fetchUrls.some((u) => u.includes('/api/view/planillaLey'))).toBe(true)
+    const targetUrl = fetchUrls.find((u) => u.includes('/api/view/planillaLey'))
+    expect(targetUrl).toBeDefined()
+    expect(targetUrl).not.toContain('sort=')
   })
 
   it('RepoPlanillaResSueldo (Reporte 10) consulta /api/view/resumenSueldos', () => {

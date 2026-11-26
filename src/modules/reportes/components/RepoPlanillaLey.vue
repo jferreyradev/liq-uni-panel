@@ -12,18 +12,26 @@ import { useEndPoints } from "@/composables/useEndPoints";
 const { apiBase } = useEndPoints();
 
 function useResLiqCod(getId) {
-  return useFetch(
-    () =>
-      `${apiBase.value}/api/view/planillaLey?${getId()}&sort={"IdRep":"asc","Orden":"asc","FechaDev":"asc"}`,
-  );
+  return useFetch(() => `${apiBase.value}/api/view/planillaLey?${getId()}`);
 }
 
 const { data, error, isPending } = useResLiqCod(() => store.filterString);
 
+const sortedData = computed(() => {
+  if (!data.value || !Array.isArray(data.value)) return [];
+  return [...data.value].sort((a, b) => {
+    return (
+      (Number(a.IDREP) || 0) - (Number(b.IDREP) || 0) ||
+      (Number(a.ORDEN) || 0) - (Number(b.ORDEN) || 0) ||
+      String(a.FECHADEV || "").localeCompare(String(b.FECHADEV || ""))
+    );
+  });
+});
+
 const totImporte = computed(() => {
   var totImp = 0;
-  if (data.value) {
-    data.value.forEach((x) => {
+  if (sortedData.value) {
+    sortedData.value.forEach((x) => {
       totImp += x.IMPORTE;
     });
   }
@@ -64,7 +72,7 @@ function handleDownload() {
 }
 
 function exportFile() {
-  const map1 = data.value.map((x) => {
+  const map1 = sortedData.value.map((x) => {
     return [
       x.IDREP,
       x.ORDEN,
@@ -138,7 +146,7 @@ function exportFile() {
         class="text-caption"
         hover
         density="compact"
-        :items="data"
+        :items="sortedData"
         :headers="headers"
       >
         <template #item="{ item }">
