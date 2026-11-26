@@ -4,6 +4,8 @@ import { leerDatos } from "@/shared/services/apiService";
 import { useSpGrabar } from "@/composables/useSpGrabar";
 import { TooltipButton, ConfirmacionDialog } from "@/shared/components";
 import { getVto, getFechaDMY, financial } from "@/utils/formatos";
+import { utils, writeFileXLSX } from "xlsx";
+import { agregaTitulosExcel } from "@/utils/reportes.js";
 import NovHaberesVista from "./NovHaberesVista.vue";
 
 const props = defineProps(["setHojaEdicion", "hojaEditar"]);
@@ -16,7 +18,7 @@ function handleCerrarEdicion() {
 }
 
 const listaHeaders = [
-  { title: "Acciones", key: "" },
+  { title: "Acciones", key: "ACCIONES" },
   { title: "Nro Rep.", key: "NROREPARTICION" },
   { title: "Boleta", key: "NROBOLETA" },
   { title: "Afiliado", key: "NROAFILIADO" },
@@ -29,7 +31,6 @@ const listaHeaders = [
   { title: "Documento", key: "DOCUMENTO" },
   { title: "Apellido", key: "APELLIDO" },
   { title: "Nombre", key: "NOMBRE" },
-  { title: "", key: "NOMBRE" },
   { title: "Tipo Empleo", key: "TIPOEMPLEOID" },
   { title: "Sit. Rev.", key: "SITUACIONREVISTAID" },
   { title: "Tipo OS", key: "TIPOOBRASOCIALID" },
@@ -46,9 +47,17 @@ const lecturaListaRegs = ref(true);
 
 async function leerListaRegs() {
   isPending.value = true;
-  const { datos, operacionOk } = await leerDatos(
-    "view/novhaberes?HojaId=" + hojaEditar.ID,
-  );
+  const idHoja = hojaEditar?.ID ?? hojaEditar?.Id ?? hojaEditar?.id ?? 0;
+  // Se consulta el recurso 'novhaberes' para obtener la totalidad de los registros
+  // de la hoja, dado que la vista de BD 'view/novhaberes' filtra agentes según situación de revista.
+  let { datos, operacionOk } = await leerDatos("novhaberes?HojaId=" + idHoja);
+  if (!operacionOk || !datos || datos.length === 0) {
+    const fallback = await leerDatos("view/novhaberes?HojaId=" + idHoja);
+    if (fallback.operacionOk && fallback.datos && fallback.datos.length > 0) {
+      datos = fallback.datos;
+      operacionOk = fallback.operacionOk;
+    }
+  }
   data.value = datos;
   lecturaListaRegs.value = operacionOk;
   isPending.value = false;
@@ -147,14 +156,74 @@ async function eliminar(id) {
   return true;
 }
 
+function handleDownload() {
+  exportFile();
+}
+
+function exportFile() {
+  if (!data.value || !Array.isArray(data.value)) return;
+  const map1 = data.value.map((x) => [
+    x.NROREPARTICION,
+    x.NROBOLETA,
+    x.NROAFILIADO,
+    x.CODIGO,
+    x.SUBCODIGO,
+    x.CLASE,
+    x.DIAS,
+    getVto(x.VENCIMIENTO),
+    financial(x.IMPORTE),
+    x.DOCUMENTO,
+    x.APELLIDO,
+    x.NOMBRE,
+    x.TIPOEMPLEOID,
+    x.SITUACIONREVISTAID,
+    x.TIPOOBRASOCIALID,
+    x.PPP,
+    getFechaDMY(x.FECHAGRABACION),
+  ]);
+
+  const titulosTabla = [
+    "Nro Rep.",
+    "Boleta",
+    "Afiliado",
+    "Código",
+    "Subcódigo",
+    "Clase",
+    "Días",
+    "Vencimiento",
+    "Importe",
+    "Documento",
+    "Apellido",
+    "Nombre",
+    "Tipo Empleo",
+    "Sit. Rev.",
+    "Tipo OS",
+    "PPP",
+    "Fecha Grab.",
+  ];
+  const filtros = "";
+  const idHoja = hojaEditar?.ID ?? hojaEditar?.Id ?? "";
+  const tituloReporte = "Detalle de Hoja Nº: " + idHoja;
+  agregaTitulosExcel(map1, tituloReporte, filtros, titulosTabla);
+  const ws = utils.aoa_to_sheet(map1);
+  const wb = utils.book_new();
+  utils.book_append_sheet(wb, ws, "Data");
+  writeFileXLSX(wb, "DetalleHojaHaberes_" + `${idHoja}.xlsx`, {
+    compression: true,
+  });
+}
+
 // -------------------------------------------------
 </script>
 
 <template>
   <v-container>
     <v-row>
-      <p>Hoja Nro: {{ hojaEditar.ID }}</p>
-      <p>Tipo: {{ hojaEditar.TIPOHOJADESCRIPCION }}</p>
+      <p>
+        <b>Hoja Nro:</b> {{ hojaEditar?.ID ?? hojaEditar?.Id }} -
+        <b>Tipo:</b> {{ hojaEditar?.TIPOHOJADESCRIPCION }}
+        <span v-if="data"> - <b>Total registros:</b> {{ data.length }}</span>
+      </p>
     </v-row>
   </v-container>
   <v-container>
@@ -165,6 +234,12 @@ async function eliminar(id) {
         elevation="3"
         @click="handleModif(null)"
         >Nuevo registro</v-btn
+      >
+      <v-btn
+        color="primary"
+        @click="handleDownload"
+        :disabled="!data || !data.length"
+        >Descargar</v-btn
       >
       <v-btn
         color="primary"
@@ -192,6 +267,7 @@ async function eliminar(id) {
         class="text-caption"
         hover
         density="compact"
+        item-value="ID"
         :items="data"
         :headers="listaHeaders"
         fixed-header
@@ -203,13 +279,13 @@ async function eliminar(id) {
                 :icono="'mdi-pencil'"
                 :toolMsg="'Editar'"
                 :funcion="handleModif"
-                :itemid="item.ID"
+                :itemid="item.ID ?? item.Id"
               ></TooltipButton>
               <TooltipButton
                 :icono="'mdi-delete'"
                 :toolMsg="'Eliminar'"
                 :funcion="handleEliminar"
-                :itemid="item.ID"
+                :itemid="item.ID ?? item.Id"
               ></TooltipButton>
             </td>
             <td class="text-right m-0 p-0">{{ item.NROREPARTICION }}</td>
@@ -223,7 +299,7 @@ async function eliminar(id) {
             <td class="text-center m-0 p-0">{{ financial(item.IMPORTE) }}</td>
             <td class="text-right m-0 p-0">{{ item.DOCUMENTO }}</td>
             <td class="text-left">{{ item.APELLIDO }}</td>
-            <td class="text-left" colspan="2">{{ item.NOMBRE }}</td>
+            <td class="text-left">{{ item.NOMBRE }}</td>
             <td class="text-center m-0 p-0">{{ item.TIPOEMPLEOID }}</td>
             <td class="text-center m-0 p-0">{{ item.SITUACIONREVISTAID }}</td>
             <td class="text-center m-0 p-0">{{ item.TIPOOBRASOCIALID }}</td>
