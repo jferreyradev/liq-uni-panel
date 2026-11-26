@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 import { createRouter, createMemoryHistory } from "vue-router";
+import { useFilterStore } from "@/stores/filterStore";
 import OperacionesView from "../views/OperacionesView.vue";
 import OperacionTransformacion from "../components/OperacionTransformacion.vue";
 import OperacionLiquidacion from "../components/OperacionLiquidacion.vue";
@@ -94,6 +95,30 @@ describe("Módulo de Operaciones", () => {
         })
       );
       expect(wrapper.emitted("proceso-iniciado")).toBeTruthy();
+    });
+
+    it("envía GrupoRep: 1 aun cuando filterStore tiene serverIdRep configurado", async () => {
+      const store = useFilterStore();
+      store.serverConfig = { IDREP: 400, DESCRIPCION: "Municipalidad de Concepción" };
+
+      const wrapper = mount(OperacionTransformacion);
+      await flushPromises();
+
+      await wrapper.vm.ejecutarTransformacion();
+      await flushPromises();
+
+      expect(mockEjecutarSP_SinEspera).toHaveBeenLastCalledWith(
+        "sp/transform",
+        expect.objectContaining({
+          GrupoRep: 1,
+          TipoLiq: 1,
+          GrupoAdicional: 0,
+        })
+      );
+      // Aseguramos que no envía 'Rep' o 'GrupoRep: 0'
+      const ultimoPayload = mockEjecutarSP_SinEspera.mock.calls.at(-1)[1];
+      expect(ultimoPayload.GrupoRep).toBe(1);
+      expect(ultimoPayload.Rep).toBeUndefined();
     });
   });
 

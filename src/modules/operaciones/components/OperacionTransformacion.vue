@@ -49,8 +49,17 @@ onMounted(async () => {
 });
 
 async function solicitarConfirmacion() {
-  const { valid } = await form.value.validate();
-  if (!valid) return;
+  if (form.value) {
+    const { valid } = await form.value.validate();
+    if (!valid) return;
+  }
+  const fecha = getFechaToAPIFromMMYYYY(periodo.value);
+  if (!fecha) {
+    alertTipo.value = "error";
+    alertMensaje.value = "El período ingresado no es válido (formato esperado: MM/AAAA).";
+    mostrarAlert.value = true;
+    return;
+  }
   mostrarConfirmacion.value = true;
 }
 
@@ -59,12 +68,25 @@ async function ejecutarTransformacion() {
   isRunning.value = true;
   mostrarAlert.value = false;
 
+  const fechaPeriodo = getFechaToAPIFromMMYYYY(periodo.value);
+  if (!fechaPeriodo) {
+    alertTipo.value = "error";
+    alertMensaje.value = "El formato del período no es válido. Debe ser MM/AAAA.";
+    mostrarAlert.value = true;
+    isRunning.value = false;
+    return;
+  }
+
+  const tipoLiqVal = Number(tipoLiqSelected.value?.value ?? tipoLiqSelected.value ?? 1);
+  const grupoAdicionalVal = Number(adicional.value) || 0;
+
+  // En Oracle MOD_TRANS_NOV.PRINCIPAL(:Periodo, :GrupoRep, :TipoLiq, :GrupoAdicional)
+  // GrupoRep corresponde al grupo de reparticiones (1 = Municipios en la BD).
   const payload = {
-    Periodo: getFechaToAPIFromMMYYYY(periodo.value),
-    GrupoRep: repId.value ? 0 : 1,
-    Rep: repId.value,
-    TipoLiq: tipoLiqSelected.value.value,
-    GrupoAdicional: Number(adicional.value) || 0,
+    Periodo: fechaPeriodo,
+    GrupoRep: 1,
+    TipoLiq: tipoLiqVal,
+    GrupoAdicional: grupoAdicionalVal,
   };
 
   try {
@@ -194,7 +216,7 @@ async function ejecutarTransformacion() {
     <v-dialog v-model="mostrarConfirmacion" max-width="500px">
       <ConfirmacionDialog
         titulo="Confirmar Transformación de Novedades"
-        :mensaje="`¿Está seguro de iniciar la transformación de novedades para el período ${periodo} (${tipoLiqSelected.name})?`"
+        :mensaje="`¿Está seguro de iniciar la transformación de novedades para el período ${periodo} (${tipoLiqSelected?.name || 'Mensual'})?`"
         :cerrar="() => (mostrarConfirmacion = false)"
         :aceptar="ejecutarTransformacion"
       />
