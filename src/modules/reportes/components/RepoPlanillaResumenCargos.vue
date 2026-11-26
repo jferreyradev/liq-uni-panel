@@ -5,12 +5,12 @@ import { useFetch } from "@/composables/useFetch";
 import { RepoHeader } from "@/shared/components";
 import { getFecha, getVto, agregaTitulosExcel } from "@/utils/reportes.js";
 import { useEndPoints } from "@/composables/useEndPoints";
-
-//const { apiBaseDev } = useApiConfig()
+import { ref } from "vue";
 
 const { apiBase } = useEndPoints();
 
 const store = useFilterStore();
+const search = ref("");
 
 function useResLiqCod(getId) {
   return useFetch(() => `${apiBase.value}/api/view/resumenCargos?${getId()}`);
@@ -24,37 +24,33 @@ const headers = [
   {
     title: "Rep",
     align: "start",
-    sortable: false,
     key: "IDREP",
   },
   {
     title: "Orden",
     align: "start",
-    sortable: false,
     key: "ORDEN",
   },
   {
     title: "DNI",
     align: "start",
-    sortable: false,
     key: "DOCUMENTO",
   },
   {
     title: "CUIL",
     align: "start",
-    sortable: false,
     key: "PERSONACUIL",
   },
-  { title: "Apellido", key: "APELLIDO", sortable: false },
-  { title: "Nombre", key: "NOMBRE", sortable: false },
-  { title: "Nacimiento", key: "FECHANAC", sortable: false },
-  { title: "Sexo", key: "SEXO", sortable: false },
-  { title: "Categoria", key: "CATEGORIA", sortable: false },
-  { title: "SitRev", key: "SITUACIONREVISTAID", sortable: false },
-  { title: "Titulo", key: "TITULO", sortable: false },
-  { title: "Titulo Esp", key: "TITULOESPECIAL", sortable: false },
-  { title: "Antiguedad", key: "ANTIGUEDAD", sortable: false },
-  { title: "Vto Esc.", key: "VTOESCALAFON", sortable: false },
+  { title: "Apellido", key: "APELLIDO" },
+  { title: "Nombre", key: "NOMBRE" },
+  { title: "Nacimiento", key: "FECHANAC" },
+  { title: "Sexo", key: "SEXO" },
+  { title: "Categoria", key: "CATEGORIA" },
+  { title: "SitRev", key: "SITUACIONREVISTAID" },
+  { title: "Titulo", key: "TITULO" },
+  { title: "Titulo Esp", key: "TITULOESPECIAL" },
+  { title: "Antiguedad", key: "ANTIGUEDAD" },
+  { title: "Vto Esc.", key: "VTOESCALAFON" },
 ];
 
 function handleDownload() {
@@ -137,7 +133,11 @@ function exportFile() {
 
 <template>
   <v-container>
-    <RepoHeader title="Planilla resumen de cargos" :subtitle="store.liqString">
+    <RepoHeader
+      title="Planilla resumen de cargos"
+      :subtitle="store.liqString"
+      v-model:search="search"
+    >
       <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
       >
@@ -151,6 +151,7 @@ function exportFile() {
         density="compact"
         :items="data"
         :headers="headers"
+        :search="search"
       >
         <template #item="{ item }">
           <tr class="pa-0 ma-0">

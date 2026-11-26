@@ -12,6 +12,19 @@ const props = defineProps({
     type: String,
     default: "mdi-file-chart-outline",
   },
+  showSearch: {
+    type: Boolean,
+    default: false,
+  },
+  searchPlaceholder: {
+    type: String,
+    default: "Buscar en la tabla...",
+  },
+});
+
+const search = defineModel("search", {
+  type: String,
+  default: undefined,
 });
 </script>
 
@@ -33,8 +46,20 @@ const props = defineProps({
         </div>
       </div>
 
-      <!-- Slot para botones de acción (Descargar Excel, Mostrar Tabla, etc.) -->
-      <div v-if="$slots.default" class="d-flex align-center flex-wrap ga-2">
+      <!-- Slot para búsqueda y botones de acción (Descargar Excel, Mostrar Tabla, etc.) -->
+      <div v-if="$slots.default || props.showSearch || search !== undefined" class="d-flex align-center flex-wrap ga-2">
+        <v-text-field
+          v-if="props.showSearch || search !== undefined"
+          v-model="search"
+          :placeholder="props.searchPlaceholder"
+          prepend-inner-icon="mdi-magnify"
+          density="compact"
+          variant="outlined"
+          hide-details
+          clearable
+          bg-color="white"
+          style="min-width: 200px; max-width: 280px;"
+        />
         <slot></slot>
       </div>
     </div>

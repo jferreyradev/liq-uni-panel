@@ -4,10 +4,12 @@ import { useFilterStore } from "@/stores/filterStore";
 import { useFetch } from "@/composables/useFetch";
 import { RepoHeader } from "@/shared/components";
 import { useEndPoints } from "@/composables/useEndPoints";
+import { ref } from "vue";
 
 const { apiBase } = useEndPoints();
 
 const store = useFilterStore();
+const search = ref("");
 
 function useResLiqCod(getId) {
   return useFetch(
@@ -24,13 +26,11 @@ const headers = [
   {
     title: "REP",
     align: "start",
-    sortable: true,
     key: "IDREP",
   },
   {
     title: "DNI",
     align: "start",
-    sortable: true,
     key: "DOCUMENTO",
   },
   { title: "Apellido y nombre", key: "APENOM" },
@@ -97,6 +97,7 @@ function exportFile() {
     <RepoHeader
       title="Resumen de código 153 de liquidación"
       :subtitle="store.liqString"
+      v-model:search="search"
     >
       <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
@@ -111,6 +112,7 @@ function exportFile() {
         density="compact"
         :items="data"
         :headers="headers"
+        :search="search"
       >
       </v-data-table>
       <div v-else-if="error">No se puede obtener los datos solicitados.</div>

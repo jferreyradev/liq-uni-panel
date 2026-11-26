@@ -4,14 +4,13 @@ import { useFilterStore } from "@/stores/filterStore";
 import { useFetch } from "@/composables/useFetch";
 import { RepoHeader } from "@/shared/components";
 import { financial, getVto, agregaTitulosExcel } from "@/utils/reportes.js";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useEndPoints } from "@/composables/useEndPoints";
-
-//const { apiBaseDev } = useApiConfig()
 
 const { apiBase } = useEndPoints();
 
 const store = useFilterStore();
+const search = ref("");
 
 function useResLiqCod(getId) {
   return useFetch(
@@ -39,29 +38,26 @@ const headers = [
   {
     title: "Rep",
     align: "start",
-    sortable: false,
     key: "IDREP",
   },
   {
     title: "Orden",
     align: "start",
-    sortable: false,
     key: "ORDEN",
   },
   {
     title: "DNI",
     align: "start",
-    sortable: false,
     key: "DOCUMENTO",
   },
-  { title: "Apellido y nombre", key: "APENOM", sortable: false },
-  { title: "Código", key: "CODIGO", sortable: false },
-  { title: "SubCod.", key: "SUBCODIGO", sortable: false },
-  { title: "Descripción", key: "DESCRIPCION", sortable: false },
-  { title: "Vto", key: "VTO", sortable: false },
-  { title: "Clase", key: "CLASE", sortable: false },
-  { title: "Dias", key: "DIAS", sortable: false },
-  { title: "Importe", key: "IMPORTE", sortable: false },
+  { title: "Apellido y nombre", key: "APENOM" },
+  { title: "Código", key: "CODIGO" },
+  { title: "SubCod.", key: "SUBCODIGO" },
+  { title: "Descripción", key: "DESCRIPCION" },
+  { title: "Vto", key: "VTO" },
+  { title: "Clase", key: "CLASE" },
+  { title: "Dias", key: "DIAS" },
+  { title: "Importe", key: "IMPORTE" },
 ];
 
 function handleDownload() {
@@ -148,7 +144,11 @@ function exportFile() {
 
 <template>
   <v-container>
-    <RepoHeader title="Planilla de Retenciones" :subtitle="store.liqString">
+    <RepoHeader
+      title="Planilla de Retenciones"
+      :subtitle="store.liqString"
+      v-model:search="search"
+    >
       <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
       >
@@ -162,6 +162,7 @@ function exportFile() {
         density="compact"
         :items="data"
         :headers="headers"
+        :search="search"
       >
         <template #item="{ item }">
           <tr class="pa-0 ma-0">

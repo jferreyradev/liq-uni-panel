@@ -4,10 +4,12 @@ import { useFetch } from "@/composables/useFetch";
 import { useFilterStore } from "@/stores/filterStore";
 import { RepoHeader } from "@/shared/components";
 import { useEndPoints } from "@/composables/useEndPoints";
+import { ref } from "vue";
 
 const { apiBase } = useEndPoints();
 
 const store = useFilterStore();
+const search = ref("");
 
 function useResLiq(getId) {
   return useFetch(() => `${apiBase.value}/api/repo/resumenLiq?${getId()}`);
@@ -21,13 +23,11 @@ const headers = [
   {
     title: "Rep",
     align: "end",
-    sortable: true,
     key: "IDREP",
   },
   {
     title: "Orden",
     align: "end",
-    sortable: true,
     key: "ORDEN",
   },
   { title: "DNI", key: "PERSONADOCUMENTO", align: "end" },
@@ -96,7 +96,11 @@ function exportFile() {
 
 <template>
   <v-container>
-    <RepoHeader title="Resumen de liquidación" :subtitle="store.liqString">
+    <RepoHeader
+      title="Resumen de liquidación"
+      :subtitle="store.liqString"
+      v-model:search="search"
+    >
       <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
       >
@@ -110,6 +114,7 @@ function exportFile() {
         density="compact"
         :items="data"
         :headers="headers"
+        :search="search"
       >
         <template #item="{ item }">
           <tr class="pa-0 ma-0">

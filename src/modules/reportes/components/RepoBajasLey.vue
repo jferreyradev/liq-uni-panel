@@ -5,8 +5,10 @@ import { useFetch } from "@/composables/useFetch";
 import { RepoHeader } from "@/shared/components";
 import { agregaTitulosExcel, getVto, getFecha } from "@/utils/reportes.js";
 import { useEndPoints } from "@/composables/useEndPoints";
+import { ref } from "vue";
 
 const { apiBase } = useEndPoints();
+const search = ref("");
 
 const store = useFilterStore();
 
@@ -21,17 +23,16 @@ const { data, error, isPending } = useResLiqCod(
 const props = defineProps(["fileName"]);
 
 const headers = [
-  { title: "Documento", key: "DOCUMENTO", align: "center", sortable: false },
+  { title: "Documento", key: "DOCUMENTO", align: "center" },
   {
     title: "Apellido y Nombre",
     key: "APENOM",
     align: "start",
-    sortable: false,
   },
-  { title: "Sexo", key: "SEXO", align: "center", sortable: false },
-  { title: "Fecha. Nac.", key: "FECHANAC", align: "center", sortable: false },
-  { title: "Edad", key: "EDAD", align: "center", sortable: false },
-  { title: "Periodo", key: "PERIODO", align: "center", sortable: false },
+  { title: "Sexo", key: "SEXO", align: "center" },
+  { title: "Fecha. Nac.", key: "FECHANAC", align: "center" },
+  { title: "Edad", key: "EDAD", align: "center" },
+  { title: "Periodo", key: "PERIODO", align: "center" },
 ];
 
 function handleDownload() {
@@ -88,7 +89,11 @@ function exportFile() {
 
 <template>
   <v-container>
-    <RepoHeader title="Bajas de Ley" :subtitle="store.periodoString">
+    <RepoHeader
+      title="Bajas de Ley"
+      :subtitle="store.periodoString"
+      v-model:search="search"
+    >
       <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
       >
@@ -102,6 +107,7 @@ function exportFile() {
         density="compact"
         :items="data"
         :headers="headers"
+        :search="search"
       >
         <template #item="{ item }">
           <tr class="pa-0 ma-0">

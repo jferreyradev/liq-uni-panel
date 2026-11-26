@@ -5,10 +5,12 @@ import { useFetch } from "@/composables/useFetch";
 import { RepoHeader } from "@/shared/components";
 import { financial, agregaTitulosExcel } from "@/utils/reportes.js";
 import { useEndPoints } from "@/composables/useEndPoints";
+import { ref } from "vue";
 
 const { apiBase } = useEndPoints();
 
 const store = useFilterStore();
+const search = ref("");
 
 function useResLiqCod(getId) {
   return useFetch(() => `${apiBase.value}/api/view/resumenCodLiq?${getId()}`);
@@ -19,13 +21,13 @@ const { data, error, isPending } = useResLiqCod(() => store.filterString);
 const props = defineProps(["fileName"]);
 
 const headers = [
-  { title: "Rep", key: "IDREP", align: "start", sortable: false },
-  { title: "Codigo", key: "CODIGO", align: "end", sortable: false },
-  { title: "Subcodigo", key: "SUBCODIGO", align: "start", sortable: false },
-  { title: "Descripción", key: "DESCRIPCION", align: "start", sortable: false },
-  { title: "Cantidad", key: "CANTIDAD", align: "end", sortable: false },
-  { title: "Importe", key: "IMPORTE", align: "end", sortable: false },
-  { title: "Tipo total", key: "TIPOTOTAL", align: "end", sortable: false },
+  { title: "Rep", key: "IDREP", align: "start" },
+  { title: "Codigo", key: "CODIGO", align: "end" },
+  { title: "Subcodigo", key: "SUBCODIGO", align: "start" },
+  { title: "Descripción", key: "DESCRIPCION", align: "start" },
+  { title: "Cantidad", key: "CANTIDAD", align: "end" },
+  { title: "Importe", key: "IMPORTE", align: "end" },
+  { title: "Tipo total", key: "TIPOTOTAL", align: "end" },
 ];
 
 function handleDownload() {
@@ -88,6 +90,7 @@ function exportFile() {
     <RepoHeader
       title="Resumen de códigos de liquidación"
       :subtitle="store.liqString"
+      v-model:search="search"
     >
       <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
@@ -102,6 +105,7 @@ function exportFile() {
         density="compact"
         :items="data"
         :headers="headers"
+        :search="search"
       >
         <template #item="{ item }">
           <tr class="pa-0 ma-0">

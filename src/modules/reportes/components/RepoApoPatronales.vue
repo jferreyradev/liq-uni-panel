@@ -4,10 +4,11 @@ import { useFilterStore } from "@/stores/filterStore";
 import { useFetch } from "@/composables/useFetch";
 import { RepoHeader } from "@/shared/components";
 import { financial, agregaTitulosExcel } from "@/utils/reportes.js";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useEndPoints } from "@/composables/useEndPoints";
 
 const { apiBase } = useEndPoints();
+const search = ref("");
 
 const totImporte = computed(() => {
   var totPatJub = 0;
@@ -38,25 +39,22 @@ const headers = [
   {
     title: "Rep",
     align: "start",
-    sortable: false,
     key: "IDREP",
   },
   {
     title: "Orden",
     align: "start",
-    sortable: false,
     key: "ORDEN",
   },
   {
     title: "DNI",
     align: "start",
-    sortable: false,
     key: "DOCUMENTO",
   },
-  { title: "Apellido y nombre", key: "APENOM", sortable: false },
-  { title: "Pat. Jub.", key: "PATJUB", sortable: false },
-  { title: "Pat. OS", key: "PATOS", sortable: false },
-  { title: "Pat. ART", key: "PATART", sortable: false },
+  { title: "Apellido y nombre", key: "APENOM" },
+  { title: "Pat. Jub.", key: "PATJUB" },
+  { title: "Pat. OS", key: "PATOS" },
+  { title: "Pat. ART", key: "PATART" },
 ];
 
 function handleDownload() {
@@ -128,6 +126,7 @@ function exportFile() {
     <RepoHeader
       title="Resumen de Aportes Patromales"
       :subtitle="store.liqString"
+      v-model:search="search"
     >
       <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
@@ -142,6 +141,7 @@ function exportFile() {
         density="compact"
         :items="data"
         :headers="headers"
+        :search="search"
       >
         <template #item="{ item }">
           <tr class="pa-0 ma-0">

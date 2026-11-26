@@ -4,12 +4,13 @@ import { useFilterStore } from "@/stores/filterStore";
 import { useFetch } from "@/composables/useFetch";
 import { RepoHeader } from "@/shared/components";
 import { financial, agregaTitulosExcel } from "@/utils/reportes.js";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useEndPoints } from "@/composables/useEndPoints";
 
 const { apiBase } = useEndPoints();
 
 const store = useFilterStore();
+const search = ref("");
 
 function useResLiqCod(getId) {
   return useFetch(() => `${apiBase.value}/api/view/resumenSueldos?${getId()}`);
@@ -44,30 +45,27 @@ const headers = [
   {
     title: "Rep",
     align: "start",
-    sortable: false,
     key: "IDREP",
   },
   {
     title: "Orden",
     align: "start",
-    sortable: false,
     key: "ORDEN",
   },
   {
     title: "DNI",
     align: "start",
-    sortable: false,
     key: "DOCUMENTO",
   },
-  { title: "Apellido y nombre", key: "APENOM", sortable: false },
-  { title: "Mes Liq.", key: "MESLIQ", sortable: false },
-  { title: "Categoría", key: "CAT", sortable: false },
-  { title: "Hab. c/Ap.", key: "HABCONAP", sortable: false },
-  { title: "Hab. S/Ap.", key: "HABSINAP", sortable: false },
-  { title: "Asig. Fam.", key: "ASIGNFAM", sortable: false },
-  { title: "Desc. Ley", key: "DESCLEY", sortable: false },
-  { title: "Desc. Varios", key: "DESCVARIOS", sortable: false },
-  { title: "Neto", key: "NETO", sortable: false },
+  { title: "Apellido y nombre", key: "APENOM" },
+  { title: "Mes Liq.", key: "MESLIQ" },
+  { title: "Categoría", key: "CAT" },
+  { title: "Hab. c/Ap.", key: "HABCONAP" },
+  { title: "Hab. S/Ap.", key: "HABSINAP" },
+  { title: "Asig. Fam.", key: "ASIGNFAM" },
+  { title: "Desc. Ley", key: "DESCLEY" },
+  { title: "Desc. Varios", key: "DESCVARIOS" },
+  { title: "Neto", key: "NETO" },
 ];
 
 function handleDownload() {
@@ -158,7 +156,11 @@ function exportFile() {
 
 <template>
   <v-container>
-    <RepoHeader title="Resumen de Sueldos" :subtitle="store.liqString">
+    <RepoHeader
+      title="Resumen de Sueldos"
+      :subtitle="store.liqString"
+      v-model:search="search"
+    >
       <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
       >
@@ -172,6 +174,7 @@ function exportFile() {
         density="compact"
         :items="data"
         :headers="headers"
+        :search="search"
       >
         <template #item="{ item }">
           <tr class="pa-0 ma-0">

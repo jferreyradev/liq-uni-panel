@@ -4,12 +4,13 @@ import { useFilterStore } from "@/stores/filterStore";
 import { useFetch } from "@/composables/useFetch";
 import { RepoHeader } from "@/shared/components";
 import { financial, agregaTitulosExcel } from "@/utils/reportes.js";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useEndPoints } from "@/composables/useEndPoints";
 
 const { apiBase } = useEndPoints();
 
 const store = useFilterStore();
+const search = ref("");
 
 function useResLiqCod(getId) {
   return useFetch(
@@ -74,37 +75,34 @@ const headers = [
   {
     title: "Rep",
     align: "start",
-    sortable: false,
     key: "IDREP",
   },
   {
     title: "Orden",
     align: "start",
-    sortable: false,
     key: "ORDEN",
   },
   {
     title: "DNI",
     align: "start",
-    sortable: false,
     key: "DOCUMENTO",
   },
-  { title: "Apellido y nombre", key: "APENOM", sortable: false },
-  { title: "Mes Liq.", key: "MESLIQ", sortable: false },
-  { title: "Categoría", key: "CAT", sortable: false },
-  { title: "Hab. c/Ap.", key: "HABCONAP", sortable: false },
-  { title: "Inasist. Rem./Retiro", key: "INASISTREM", sortable: false },
-  { title: "Hab. c/Ap. neto", key: "HABCONAP2", sortable: false },
-  { title: "Hab. S/Ap.", key: "HABSINAP", sortable: false },
-  { title: "Tot. Hab.", key: "TOTALHAB", sortable: false },
-  { title: "Asig. Fam.", key: "ASIGNFAM", sortable: false },
-  { title: "Desc. Ley", key: "DESCLEY", sortable: false },
-  { title: "Desc. Varios", key: "DESCVARIOS", sortable: false },
-  { title: "Neto", key: "NETO", sortable: false },
-  { title: "Ley 7991", key: "LEY7991", sortable: false },
-  { title: "Desc Jub Adic", key: "DESCJUBADIC", sortable: false },
-  { title: "Inasist. No Rem./Retiro", key: "INASISTNOREM", sortable: false },
-  { title: "Discapacidad", key: "DISCAPACIDAD", sortable: false },
+  { title: "Apellido y nombre", key: "APENOM" },
+  { title: "Mes Liq.", key: "MESLIQ" },
+  { title: "Categoría", key: "CAT" },
+  { title: "Hab. c/Ap.", key: "HABCONAP" },
+  { title: "Inasist. Rem./Retiro", key: "INASISTREM" },
+  { title: "Hab. c/Ap. neto", key: "HABCONAP2" },
+  { title: "Hab. S/Ap.", key: "HABSINAP" },
+  { title: "Tot. Hab.", key: "TOTALHAB" },
+  { title: "Asig. Fam.", key: "ASIGNFAM" },
+  { title: "Desc. Ley", key: "DESCLEY" },
+  { title: "Desc. Varios", key: "DESCVARIOS" },
+  { title: "Neto", key: "NETO" },
+  { title: "Ley 7991", key: "LEY7991" },
+  { title: "Desc Jub Adic", key: "DESCJUBADIC" },
+  { title: "Inasist. No Rem./Retiro", key: "INASISTNOREM" },
+  { title: "Discapacidad", key: "DISCAPACIDAD" },
 ];
 
 function handleDownload() {
@@ -222,6 +220,7 @@ function exportFile() {
     <RepoHeader
       title="Resumen de Sueldos - Inasist. - Ley"
       :subtitle="store.liqString"
+      v-model:search="search"
     >
       <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
@@ -236,6 +235,7 @@ function exportFile() {
         density="compact"
         :items="data"
         :headers="headers"
+        :search="search"
       >
         <template #item="{ item }">
           <tr class="pa-0 ma-0">

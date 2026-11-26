@@ -4,10 +4,12 @@ import { useFilterStore } from "@/stores/filterStore";
 import { useFetch } from "@/composables/useFetch";
 import { RepoHeader } from "@/shared/components";
 import { useEndPoints } from "@/composables/useEndPoints";
+import { ref } from "vue";
 
 const { apiBase } = useEndPoints();
 
 const store = useFilterStore();
+const search = ref("");
 
 function useResLiqFdo(getId) {
   return useFetch(() => `${apiBase.value}/api/view/resumenFdo?${getId()}`);
@@ -21,13 +23,11 @@ const headers = [
   {
     title: "Rep",
     align: "end",
-    sortable: true,
     key: "IDREP",
   },
   {
     title: "Orden",
     align: "end",
-    sortable: true,
     key: "ORDEN",
   },
   { title: "DNI", key: "PERSONADOCUMENTO", align: "end" },
@@ -128,6 +128,7 @@ function exportFile() {
     <RepoHeader
       title="Resumen de liquidación - Fondo"
       :subtitle="store.liqString"
+      v-model:search="search"
     >
       <v-btn color="primary" :disabled="!data" @click="handleDownload"
         >Descargar</v-btn
@@ -142,6 +143,7 @@ function exportFile() {
         density="compact"
         :items="data"
         :headers="headers"
+        :search="search"
       >
         <template #item="{ item }">
           <tr class="pa-0 ma-0">

@@ -43,4 +43,28 @@ describe("RepoHeader", () => {
       expect(icon.props("icon")).toBe("mdi-account-minus");
     }
   });
+
+  it("renderiza el campo de búsqueda cuando search está definido", () => {
+    const wrapper = mount(RepoHeader, {
+      props: {
+        title: "Planilla de Ley",
+        search: "Gomez",
+      },
+    });
+
+    const textField = wrapper.findComponent({ name: "VTextField" });
+    expect(textField.exists()).toBe(true);
+    expect(textField.props("modelValue")).toBe("Gomez");
+  });
+
+  it("no renderiza el campo de búsqueda por defecto si no se pasa search ni showSearch", () => {
+    const wrapper = mount(RepoHeader, {
+      props: {
+        title: "Planilla de Ley",
+      },
+    });
+
+    const textField = wrapper.findComponent({ name: "VTextField" });
+    expect(textField.exists()).toBe(false);
+  });
 });
