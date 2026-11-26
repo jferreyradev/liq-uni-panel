@@ -3,19 +3,16 @@ import { ref, computed } from "vue";
 import { useFilterStore } from "@/stores/filterStore";
 import { useEndPoints } from "@/composables/useEndPoints";
 import { useFetch } from "@/composables/useFetch";
-import { financial } from "@/utils/reportes.js";
 import { ejecutarSP, leerDatos } from "@/shared/services/apiService";
 
 const { apiBase, getBoletasHeaders, buildApiHeaders } = useEndPoints();
 const store = useFilterStore();
 const refreshTrigger = ref(0);
 
-// Búsqueda en grilla y filtros de estado
+// Búsqueda en grilla de liquidaciones
 const busquedaCargo = ref("");
-const filtroEstado = ref("todos"); // "todos" | "activos" | "bloqueados"
-const filtroTipo = ref("todos"); // "todos" | "efectivo" | "ley"
 
-// Búsqueda directa alternativa en view/cargo (por si el usuario busca un cargo puntual)
+// Búsqueda directa alternativa en view/cargo (por si se busca un cargo puntual)
 const busquedaDirectaTexto = ref("");
 const buscandoCargoDirecto = ref(false);
 const cargoDirectoEncontrado = ref(null);
@@ -25,7 +22,7 @@ const cargoDirectoMensaje = ref("");
 const seleccionados = ref([]);
 const mostrarDialogoBloqueo = ref(false);
 const itemsABloquear = ref([]);
-const modoBloqueoEsLey = ref(store.ley ? 1 : 0);
+const modoBloqueoEsLey = ref(store.ley ? 1 : 0); // 0: Efectivo, 1: Ley, 2: Ambos
 const isBloqueando = ref(false);
 const bloqueandoId = ref(null);
 
@@ -34,21 +31,25 @@ const mostrarAlert = ref(false);
 const alertMensaje = ref("");
 const alertTipo = ref("success");
 
-// Consulta de liquidaciones para acreditación (sin forzar filtro estricto de Ley para mostrar ambas)
-function useDetalleAcred() {
+// Consulta las liquidaciones calculadas antes de generar el archivo bancario (view/liq)
+function useLiquidaciones() {
   const headersFn = buildApiHeaders || getBoletasHeaders || (() => ({}));
   return useFetch(
     () => {
       const m = String(Number(store.month) || (new Date().getMonth() + 1)).padStart(2, "0");
       const y = store.year || new Date().getFullYear();
       const per = `01/${m}/${y}`;
-      return `${apiBase.value}/api/view/detalleAcred?TipoLiquidacionId=${store.tipoliq}&GrupoAdicionalId=${store.nroadi}&Periodo=${per}&_r=${refreshTrigger.value}`;
+      let q = `Periodo=${per}&TipoLiquidacionId=${store.tipoliq}&GrupoAdicionalId=${store.nroadi}`;
+      if (store.serverIdRep) {
+        q += `&ReparticionId=${store.serverIdRep}`;
+      }
+      return `${apiBase.value}/api/view/liq?${q}&_r=${refreshTrigger.value}`;
     },
     () => ({ headers: headersFn() })
   );
 }
 
-const { data, error, isPending } = useDetalleAcred();
+const { data, error, isPending } = useLiquidaciones();
 
 const getVto = (vto) => {
   if (vto) {
@@ -63,60 +64,28 @@ const getVto = (vto) => {
 
 const headers = [
   { title: "Acciones", key: "acciones", sortable: false, align: "center", width: "90px" },
-  { title: "Bloqueo", key: "BLOQ", align: "center", width: "115px", sortable: true },
-  { title: "Tipo", key: "ESLEY", align: "center", width: "105px", sortable: true },
-  { title: "Orden", key: "ORDEN", align: "end", sortable: true },
-  { title: "Documento", key: "DOCUMENTO", align: "start", sortable: true },
+  { title: "Orden / Cargo", key: "ORDEN", align: "end", sortable: true, width: "120px" },
+  { title: "Documento", key: "DOCUMENTO", align: "start", sortable: true, width: "120px" },
   { title: "Apellido", key: "APELLIDO", align: "start", sortable: true },
   { title: "Nombre", key: "NOMBRE", align: "start", sortable: true },
-  { title: "Neto", key: "NETO", align: "end", sortable: true },
-  { title: "CBU", key: "CBU", align: "start", sortable: true },
-  { title: "Haberes", key: "HABERES", align: "end", sortable: true },
-  { title: "Retenciones", key: "RETENCIONES", align: "end", sortable: true },
-  { title: "Liquidación Id", key: "LIQUIDACIONID", align: "end", sortable: true },
-  { title: "Adicional", key: "GRUPOADICIONALID", align: "end", sortable: true },
-  { title: "Periodo", key: "PERIODO", align: "start", sortable: true },
-  { title: "Fecha dev", key: "FECHADEV", align: "start", sortable: true },
-  { title: "Repartición", key: "REPARTICIONID", align: "end", sortable: true },
-  { title: "Afiliado", key: "AFILIADO", align: "end", sortable: true },
-  { title: "CUIL", key: "CUIL", align: "start", sortable: true },
-  { title: "Uni Org", key: "UNIORG", align: "end", sortable: true },
+  { title: "CUIL", key: "PERSONACUIL", align: "start", sortable: true },
+  { title: "Tipo Liq.", key: "TIPOLIQUIDACIONDESCRIPCION", align: "start", sortable: true },
+  { title: "Adicional", key: "GRUPOADICIONALID", align: "end", sortable: true, width: "100px" },
+  { title: "Periodo", key: "PERIODO", align: "start", sortable: true, width: "110px" },
+  { title: "Fecha Dev.", key: "FECHADEV", align: "start", sortable: true, width: "110px" },
+  { title: "Liquidación Id", key: "LIQUIDACIONID", align: "end", sortable: true, width: "130px" },
+  { title: "Repartición", key: "REPARTICIONID", align: "end", sortable: true, width: "110px" },
+  { title: "Uni Org", key: "UNIORG", align: "end", sortable: true, width: "100px" },
 ];
 
-const itemsFiltrados = computed(() => {
+const itemsLiquidacion = computed(() => {
   if (!data.value || !Array.isArray(data.value)) return [];
-  let lista = data.value;
-
-  // Filtro por Estado
-  if (filtroEstado.value === "activos") {
-    lista = lista.filter((x) => Number(x.BLOQ) === 0);
-  } else if (filtroEstado.value === "bloqueados") {
-    lista = lista.filter((x) => Number(x.BLOQ) === 1);
-  }
-
-  // Filtro por Tipo (Ley vs Efectivo)
-  if (filtroTipo.value === "efectivo") {
-    lista = lista.filter((x) => Number(x.ESLEY) === 0);
-  } else if (filtroTipo.value === "ley") {
-    lista = lista.filter((x) => Number(x.ESLEY) === 1);
-  }
-
-  return lista;
-});
-
-const totalActivos = computed(() => {
-  if (!data.value || !Array.isArray(data.value)) return 0;
-  return data.value.filter((x) => Number(x.BLOQ) === 0).length;
-});
-
-const totalBloqueados = computed(() => {
-  if (!data.value || !Array.isArray(data.value)) return 0;
-  return data.value.filter((x) => Number(x.BLOQ) === 1).length;
+  return data.value;
 });
 
 function abrirConfirmacionIndividual(item) {
   itemsABloquear.value = [item];
-  modoBloqueoEsLey.value = item.ESLEY !== undefined ? Number(item.ESLEY) : (store.ley ? 1 : 0);
+  modoBloqueoEsLey.value = store.ley ? 1 : 0;
   mostrarDialogoBloqueo.value = true;
 }
 
@@ -159,15 +128,12 @@ async function buscarCargoDirecto() {
         NOMBRE: c.PERSONANOMBRE || c.NOMBRE || "",
         REPARTICIONID: c.REPARTICIONID || store.serverIdRep || 400,
         ORDEN: c.ORDEN || c.Orden || q,
-        CBU: c.CBU || "",
-        HABERES: 0,
-        RETENCIONES: 0,
-        NETO: 0,
-        BLOQ: 0,
-        ESLEY: store.ley ? 1 : 0,
+        TIPOLIQUIDACIONID: store.tipoliq || 1,
+        TIPOLIQUIDACIONDESCRIPCION: "MENSUAL",
         PERIODO: store.periodoDMY,
         FECHADEV: store.periodoDMY,
         GRUPOADICIONALID: store.nroadi || 0,
+        PERSONACUIL: c.CUIL || "",
       };
       cargoDirectoMensaje.value = `Cargo encontrado: Orden #${cargoDirectoEncontrado.value.ORDEN} - ${cargoDirectoEncontrado.value.APELLIDO} ${cargoDirectoEncontrado.value.NOMBRE}`;
     } else {
@@ -185,7 +151,7 @@ function bloquearCargoDirecto() {
   abrirConfirmacionIndividual(cargoDirectoEncontrado.value);
 }
 
-// Ejecución del procedimiento de bloqueo
+// Ejecución del procedimiento de bloqueo en Oracle (sp/acred_bloquearCtaBco)
 async function ejecutarBloqueoCtaBco() {
   if (itemsABloquear.value.length === 0) return;
 
@@ -195,34 +161,35 @@ async function ejecutarBloqueoCtaBco() {
   let fallidos = 0;
   let ultimoError = "";
 
+  // Valores de vESLEY a enviar: 0 (Efectivo), 1 (Ley), o ambos si modoBloqueoEsLey === 2
+  const valoresEsLey = modoBloqueoEsLey.value === 2 ? [0, 1] : [modoBloqueoEsLey.value];
+
   for (const item of itemsABloquear.value) {
     bloqueandoId.value = item.LIQUIDACIONID;
 
-    let esLeyVal = item.ESLEY !== undefined ? Number(item.ESLEY) : (store.ley ? 1 : 0);
-    if (modoBloqueoEsLey.value === 0) esLeyVal = 0;
-    else if (modoBloqueoEsLey.value === 1) esLeyVal = 1;
+    for (const esLeyVal of valoresEsLey) {
+      const payload = {
+        vIDREP: item.REPARTICIONID || Number(store.serverIdRep) || 400,
+        vORDEN: item.ORDEN,
+        vTIPOLIQ: item.TIPOLIQUIDACIONID || Number(store.tipoliq) || 1,
+        vNROADI: item.GRUPOADICIONALID !== undefined ? Number(item.GRUPOADICIONALID) : (Number(store.nroadi) || 0),
+        vPERIODO: item.PERIODO || store.periodoDMY,
+        vVTO: item.FECHADEV || item.PERIODO || store.periodoDMY,
+        vESLEY: esLeyVal,
+      };
 
-    const payload = {
-      vIDREP: item.REPARTICIONID || Number(store.serverIdRep) || 400,
-      vORDEN: item.ORDEN,
-      vTIPOLIQ: Number(store.tipoliq) || 1,
-      vNROADI: item.GRUPOADICIONALID !== undefined ? Number(item.GRUPOADICIONALID) : (Number(store.nroadi) || 0),
-      vPERIODO: item.PERIODO || store.periodoDMY,
-      vVTO: item.FECHADEV || item.PERIODO || store.periodoDMY,
-      vESLEY: esLeyVal,
-    };
-
-    try {
-      const res = await ejecutarSP("sp/acred_bloquearCtaBco", payload);
-      if (res && (res.operacionOk || res.salida === 0 || res.estado === 200)) {
-        exitosos++;
-      } else {
+      try {
+        const res = await ejecutarSP("sp/acred_bloquearCtaBco", payload);
+        if (res && (res.operacionOk || res.salida === 0 || res.estado === 200)) {
+          exitosos++;
+        } else {
+          fallidos++;
+          ultimoError = res?.errmsg || "Error al ejecutar el procedimiento";
+        }
+      } catch (err) {
         fallidos++;
-        ultimoError = res?.errmsg || "Error al ejecutar el procedimiento";
+        ultimoError = err.message || "Error al procesar";
       }
-    } catch (err) {
-      fallidos++;
-      ultimoError = err.message || "Error al procesar";
     }
   }
 
@@ -230,11 +197,13 @@ async function ejecutarBloqueoCtaBco() {
   isBloqueando.value = false;
   mostrarDialogoBloqueo.value = false;
 
+  const descTipo = modoBloqueoEsLey.value === 1 ? "Ley Especial" : modoBloqueoEsLey.value === 2 ? "Efectivo y Ley" : "Efectivo";
+
   if (exitosos > 0) {
     alertTipo.value = fallidos > 0 ? "warning" : "success";
     alertMensaje.value = fallidos > 0
-      ? `Se procesaron ${exitosos} liquidaciones, pero fallaron ${fallidos}: ${ultimoError}`
-      : `Se bloqueó exitosamente la cuenta bancaria para ${exitosos} liquidación(es).`;
+      ? `Se aplicó bloqueo a ${exitosos} operaciones (${descTipo}), pero fallaron ${fallidos}: ${ultimoError}`
+      : `Se bloqueó exitosamente la acreditación bancaria para ${itemsABloquear.value.length} liquidación(es) en modalidad: ${descTipo}.`;
     mostrarAlert.value = true;
     seleccionados.value = [];
     itemsABloquear.value = [];
@@ -257,9 +226,9 @@ async function ejecutarBloqueoCtaBco() {
         <v-icon icon="mdi-shield-lock" size="small"></v-icon>
       </v-avatar>
       <div>
-        <div class="text-h6 font-weight-bold">Bloqueo de Liquidaciones / Cuentas Bancarias</div>
+        <div class="text-h6 font-weight-bold">Bloqueo de Liquidaciones para Acreditación Bancaria</div>
         <div class="text-caption text-medium-emphasis">
-          Seleccione liquidaciones para bloquear su acreditación bancaria (por Ley o por Efectivo). Procedimiento: <code>sp/acred_bloquearCtaBco</code>.
+          Seleccione liquidaciones de la vista previa para bloquear su acreditación bancaria <strong>antes de generar el archivo del banco</strong>. Procedimiento: <code>sp/acred_bloquearCtaBco</code>.
         </div>
       </div>
     </v-card-title>
@@ -277,17 +246,17 @@ async function ejecutarBloqueoCtaBco() {
         {{ alertMensaje }}
       </v-alert>
 
-      <!-- Panel de Búsqueda Rápida de Cargo y Filtros -->
+      <!-- Panel de Búsqueda Rápida de Cargo y Acciones -->
       <v-card class="mb-4 border" rounded="lg" variant="outlined">
         <v-card-text class="py-3 px-3 bg-grey-lighten-5">
           <v-row align="center" dense>
             <!-- Buscador en Grilla de Liquidaciones -->
-            <v-col cols="12" md="4">
+            <v-col cols="12" sm="6" md="5">
               <v-text-field
                 v-model="busquedaCargo"
                 prepend-inner-icon="mdi-magnify"
-                label="Buscar cargo en la lista (Orden, DNI, Apellido)..."
-                placeholder="Ej: 261, 12414451, DIAZ..."
+                label="Buscar cargo (N° Orden, DNI, Apellido o Nombre)..."
+                placeholder="Ej: 914, MOLINA, 14039193..."
                 variant="outlined"
                 density="compact"
                 hide-details
@@ -295,36 +264,19 @@ async function ejecutarBloqueoCtaBco() {
               />
             </v-col>
 
-            <!-- Filtros de Estado y Tipo -->
-            <v-col cols="12" sm="7" md="5" class="d-flex flex-wrap align-center ga-1">
-              <v-btn-toggle
-                v-model="filtroEstado"
-                mandatory
-                density="compact"
-                color="primary"
-                variant="outlined"
-              >
-                <v-btn value="todos" size="small">Todos ({{ data?.length || 0 }})</v-btn>
-                <v-btn value="activos" size="small" color="success">Activos ({{ totalActivos }})</v-btn>
-                <v-btn value="bloqueados" size="small" color="error">Bloqueados ({{ totalBloqueados }})</v-btn>
-              </v-btn-toggle>
-
-              <v-btn-toggle
-                v-model="filtroTipo"
-                mandatory
-                density="compact"
-                color="secondary"
-                variant="outlined"
-                class="ms-2"
-              >
-                <v-btn value="todos" size="small">Ambos</v-btn>
-                <v-btn value="efectivo" size="small">Efectivo</v-btn>
-                <v-btn value="ley" size="small">Ley</v-btn>
-              </v-btn-toggle>
+            <!-- Total de Liquidaciones Disponibles -->
+            <v-col cols="12" sm="6" md="3" class="d-flex align-center">
+              <v-chip color="primary" variant="tonal" class="font-weight-medium">
+                <v-icon start icon="mdi-calculator-variant" size="small" />
+                {{ itemsLiquidacion.length }} liquidaciones calculadas
+              </v-chip>
             </v-col>
 
             <!-- Botón Acción Masiva Bloquear -->
-            <v-col cols="12" sm="5" md="3" class="d-flex justify-end align-center ga-2">
+            <v-col cols="12" sm="12" md="4" class="d-flex justify-end align-center ga-2">
+              <span v-if="seleccionados.length > 0" class="text-caption font-weight-bold text-primary">
+                {{ seleccionados.length }} seleccionada(s)
+              </span>
               <v-btn
                 color="warning"
                 variant="flat"
@@ -340,10 +292,10 @@ async function ejecutarBloqueoCtaBco() {
         </v-card-text>
       </v-card>
 
-      <!-- Tabla de Liquidaciones para Bloqueo -->
+      <!-- Tabla de Liquidaciones (view/liq) -->
       <div v-if="isPending" class="py-6 text-center text-medium-emphasis">
         <v-progress-circular indeterminate color="warning" size="28" class="me-2" />
-        Cargando liquidaciones del período...
+        Consultando liquidaciones calculadas del período (view/liq)...
       </div>
 
       <div v-else-if="error" class="text-error py-4 text-center">
@@ -359,10 +311,10 @@ async function ejecutarBloqueoCtaBco() {
           class="text-caption border rounded elevation-1"
           hover
           density="compact"
-          :items="itemsFiltrados"
+          :items="itemsLiquidacion"
           :headers="headers"
           :search="busquedaCargo"
-          no-data-text="No hay liquidaciones disponibles para bloquear en este período o filtros."
+          no-data-text="No hay liquidaciones disponibles en view/liq para el período y tipo seleccionados."
         >
           <!-- Acciones individuales -->
           <template #[`item.acciones`]="{ item }">
@@ -381,55 +333,14 @@ async function ejecutarBloqueoCtaBco() {
             </v-tooltip>
           </template>
 
-          <!-- Chip Bloqueo -->
-          <template #[`item.BLOQ`]="{ item }">
-            <v-chip
-              size="x-small"
-              :color="Number(item.BLOQ) === 1 ? 'error' : 'success'"
-              :variant="Number(item.BLOQ) === 1 ? 'flat' : 'tonal'"
-              class="font-weight-medium"
-            >
-              <v-icon start size="x-small">
-                {{ Number(item.BLOQ) === 1 ? "mdi-lock" : "mdi-check-circle" }}
-              </v-icon>
-              {{ Number(item.BLOQ) === 1 ? "Bloqueado" : "Activo" }}
-            </v-chip>
-          </template>
-
-          <!-- Chip Tipo (Ley / Efectivo) -->
-          <template #[`item.ESLEY`]="{ item }">
-            <v-chip
-              size="x-small"
-              :color="Number(item.ESLEY) === 1 ? 'info' : 'secondary'"
-              variant="outlined"
-            >
-              {{ Number(item.ESLEY) === 1 ? "Ley Especial" : "Efectivo" }}
-            </v-chip>
-          </template>
-
-          <!-- Orden -->
+          <!-- Orden / Cargo -->
           <template #[`item.ORDEN`]="{ item }">
             <span class="font-weight-bold text-primary">#{{ item.ORDEN }}</span>
           </template>
 
-          <!-- Importe Neto -->
-          <template #[`item.NETO`]="{ item }">
-            <span class="font-weight-bold text-success">{{ financial(item.NETO) }}</span>
-          </template>
-
-          <!-- Haberes -->
-          <template #[`item.HABERES`]="{ item }">
-            <span>{{ financial(item.HABERES) }}</span>
-          </template>
-
-          <!-- Retenciones -->
-          <template #[`item.RETENCIONES`]="{ item }">
-            <span>{{ financial(item.RETENCIONES) }}</span>
-          </template>
-
-          <!-- CBU -->
-          <template #[`item.CBU`]="{ item }">
-            <span class="font-mono text-caption">{{ item.CBU || "-" }}</span>
+          <!-- Documento -->
+          <template #[`item.DOCUMENTO`]="{ item }">
+            <span class="font-weight-medium">{{ item.DOCUMENTO }}</span>
           </template>
 
           <!-- Periodo -->
@@ -444,12 +355,12 @@ async function ejecutarBloqueoCtaBco() {
         </v-data-table>
       </div>
 
-      <!-- Búsqueda Directa Alternativa de Cargo (por si se necesita bloquear un cargo puntual) -->
+      <!-- Búsqueda Directa Alternativa de Cargo en view/cargo -->
       <v-expansion-panels class="mt-4" variant="accordion">
         <v-expansion-panel elevation="0" class="border rounded">
           <v-expansion-panel-title class="text-caption text-medium-emphasis py-2">
             <v-icon icon="mdi-account-search" size="small" class="me-2" />
-            ¿No encuentra el cargo en la lista? Búsqueda directa por N° de Orden
+            ¿Desea buscar un cargo puntual por N° de Orden que no figura arriba?
           </v-expansion-panel-title>
           <v-expansion-panel-text class="pt-2">
             <v-row dense align="center">
@@ -457,7 +368,7 @@ async function ejecutarBloqueoCtaBco() {
                 <v-text-field
                   v-model="busquedaDirectaTexto"
                   label="N° de Orden o DNI del cargo"
-                  placeholder="Ej: 261"
+                  placeholder="Ej: 914"
                   variant="outlined"
                   density="compact"
                   hide-details
@@ -488,7 +399,7 @@ async function ejecutarBloqueoCtaBco() {
                     Orden #{{ cargoDirectoEncontrado.ORDEN }} — {{ cargoDirectoEncontrado.APELLIDO }} {{ cargoDirectoEncontrado.NOMBRE }}
                   </div>
                   <div class="text-caption">
-                    DNI: {{ cargoDirectoEncontrado.DOCUMENTO }} | Repartición: {{ cargoDirectoEncontrado.REPARTICIONID }} | CBU: {{ cargoDirectoEncontrado.CBU || 'S/D' }}
+                    DNI: {{ cargoDirectoEncontrado.DOCUMENTO }} | Repartición: {{ cargoDirectoEncontrado.REPARTICIONID }} | Tipo Liq: {{ cargoDirectoEncontrado.TIPOLIQUIDACIONDESCRIPCION }}
                   </div>
                 </div>
                 <v-btn
@@ -522,18 +433,18 @@ async function ejecutarBloqueoCtaBco() {
           </p>
 
           <v-alert type="info" variant="tonal" density="compact" class="mb-3 text-caption">
-            Procedimiento: <code>sp/acred_bloquearCtaBco</code>. Las liquidaciones bloqueadas no serán procesadas en la acreditación bancaria del medio seleccionado.
+            Procedimiento: <code>sp/acred_bloquearCtaBco</code>. Las liquidaciones bloqueadas no serán incluidas cuando se genere el archivo bancario.
           </v-alert>
 
-          <!-- Selector de Modo de Bloqueo (Ley o Efectivo) -->
+          <!-- Selector de Modo de Bloqueo (Ley vs Efectivo) -->
           <div class="border rounded pa-3 mb-3 bg-grey-lighten-5">
-            <div class="text-caption font-weight-bold text-medium-emphasis mb-1">
-              Seleccione la porción a bloquear:
+            <div class="text-caption font-weight-bold text-medium-emphasis mb-2">
+              Seleccione la porción de liquidación a bloquear:
             </div>
             <v-radio-group v-model="modoBloqueoEsLey" density="compact" hide-details>
               <v-radio label="Liquidación General / Efectivo (vESLEY = 0)" :value="0" />
               <v-radio label="Cobra Ley Especial (vESLEY = 1)" :value="1" />
-              <v-radio label="Según el valor del registro (Ley / Efectivo)" :value="-1" />
+              <v-radio label="Bloquear Ambos (Efectivo y Ley Especial)" :value="2" />
             </v-radio-group>
           </div>
 
@@ -555,7 +466,7 @@ async function ejecutarBloqueoCtaBco() {
                 Orden #{{ item.ORDEN }} — {{ item.APELLIDO }} {{ item.NOMBRE }}
               </v-list-item-title>
               <v-list-item-subtitle class="text-caption">
-                DNI: {{ item.DOCUMENTO }} | CBU: {{ item.CBU || 'S/D' }} | Neto: {{ financial(item.NETO) }}
+                DNI: {{ item.DOCUMENTO }} | Tipo Liq: {{ item.TIPOLIQUIDACIONDESCRIPCION || store.tipoliq }} | Rep: {{ item.REPARTICIONID }}
               </v-list-item-subtitle>
             </v-list-item>
           </v-list>

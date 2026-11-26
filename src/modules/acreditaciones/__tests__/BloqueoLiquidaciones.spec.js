@@ -19,7 +19,7 @@ vi.mock("@/shared/services/apiService", () => ({
 
 vi.mock("@/stores/filterStore", () => ({
   useFilterStore: () => ({
-    filterStringLey: "TipoLiquidacionId=1&GrupoAdicionalId=0&Ley=0&Periodo=01/09/2026",
+    filterString: "Periodo=01/09/2026&TipoLiquidacionId=1&GrupoAdicionalId=0",
     periodoString: "Septiembre - 2026",
     periodoDMY: "01/09/2026",
     liqString: "Mensual-0 Septiembre-2026",
@@ -42,44 +42,44 @@ vi.mock("@/composables/useEndPoints", () => ({
 
 const mockItems = [
   {
-    LIQUIDACIONID: 67719,
-    DOCUMENTO: 12414451,
-    APELLIDO: "DIAZ",
-    NOMBRE: "PEDRO PABLO",
+    PERSONAID: 526,
+    DOCUMENTO: 14039193,
+    APELLIDO: "MOLINA",
+    NOMBRE: "M. AGUSTINA",
+    PERSONACUIL: 27140391935,
+    CARGOID: 526,
     REPARTICIONID: 400,
-    ORDEN: 261,
-    AFILIADO: 168518,
-    CUIL: 20124144516,
-    CBU: "2850600140081000535857",
-    HABERES: 1178200.07,
-    RETENCIONES: 96075.88,
-    NETO: 1082124.19,
-    UNIORG: 2,
-    BLOQ: 0,
-    ESLEY: 0,
+    ORDEN: 914,
+    AFILIADO: 193895,
+    TIPOEMPLEOID: 1,
+    SITUACIONREVISTAID: 1,
+    LIQUIDACIONID: 68119,
     PERIODO: "2026-09-01T03:00:00.000Z",
     FECHADEV: "2026-09-01T03:00:00.000Z",
+    TIPOLIQUIDACIONID: 1,
+    TIPOLIQUIDACIONDESCRIPCION: "MENSUAL",
     GRUPOADICIONALID: 0,
+    UNIORG: 3,
   },
   {
-    LIQUIDACIONID: 67720,
-    DOCUMENTO: 16541253,
-    APELLIDO: "PORCEL",
-    NOMBRE: "LILIANA",
+    PERSONAID: 528,
+    DOCUMENTO: 20239637,
+    APELLIDO: "GONZALEZ",
+    NOMBRE: "JUAN PABLO",
+    PERSONACUIL: 20202396373,
+    CARGOID: 528,
     REPARTICIONID: 400,
-    ORDEN: 14,
-    AFILIADO: 194042,
-    CUIL: 27165412538,
-    CBU: "2850600140081000537211",
-    HABERES: 1362725.93,
-    RETENCIONES: 361636.58,
-    NETO: 1001089.35,
-    UNIORG: 1,
-    BLOQ: 1,
-    ESLEY: 1,
+    ORDEN: 924,
+    AFILIADO: 0,
+    TIPOEMPLEOID: 1,
+    SITUACIONREVISTAID: 1,
+    LIQUIDACIONID: 68121,
     PERIODO: "2026-09-01T03:00:00.000Z",
     FECHADEV: "2026-09-01T03:00:00.000Z",
+    TIPOLIQUIDACIONID: 1,
+    TIPOLIQUIDACIONDESCRIPCION: "MENSUAL",
     GRUPOADICIONALID: 0,
+    UNIORG: 2,
   },
 ];
 
@@ -102,9 +102,9 @@ describe("BloqueoLiquidaciones - Componente Principal de Bloqueo", () => {
     const wrapper = mount(BloqueoLiquidaciones);
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Bloqueo de Liquidaciones / Cuentas Bancarias");
+    expect(wrapper.text()).toContain("Bloqueo de Liquidaciones para Acreditación Bancaria");
     expect(wrapper.text()).toContain("sp/acred_bloquearCtaBco");
-    expect(wrapper.text()).toContain("Buscar cargo en la lista");
+    expect(wrapper.text()).toContain("Buscar cargo");
   });
 
   it("permite bloquear una liquidación individual vía sp/acred_bloquearCtaBco", async () => {
@@ -122,7 +122,7 @@ describe("BloqueoLiquidaciones - Componente Principal de Bloqueo", () => {
       "sp/acred_bloquearCtaBco",
       expect.objectContaining({
         vIDREP: 400,
-        vORDEN: 261,
+        vORDEN: 914,
         vTIPOLIQ: 1,
         vNROADI: 0,
         vPERIODO: "2026-09-01T03:00:00.000Z",
@@ -153,7 +153,7 @@ describe("BloqueoLiquidaciones - Componente Principal de Bloqueo", () => {
       1,
       "sp/acred_bloquearCtaBco",
       expect.objectContaining({
-        vORDEN: 261,
+        vORDEN: 914,
         vESLEY: 1,
       })
     );
@@ -161,49 +161,37 @@ describe("BloqueoLiquidaciones - Componente Principal de Bloqueo", () => {
       2,
       "sp/acred_bloquearCtaBco",
       expect.objectContaining({
-        vORDEN: 14,
+        vORDEN: 924,
         vESLEY: 1,
       })
     );
   });
 
-  it("permite buscar un cargo directamente por Orden si no está en la lista y bloquearlo", async () => {
-    mockLeerDatos.mockResolvedValueOnce({
-      operacionOk: true,
-      datos: [
-        {
-          ID: 999,
-          ORDEN: 555,
-          PERSONAAPELLIDO: "GOMEZ",
-          PERSONANOMBRE: "JUAN",
-          PERSONADOCUMENTO: "30111222",
-          REPARTICIONID: 400,
-          CBU: "2850000000000000000000",
-        },
-      ],
-    });
-
+  it("permite bloquear para ambos (Efectivo y Ley Especial) ejecutando 2 llamadas por liquidación", async () => {
     const wrapper = mount(BloqueoLiquidaciones);
     await flushPromises();
 
-    wrapper.vm.busquedaDirectaTexto = "555";
-    await wrapper.vm.buscarCargoDirecto();
-    await flushPromises();
-
-    expect(wrapper.vm.cargoDirectoEncontrado).not.toBeNull();
-    expect(wrapper.vm.cargoDirectoEncontrado.ORDEN).toBe(555);
-
-    wrapper.vm.bloquearCargoDirecto();
-    expect(wrapper.vm.mostrarDialogoBloqueo).toBe(true);
-    expect(wrapper.vm.itemsABloquear[0].ORDEN).toBe(555);
+    wrapper.vm.abrirConfirmacionIndividual(mockItems[0]);
+    wrapper.vm.modoBloqueoEsLey = 2; // Ambos
 
     await wrapper.vm.ejecutarBloqueoCtaBco();
     await flushPromises();
 
-    expect(mockEjecutarSP).toHaveBeenCalledWith(
+    expect(mockEjecutarSP).toHaveBeenCalledTimes(2);
+    expect(mockEjecutarSP).toHaveBeenNthCalledWith(
+      1,
       "sp/acred_bloquearCtaBco",
       expect.objectContaining({
-        vORDEN: 555,
+        vORDEN: 914,
+        vESLEY: 0,
+      })
+    );
+    expect(mockEjecutarSP).toHaveBeenNthCalledWith(
+      2,
+      "sp/acred_bloquearCtaBco",
+      expect.objectContaining({
+        vORDEN: 914,
+        vESLEY: 1,
       })
     );
   });
