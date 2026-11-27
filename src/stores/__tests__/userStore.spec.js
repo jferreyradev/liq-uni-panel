@@ -4,8 +4,8 @@ import { setActivePinia, createPinia } from 'pinia'
 
 import { useUserStore } from '../userStore'
 
-const API_BOLETAS = 'https://api-rpi.liqsysonline.com/api'
-const API_BASE = 'https://api-rpi.liqsysonline.com'
+const API_BOLETAS = 'https://api-tv.liqsysonline.com/api'
+const API_BASE = 'https://api-tv.liqsysonline.com'
 
 function respuesta(cuerpo, { status = 200 } = {}) {
   return {
@@ -34,8 +34,7 @@ describe('userStore sobre el cliente HTTP unico', () => {
     const [url, init] = global.fetch.mock.calls[0]
     expect(url).toBe(`${API_BOLETAS}/config`)
     expect(init.method).toBe('GET')
-    expect(init.headers['x-project-key']).toBe('concecpcion')
-    expect(init.headers['x-project-port']).toBe('3007')
+    expect(init.headers['x-project-key']).toBe('concepcion')
     expect(store.config.AMBIENTE).toBe('PROD')
     expect(store.error).toBe(null)
   })

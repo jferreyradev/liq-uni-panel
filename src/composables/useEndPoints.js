@@ -175,18 +175,18 @@ export function useEndPoints() {
       }
     }
 
-    // 3. Fallback a endpoints de tenants (Concepción, Burruyacú, etc.)
+    // 3. Fallback a ambiente de producción por defecto si no hay ambiente seleccionado
+    const defaultProdUrl = DEFAULT_API_ENVIRONMENTS[1]?.url || 'https://api-tv.liqsysonline.com'
+    const defaultDesaUrl = DEFAULT_API_ENVIRONMENTS[0]?.url || 'https://api-desa.liqsysonline.com'
     const tStore = getTenantStoreSafe()
-    const tEndpoints = tStore?.activeTenant?.endpoints || DEFAULT_ENDPOINTS
     const isDesaMode = env.value === 'Desa' || tStore?.activeTenantId === 'desarrollo'
-    if (isDesaMode) {
-      return {
-        base: tEndpoints.desa.base,
-        boletas: tEndpoints.desa.boletas,
-        sp: tEndpoints.desa.sp
-      }
+    const targetUrl = isDesaMode ? defaultDesaUrl : defaultProdUrl
+
+    return {
+      base: targetUrl,
+      boletas: `${targetUrl}/api`,
+      sp: `${targetUrl}/api`
     }
-    return tEndpoints.prod
   })
 
   const apiBase = computed(() => currentEndpoints.value.base)
@@ -197,31 +197,33 @@ export function useEndPoints() {
     const tStore = getTenantStoreSafe()
     const isDesaMode = env.value === 'Desa' || tStore?.activeTenantId === 'desarrollo'
 
-    // En ambiente de desarrollo se utiliza la clave 'desarrollo' y puerto '3005'
-    // En producción se utiliza la clave y puerto del municipio activo seleccionado
-    const defaultKey = isDesaMode ? 'desarrollo' : (tStore?.tenantKey || TENANTS[0].projectKey)
-    const defaultPort = isDesaMode ? '3005' : (tStore?.tenantPort || TENANTS[0].projectPort)
+    // Se envía el ID semántico del tenant (ej. 'concepcion', 'tafiviejo')
+    const activeTenantId = tStore?.activeTenantId || 'concepcion'
+    const defaultKey = isDesaMode ? 'desarrollo' : (tStore?.tenantKey || activeTenantId)
+    const defaultPort = isDesaMode ? '3005' : (tStore?.tenantPort || '')
 
     const projectKey = isDesaMode
       ? (desaKeyOverride.value || defaultKey)
-      : defaultKey
+      : (desaKeyOverride.value || defaultKey)
 
     const projectPort = isDesaMode
       ? (desaPortOverride.value || defaultPort)
-      : defaultPort
+      : (desaPortOverride.value || defaultPort)
 
     const token = authToken.value || getStoredAuthToken()
-    // Si el ambiente activo define su propia apiKey, se prioriza sobre el default
-    const envApiKey =
-      activeEnvironment.value?.apiKey ||
-      (activeEnvironment.value?.id === 'rpi-tv' ? 'f098tv' : (activeEnvironment.value?.id === 'rpi-desa' ? 'admin987front' : ''))
+    // Si el ambiente activo define su propia apiKey opcional, se prioriza
+    const envApiKey = activeEnvironment.value?.apiKey || ''
     const apiKey = envApiKey || apiKeyOverride.value || getStoredValue(STORAGE_API_KEY, defaultEnvApiKey)
     const adminKey = adminKeyOverride.value || getStoredValue(STORAGE_ADMIN_KEY, defaultEnvAdminKey)
 
     const headers = {
       'Content-Type': 'application/json',
-      'x-project-key': projectKey,
-      'x-project-port': String(projectPort)
+      'x-project-key': projectKey
+    }
+
+    // Solo se incluye x-project-port si está explícitamente configurado (o en override de prueba)
+    if (projectPort) {
+      headers['x-project-port'] = String(projectPort)
     }
 
     // Inyectar credenciales del nuevo sistema de seguridad híbrido de node-apiliq
@@ -373,7 +375,7 @@ export function useEndPoints() {
     setStoredValue(STORAGE_DESA_BASE_KEY, '')
 
     // Sincronizar automáticamente la apiKey del ambiente seleccionado
-    const keyToSet = found.apiKey || (found.id === 'rpi-tv' ? 'f098tv' : (found.id === 'rpi-desa' ? 'admin987front' : ''))
+    const keyToSet = found.apiKey || ''
     setApiKey(keyToSet)
 
     // Al conmutar de backend se limpia el token de sesión previo

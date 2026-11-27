@@ -96,7 +96,6 @@ describe('LogStore y Diagnóstico de Conexión', () => {
     expect(env.value).toBe('Prod')
     let headers = getBoletasHeaders()
     expect(headers['x-project-key']).toBe('tafiviejo')
-    expect(headers['x-project-port']).toBe('3007')
 
     setDesa()
     expect(env.value).toBe('Desa')

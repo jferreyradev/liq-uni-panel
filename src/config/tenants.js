@@ -28,13 +28,10 @@ export const TENANTS = [
     name: 'Municipalidad de Concepción',
     shortName: 'Concepción',
     location: 'Concepción - Tucumán',
-    projectKey: 'concecpcion',
-    projectPort: '3007',
     logo: logoConcepcion,
     boletaLogo: logoConcepcion,
     themeColor: '#1976D2',
-    allowedReports: [4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-    endpoints: { ...DEFAULT_ENDPOINTS }
+    allowedReports: [4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
   },
   {
     id: 'burruyacu',
@@ -43,13 +40,10 @@ export const TENANTS = [
     name: 'Municipalidad de Burruyacú',
     shortName: 'Burruyacú',
     location: 'Burruyacú - Tucumán',
-    projectKey: 'Burru',
-    projectPort: '3003',
     logo: logoBurru,
     boletaLogo: logoBurru,
     themeColor: '#2E7D32',
-    allowedReports: [4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-    endpoints: { ...DEFAULT_ENDPOINTS }
+    allowedReports: [4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
   },
   {
     id: 'tafiviejo',
@@ -58,13 +52,10 @@ export const TENANTS = [
     name: 'Municipalidad de Tafí Viejo',
     shortName: 'Tafí Viejo',
     location: 'Tafí Viejo - Tucumán',
-    projectKey: 'tafiviejo',
-    projectPort: '3007',
     logo: logoTafi,
     boletaLogo: logoTafi,
     themeColor: '#00838F',
-    allowedReports: [4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-    endpoints: { ...DEFAULT_ENDPOINTS }
+    allowedReports: [4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
   },
   {
     id: 'trancas',
@@ -73,27 +64,21 @@ export const TENANTS = [
     name: 'Municipalidad de Trancas',
     shortName: 'Trancas',
     location: 'Trancas - Tucumán',
-    projectKey: 'ServerTrancas',
-    projectPort: '3005',
     logo: logoTrancas,
     boletaLogo: logoTrancas,
     themeColor: '#6A1B9A',
-    allowedReports: [1, 2, 4, 5],
-    endpoints: { ...DEFAULT_ENDPOINTS }
+    allowedReports: [1, 2, 4, 5]
   },
   {
     id: 'desarrollo',
     name: 'Desarrollo',
     shortName: 'Desarrollo',
     location: 'Servidor de Desarrollo / Testing',
-    projectKey: 'desarrollo',
-    projectPort: '3005',
     logo: logoDefault,
     boletaLogo: logoDefault,
     themeColor: '#7C4DFF',
     isDevelopment: true,
-    allowedReports: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-    endpoints: { ...DEFAULT_ENDPOINTS }
+    allowedReports: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
   }
 ]
 

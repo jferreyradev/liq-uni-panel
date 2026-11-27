@@ -36,8 +36,8 @@ export const useTenantStore = defineStore('tenant', () => {
     return getTenantById(activeTenantId.value)
   })
 
-  const tenantKey = computed(() => activeTenant.value.projectKey)
-  const tenantPort = computed(() => activeTenant.value.projectPort)
+  const tenantKey = computed(() => activeTenant.value.projectKey || activeTenant.value.id)
+  const tenantPort = computed(() => activeTenant.value.projectPort || '')
   const tenantName = computed(() => activeTenant.value.name)
   const tenantShortName = computed(() => activeTenant.value.shortName)
   const tenantLocation = computed(() => activeTenant.value.location)

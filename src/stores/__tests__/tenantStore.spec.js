@@ -15,8 +15,7 @@ describe('TenantStore and Multi-Tenant Integration', () => {
   it('inicializa con el municipio por defecto (Concepción)', () => {
     const store = useTenantStore()
     expect(store.activeTenantId).toBe('concepcion')
-    expect(store.tenantKey).toBe('concecpcion')
-    expect(store.tenantPort).toBe('3007')
+    expect(store.tenantKey).toBe('concepcion')
     expect(store.tenantName).toContain('Concepción')
   })
 
@@ -27,61 +26,54 @@ describe('TenantStore and Multi-Tenant Integration', () => {
     expect(ids).toEqual(['concepcion', 'burruyacu', 'tafiviejo', 'trancas', 'desarrollo'])
   })
 
-  it('permite conmutar a Burruyacú y actualiza la key y puerto', () => {
+  it('permite conmutar a Burruyacú y actualiza la key de tenant', () => {
     const store = useTenantStore()
     const ok = store.setTenant('burruyacu')
     expect(ok).toBe(true)
     expect(store.activeTenantId).toBe('burruyacu')
-    expect(store.tenantKey).toBe('Burru')
-    expect(store.tenantPort).toBe('3003')
+    expect(store.tenantKey).toBe('burruyacu')
   })
 
-  it('permite conmutar a Tafí Viejo y actualiza key y puerto', () => {
+  it('permite conmutar a Tafí Viejo y actualiza key de tenant', () => {
     const store = useTenantStore()
     const ok = store.setTenant('tafiviejo')
     expect(ok).toBe(true)
     expect(store.activeTenantId).toBe('tafiviejo')
     expect(store.tenantKey).toBe('tafiviejo')
-    expect(store.tenantPort).toBe('3007')
   })
 
-  it('permite conmutar a Trancas y actualiza key y puerto', () => {
+  it('permite conmutar a Trancas y actualiza key de tenant', () => {
     const store = useTenantStore()
     const ok = store.setTenant('trancas')
     expect(ok).toBe(true)
     expect(store.activeTenantId).toBe('trancas')
-    expect(store.tenantKey).toBe('ServerTrancas')
-    expect(store.tenantPort).toBe('3005')
+    expect(store.tenantKey).toBe('trancas')
   })
 
-  it('permite conmutar a Desarrollo y actualiza key y puerto a desarrollo/3005', () => {
+  it('permite conmutar a Desarrollo y actualiza key a desarrollo', () => {
     const store = useTenantStore()
     const ok = store.setTenant('desarrollo')
     expect(ok).toBe(true)
     expect(store.activeTenantId).toBe('desarrollo')
     expect(store.tenantKey).toBe('desarrollo')
-    expect(store.tenantPort).toBe('3005')
     expect(store.tenantShortName).toBe('Desarrollo')
   })
 
-  it('conecta con useEndPoints y genera encabezados reactivos', () => {
+  it('conecta con useEndPoints y genera encabezados reactivos limpios', () => {
     const store = useTenantStore()
     const { getBoletasHeaders } = useEndPoints()
 
     store.setTenant('burruyacu')
     let headers = getBoletasHeaders()
-    expect(headers['x-project-key']).toBe('Burru')
-    expect(headers['x-project-port']).toBe('3003')
+    expect(headers['x-project-key']).toBe('burruyacu')
 
     store.setTenant('trancas')
     headers = getBoletasHeaders()
-    expect(headers['x-project-key']).toBe('ServerTrancas')
-    expect(headers['x-project-port']).toBe('3005')
+    expect(headers['x-project-key']).toBe('trancas')
 
     store.setTenant('desarrollo')
     headers = getBoletasHeaders()
     expect(headers['x-project-key']).toBe('desarrollo')
-    expect(headers['x-project-port']).toBe('3005')
   })
 
   it('respeta la asignación de reportes permitidos según el municipio', () => {
@@ -102,7 +94,7 @@ describe('TenantStore and Multi-Tenant Integration', () => {
     expect(env.value).toBe('Prod')
     expect(isProd.value).toBe(true)
     expect(isDesa.value).toBe(false)
-    expect(apiBase.value).toContain('api-rpi.liqsysonline.com')
+    expect(apiBase.value).toContain('api-tv.liqsysonline.com')
 
     setDesa()
     expect(env.value).toBe('Desa')
@@ -115,7 +107,7 @@ describe('TenantStore and Multi-Tenant Integration', () => {
 
     toggleEnv()
     expect(env.value).toBe('Prod')
-    expect(apiBase.value).toContain('api-rpi.liqsysonline.com')
+    expect(apiBase.value).toContain('api-tv.liqsysonline.com')
     if (typeof window !== 'undefined' && window.localStorage) {
       expect(window.localStorage.getItem('liq_env')).toBe('Prod')
     }

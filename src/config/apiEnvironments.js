@@ -9,13 +9,13 @@ export const DEFAULT_API_ENVIRONMENTS = [
     id: 'rpi-desa',
     nombre: 'Desarrollo (Cloudflare Desa)',
     url: 'https://api-desa.liqsysonline.com',
-    apiKey: import.meta.env?.VITE_API_KEY_DESA || 'admin987front'
+    apiKey: import.meta.env?.VITE_API_KEY_DESA || ''
   },
   {
     id: 'rpi-tv',
     nombre: 'Servidor TV (Tafí Viejo)',
     url: 'https://api-tv.liqsysonline.com',
-    apiKey: import.meta.env?.VITE_API_KEY_TV || 'f098tv'
+    apiKey: import.meta.env?.VITE_API_KEY_TV || ''
   }
 ]
 
@@ -63,12 +63,12 @@ export function loadApiEnvironments() {
             apiKey = match.apiKey
             changed = true
           }
-          if (item.id === 'rpi-tv' && (!apiKey || apiKey === 'admin987front')) {
-            apiKey = 'f098tv'
+          if (item.id === 'rpi-tv' && !apiKey && match?.apiKey) {
+            apiKey = match.apiKey
             changed = true
           }
-          if (item.id === 'rpi-desa' && !apiKey) {
-            apiKey = 'admin987front'
+          if (item.id === 'rpi-desa' && !apiKey && match?.apiKey) {
+            apiKey = match.apiKey
             changed = true
           }
 

@@ -312,9 +312,7 @@ export const useUserStore = defineStore('userStore', {
         }
 
         const { activeEnvironment, apiKeyOverride } = useEndPoints()
-        const envApiKey =
-          activeEnvironment?.value?.apiKey ||
-          (activeEnvironment?.value?.id === 'rpi-tv' ? 'f098tv' : (activeEnvironment?.value?.id === 'rpi-desa' ? 'admin987front' : ''))
+        const envApiKey = activeEnvironment?.value?.apiKey || ''
         const currentApiKey =
           envApiKey ||
           apiKeyOverride?.value ||
