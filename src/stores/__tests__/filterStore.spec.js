@@ -18,8 +18,8 @@ describe('filterStore getters de régimen Ley/Efe', () => {
     expect(store.isLey).toBe(false);
     expect(store.leyTag).toBe('Efe');
     expect(store.leyLabel).toBe('Liquidación Efectivo (0)');
-    expect(store.liqCompactString).toBe('2026NovM0');
-    expect(store.liqCompactStringLey).toBe('2026NovM0_Efe');
+    expect(store.liqCompactString).toBe('202611M0');
+    expect(store.liqCompactStringLey).toBe('202611M0_Efe');
     expect(store.liqStringLey).toContain('[Efe]');
   });
 
@@ -34,8 +34,8 @@ describe('filterStore getters de régimen Ley/Efe', () => {
     expect(store.isLey).toBe(true);
     expect(store.leyTag).toBe('Ley');
     expect(store.leyLabel).toBe('Ley Especial (1)');
-    expect(store.liqCompactString).toBe('2026NovM0');
-    expect(store.liqCompactStringLey).toBe('2026NovM0_Ley');
+    expect(store.liqCompactString).toBe('202611M0');
+    expect(store.liqCompactStringLey).toBe('202611M0_Ley');
     expect(store.liqStringLey).toContain('[Ley]');
   });
 });

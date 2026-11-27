@@ -13,7 +13,7 @@ vi.mock('@/stores/filterStore', () => ({
   useFilterStore: () => ({
     filterStringLey: 'TipoLiquidacionId=1&GrupoAdicionalId=0&Ley=1&Periodo=01/08/2026',
     periodoString: 'Agosto - 2026',
-    liqCompactString: '2026AgoM0',
+    liqCompactString: '202608M0',
     year: 2026,
     month: '08',
     ley: 1

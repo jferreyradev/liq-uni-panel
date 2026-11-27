@@ -21,7 +21,7 @@ vi.mock("@/stores/filterStore", () => ({
     periodoString: "Septiembre - 2026",
     periodoDMY: "01/09/2026",
     liqString: "Mensual-0 Septiembre-2026",
-    liqCompactString: "2026SepM0",
+    liqCompactString: "202609M0",
     tipoliq: 1,
     nroadi: 0,
     ley: 0,
