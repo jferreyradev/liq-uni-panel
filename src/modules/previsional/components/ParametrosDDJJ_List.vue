@@ -152,10 +152,6 @@ async function eliminar(id) {
   return false;
 }
 
-function handleDownload() {
-  exportFile();
-}
-
 function exportFile() {
   if (!Array.isArray(data.value)) return;
   const map1 = data.value.map((x) => {
@@ -234,7 +230,7 @@ function exportFile() {
         @click="handleModif(null)"
         >Nuevo rango</v-btn
       >
-      <v-btn color="primary" :disabled="!data" @click="handleDownload"
+      <v-btn color="primary" :disabled="!data" @click="exportFile"
         >Descargar</v-btn
       >
       <v-btn

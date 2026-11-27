@@ -57,6 +57,8 @@ const stubs = {
   'v-container': { template: '<div><slot /></div>' },
   'v-row': { template: '<div><slot /></div>' },
   'v-btn': { template: '<button><slot /></button>' },
+  'v-alert': { template: '<div><slot /></div>' },
+  'v-progress-circular': { template: '<div><slot /></div>' },
   'v-data-table': {
     props: ['items', 'headers'],
     template: `

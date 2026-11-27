@@ -145,7 +145,7 @@ async function eliminar(id) {
 // funciones de exportación a archivo excel
 
 const totImporte = computed(() => {
-  var totImp = 0;
+  let totImp = 0;
   if (data.value) {
     data.value.forEach((x) => {
       totImp += x.IMPORTE;
@@ -154,11 +154,6 @@ const totImporte = computed(() => {
 
   return { totImp };
 });
-
-function handleDownload() {
-  console.log("download");
-  exportFile();
-}
 
 function exportFile() {
   const map1 = data.value.map((x) => {
@@ -246,7 +241,7 @@ function exportFile() {
         @click="handleModif(null)"
         >Nuevo registro</v-btn
       >
-      <v-btn color="primary" :disabled="!data" @click="handleDownload"
+      <v-btn color="primary" :disabled="!data" @click="exportFile"
         >Descargar</v-btn
       >
       <v-btn

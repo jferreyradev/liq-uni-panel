@@ -1,22 +1,22 @@
 <script setup>
-import RepoCod153 from "../components/RepoCod153.vue";
-import RepoResumenLiq from "../components/RepoResumenLiq.vue";
-import RepoResumenCod from "../components/RepoResumenCod.vue";
-import RepoResumenLiqFDO from "../components/RepoResumenLiqFdo.vue";
+import { ref, computed, watch, defineAsyncComponent } from "vue";
 import { LiqInputPanel } from "@/shared/components";
-import RepoApoPatronales from "../components/RepoApoPatronales.vue";
-import RepoPlanillaDetLiq from "../components/RepoPlanillaDetLiq.vue";
-import RepoPlanillaRet from "../components/RepoPlanillaRet.vue";
-import RepoPlanillaLey from "../components/RepoPlanillaLey.vue";
-import RepoPlanillaResSueldo from "../components/RepoPlanillaResSueldo.vue";
-import RepoPlanillaRetCargo from "../components/RepoPlanillaRetCargo.vue";
-import RepoPlanillaRetencionesCPA from "../components/RepoPlanillaRetencionesCPA.vue";
-import RepoBajasLey from "../components/RepoBajasLey.vue";
-import RepoPlanillaResSueldoComp from "../components/RepoPlanillaResSueldoComp.vue";
-import RepoPlanillaResumenCargos from "../components/RepoPlanillaResumenCargos.vue";
-
-import { ref, computed, watch } from "vue";
 import { useTenantStore } from "@/stores/tenantStore";
+
+const RepoResumenLiq = defineAsyncComponent(() => import("../components/RepoResumenLiq.vue"));
+const RepoCod153 = defineAsyncComponent(() => import("../components/RepoCod153.vue"));
+const RepoResumenCod = defineAsyncComponent(() => import("../components/RepoResumenCod.vue"));
+const RepoResumenLiqFDO = defineAsyncComponent(() => import("../components/RepoResumenLiqFdo.vue"));
+const RepoApoPatronales = defineAsyncComponent(() => import("../components/RepoApoPatronales.vue"));
+const RepoPlanillaDetLiq = defineAsyncComponent(() => import("../components/RepoPlanillaDetLiq.vue"));
+const RepoPlanillaRet = defineAsyncComponent(() => import("../components/RepoPlanillaRet.vue"));
+const RepoPlanillaLey = defineAsyncComponent(() => import("../components/RepoPlanillaLey.vue"));
+const RepoPlanillaResSueldo = defineAsyncComponent(() => import("../components/RepoPlanillaResSueldo.vue"));
+const RepoPlanillaRetencionesCPA = defineAsyncComponent(() => import("../components/RepoPlanillaRetencionesCPA.vue"));
+const RepoPlanillaRetCargo = defineAsyncComponent(() => import("../components/RepoPlanillaRetCargo.vue"));
+const RepoBajasLey = defineAsyncComponent(() => import("../components/RepoBajasLey.vue"));
+const RepoPlanillaResSueldoComp = defineAsyncComponent(() => import("../components/RepoPlanillaResSueldoComp.vue"));
+const RepoPlanillaResumenCargos = defineAsyncComponent(() => import("../components/RepoPlanillaResumenCargos.vue"));
 
 const tenantStore = useTenantStore();
 

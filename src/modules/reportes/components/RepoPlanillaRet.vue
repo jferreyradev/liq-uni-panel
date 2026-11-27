@@ -22,7 +22,7 @@ function useResLiqCod(getId) {
 const { data, error, isPending } = useResLiqCod(() => store.filterString);
 
 const totImporte = computed(() => {
-  var totImp = 0;
+  let totImp = 0;
   if (data.value) {
     data.value.forEach((x) => {
       totImp += x.IMPORTE;
@@ -59,11 +59,6 @@ const headers = [
   { title: "Dias", key: "DIAS" },
   { title: "Importe", key: "IMPORTE" },
 ];
-
-function handleDownload() {
-  console.log("download");
-  exportFile();
-}
 
 function exportFile() {
   const map1 = data.value.map((x) => {
@@ -149,12 +144,15 @@ function exportFile() {
       :subtitle="store.liqString"
       v-model:search="search"
     >
-      <v-btn color="primary" :disabled="!data" @click="handleDownload"
+      <v-btn color="primary" :disabled="!data" @click="exportFile"
         >Descargar</v-btn
       >
     </RepoHeader>
     <v-row>
-      <div v-if="isPending">loading...</div>
+      <div v-if="isPending" class="d-flex align-center justify-center w-100 py-8 text-medium-emphasis">
+        <v-progress-circular indeterminate color="primary" class="me-2" size="24" />
+        <span>Cargando datos del reporte...</span>
+      </div>
       <v-data-table
         v-else-if="data"
         class="text-caption"
@@ -195,7 +193,9 @@ function exportFile() {
           </tr>
         </template>
       </v-data-table>
-      <div v-else-if="error">No se puede obtener los datos solicitados.</div>
+      <v-alert v-else-if="error" type="error" variant="tonal" class="my-3 w-100">
+        No se pudieron cargar los datos solicitados. Verifique el período o liquidación seleccionada.
+      </v-alert>
     </v-row>
   </v-container>
 </template>

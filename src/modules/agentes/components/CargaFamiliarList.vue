@@ -251,10 +251,6 @@ async function desasociarCargo(idCargo) {
 // -------------------------------------------------
 // funciones de exportación a archivo excel
 
-function handleDownload() {
-  exportFile();
-}
-
 function exportFile() {
   const map1 = listaRegistros.value.map((x) => {
     return [
@@ -343,7 +339,7 @@ cargarDatos();
           @click="handleModif(null)"
           >Agregar</v-btn
         >
-        <v-btn color="primary" :disabled="!data" @click="handleDownload"
+        <v-btn color="primary" :disabled="!data" @click="exportFile"
           >Descargar</v-btn
         >
         <v-btn

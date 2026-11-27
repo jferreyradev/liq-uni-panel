@@ -156,10 +156,6 @@ async function eliminar(id) {
   return true;
 }
 
-function handleDownload() {
-  exportFile();
-}
-
 function exportFile() {
   if (!data.value || !Array.isArray(data.value)) return;
   const map1 = data.value.map((x) => [
@@ -237,7 +233,7 @@ function exportFile() {
       >
       <v-btn
         color="primary"
-        @click="handleDownload"
+        @click="exportFile"
         :disabled="!data || !data.length"
         >Descargar</v-btn
       >

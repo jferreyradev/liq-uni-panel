@@ -59,7 +59,8 @@ const stubsVuetify = {
   'v-card': true,
   'v-btn': true,
   'v-data-table': true,
-  'v-alert': true
+  'v-alert': true,
+  'v-progress-circular': true
 }
 
 describe('Reportes Endpoints - Verificación de URLs de API para cada componente', () => {
