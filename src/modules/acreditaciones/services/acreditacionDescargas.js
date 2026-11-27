@@ -26,6 +26,39 @@ export const getPeriodo = (per) => {
 };
 
 /**
+ * Genera el nombre del archivo bancario TXT según régimen Ley (1) o Efe (0).
+ * @param {Object} store
+ * @returns {string}
+ */
+export function generarNombreArchivoAcred(store) {
+  const modo = Number(store.ley) === 1 ? "Ley" : "Efe";
+  const periodo = store.liqCompactString || "Periodo";
+  return `${periodo}_Acred_${modo}.txt`;
+}
+
+/**
+ * Genera el nombre del archivo Excel de Resumen de Acreditaciones.
+ * @param {Object} store
+ * @returns {string}
+ */
+export function generarNombreResumenExcel(store) {
+  const modo = Number(store.ley) === 1 ? "Ley" : "Efe";
+  const periodo = store.liqCompactString || "Periodo";
+  return `${periodo}_ResAcred_${modo}.xlsx`;
+}
+
+/**
+ * Genera el nombre del archivo Excel de Detalle de Acreditaciones.
+ * @param {Object} store
+ * @returns {string}
+ */
+export function generarNombreDetalleExcel(store) {
+  const modo = Number(store.ley) === 1 ? "Ley" : "Efe";
+  const periodo = store.liqCompactString || "Periodo";
+  return `${periodo}_DetAcred_${modo}.xlsx`;
+}
+
+/**
  * Descarga el archivo Excel de Resumen de Acreditaciones.
  * @param {Object} store - Store de filtros
  * @returns {Promise<string>} Nombre del archivo descargado
@@ -71,8 +104,7 @@ export async function descargarResumenExcel(store) {
   const wb = utils.book_new();
   utils.book_append_sheet(wb, ws, "Data");
 
-  const periodoLimpio = getPeriodo(store.periodoString) || store.liqCompactString;
-  const nombreArchivo = `Resumen_Acred_${periodoLimpio}.xlsx`;
+  const nombreArchivo = generarNombreResumenExcel(store);
   writeFileXLSX(wb, nombreArchivo, { compression: true });
   return nombreArchivo;
 }
@@ -159,8 +191,7 @@ export async function descargarDetalleExcel(store) {
   const wb = utils.book_new();
   utils.book_append_sheet(wb, ws, "Data");
 
-  const periodoLimpio = getPeriodo(store.periodoString) || store.liqCompactString;
-  const nombreArchivo = `Detalle_Acred_${periodoLimpio}.xlsx`;
+  const nombreArchivo = generarNombreDetalleExcel(store);
   writeFileXLSX(wb, nombreArchivo, { compression: true });
   return nombreArchivo;
 }
@@ -176,8 +207,7 @@ export async function descargarArchivoBancoTxt(store, apiBase, getHeadersFn) {
   const queryStr = store.filterStringLey;
   const headers = getHeadersFn ? getHeadersFn() : {};
   const urlTxt = `${apiBase}/api/txt/archivoAcred?${queryStr}`;
-  const periodoLimpio = getPeriodo(store.periodoString) || store.liqCompactString;
-  const nombreArchivo = `Acreditaciones_${periodoLimpio}.txt`;
+  const nombreArchivo = generarNombreArchivoAcred(store);
 
   // 1. Intentar descarga de archivo directa via endpoint txt
   const res = await descargaArchivo(urlTxt, {

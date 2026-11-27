@@ -68,6 +68,13 @@ export const useFilterStore = defineStore('filter', {
     },
     liqString: (state) =>
       `${liqMap.get(state.tipoliq.toString())}-${state.nroadi}  ${meses[state.month - 1]}-${state.year}`,
+    isLey: (state) => Number(state.ley) === 1,
+    leyTag: (state) => (Number(state.ley) === 1 ? 'Ley' : 'Efe'),
+    leyLabel: (state) => (Number(state.ley) === 1 ? 'Ley Especial (1)' : 'Liquidación Efectivo (0)'),
+    liqCompactStringLey: (state) =>
+      `${state.year}${meses[state.month - 1]?.substring(0, 3) || ''}${liqMap.get(state.tipoliq.toString())?.substring(0, 1) || ''}${state.nroadi}_${Number(state.ley) === 1 ? 'Ley' : 'Efe'}`,
+    liqStringLey: (state) =>
+      `${liqMap.get(state.tipoliq.toString())}-${state.nroadi}  ${meses[state.month - 1]}-${state.year} [${Number(state.ley) === 1 ? 'Ley' : 'Efe'}]`,
     getURLAPI: () => {
       const { apiBase } = useEndPoints()
       return `${apiBase.value}`

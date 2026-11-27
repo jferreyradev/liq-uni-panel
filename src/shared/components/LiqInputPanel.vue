@@ -177,7 +177,8 @@ const handleClick = () => {
       <v-col v-if="props.esley" cols="auto" class="d-flex align-center">
         <v-checkbox
           v-model="esLey"
-          label="Es Ley"
+          :label="esLey ? 'Ley Especial (1)' : 'Liquidación Efectivo (0)'"
+          :color="esLey ? 'purple-darken-1' : 'primary'"
           density="compact"
           hide-details
         />

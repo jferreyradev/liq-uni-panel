@@ -6,6 +6,7 @@ import { useEndPoints } from "@/composables/useEndPoints";
 import { useFetch } from "@/composables/useFetch";
 import { financial, agregaTitulosExcel } from "@/utils/reportes.js";
 import { utils, writeFileXLSX } from "xlsx";
+import { generarNombreDetalleExcel } from "../services/acreditacionDescargas.js";
 import { ejecutarSP } from "@/shared/services/apiService";
 
 const { apiBase, getBoletasHeaders, buildApiHeaders } = useEndPoints();
@@ -253,7 +254,7 @@ function exportFile() {
   const wb = utils.book_new();
   utils.book_append_sheet(wb, ws, "Data");
 
-  writeFileXLSX(wb, `Detalle_Acred_${getPeriodo(store.periodoString) || store.liqCompactString}.xlsx`, {
+  writeFileXLSX(wb, generarNombreDetalleExcel(store), {
     compression: true,
   });
 }
@@ -261,7 +262,7 @@ function exportFile() {
 
 <template>
   <v-container class="px-0">
-    <RepoHeader title="Detalle Acreditaciones" :subtitle="store.liqString">
+    <RepoHeader title="Detalle Acreditaciones" :subtitle="store.liqStringLey || store.liqString">
       <v-btn
         :color="preview ? 'secondary' : 'primary'"
         variant="outlined"

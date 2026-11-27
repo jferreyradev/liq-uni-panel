@@ -6,6 +6,7 @@ import { useEndPoints } from "@/composables/useEndPoints";
 import { useFetch } from "@/composables/useFetch";
 import { descargaArchivo } from "@/shared/services/apiService";
 import { descargarDesdeBlob, descargarDesdeUrl } from "@/utils/descargas";
+import { generarNombreArchivoAcred } from "../services/acreditacionDescargas.js";
 
 const preview = ref(false);
 const { apiBase, getBoletasHeaders, buildApiHeaders } = useEndPoints();
@@ -40,7 +41,7 @@ const getPeriodo = (per) => {
 async function downloadAcred() {
   const url = `${apiBase.value}/api/txt/archivoAcred?${store.filterStringLey}`;
   const urlDescarga = await getTxtFromAPI(url);
-  const nombre = `Acreditaciones_${getPeriodo(store.periodoString) || store.liqCompactString}.txt`;
+  const nombre = generarNombreArchivoAcred(store);
 
   if (urlDescarga == null) {
     if (data.value && data.value.length > 0) {
@@ -79,7 +80,7 @@ const headers = [
 
 <template>
   <v-container class="px-0">
-    <RepoHeader title="Archivo Acreditaciones" :subtitle="store.liqString">
+    <RepoHeader title="Archivo Acreditaciones" :subtitle="store.liqStringLey || store.liqString">
       <v-btn
         color="primary"
         :disabled="!data || data.length === 0"

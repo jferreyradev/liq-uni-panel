@@ -5,6 +5,9 @@ import {
   descargarDetalleExcel,
   descargarArchivoBancoTxt,
   descargarTodosArchivos,
+  generarNombreArchivoAcred,
+  generarNombreResumenExcel,
+  generarNombreDetalleExcel,
 } from "../services/acreditacionDescargas";
 
 const mockLeerDatos = vi.fn();
@@ -67,7 +70,7 @@ describe("acreditacionDescargas service", () => {
         `view/resumenAcred?${mockStore.filterStringLey}`
       );
       expect(mockWriteFileXLSX).toHaveBeenCalledTimes(1);
-      expect(fileName).toBe("Resumen_Acred_Noviembre_2026.xlsx");
+      expect(fileName).toBe("2026NovM0_ResAcred_Efe.xlsx");
     });
 
     it("lanza un error si no hay datos disponibles en la vista", async () => {
@@ -116,7 +119,7 @@ describe("acreditacionDescargas service", () => {
         `view/detalleAcred?${mockStore.filterStringLey}`
       );
       expect(mockWriteFileXLSX).toHaveBeenCalledTimes(1);
-      expect(fileName).toBe("Detalle_Acred_Noviembre_2026.xlsx");
+      expect(fileName).toBe("2026NovM0_DetAcred_Efe.xlsx");
     });
 
     it("lanza un error si el backend responde con error", async () => {
@@ -155,9 +158,9 @@ describe("acreditacionDescargas service", () => {
       );
       expect(mockDescargarDesdeUrl).toHaveBeenCalledWith(
         "blob:https://api.test/12345",
-        "Acreditaciones_Noviembre_2026.txt"
+        "2026NovM0_Acred_Efe.txt"
       );
-      expect(fileName).toBe("Acreditaciones_Noviembre_2026.txt");
+      expect(fileName).toBe("2026NovM0_Acred_Efe.txt");
     });
 
     it("usa fallback de view/archivoAcred si endpoint txt falla", async () => {
@@ -181,9 +184,9 @@ describe("acreditacionDescargas service", () => {
       );
       expect(mockDescargarDesdeBlob).toHaveBeenCalledWith(
         expect.any(Blob),
-        "Acreditaciones_Noviembre_2026.txt"
+        "2026NovM0_Acred_Efe.txt"
       );
-      expect(fileName).toBe("Acreditaciones_Noviembre_2026.txt");
+      expect(fileName).toBe("2026NovM0_Acred_Efe.txt");
     });
   });
 
@@ -212,9 +215,25 @@ describe("acreditacionDescargas service", () => {
       );
 
       expect(archivos).toHaveLength(3);
-      expect(archivos[0]).toContain("Resumen_Acred");
-      expect(archivos[1]).toContain("Detalle_Acred");
-      expect(archivos[2]).toContain("Acreditaciones_");
+      expect(archivos[0]).toContain("ResAcred_Efe");
+      expect(archivos[1]).toContain("DetAcred_Efe");
+      expect(archivos[2]).toContain("Acred_Efe");
+    });
+  });
+
+  describe("generadores de nombres de archivo", () => {
+    it("genera nombres con sufijo _Efe cuando ley es 0", () => {
+      const storeEfe = { liqCompactString: "2026NovM0", ley: 0 };
+      expect(generarNombreArchivoAcred(storeEfe)).toBe("2026NovM0_Acred_Efe.txt");
+      expect(generarNombreResumenExcel(storeEfe)).toBe("2026NovM0_ResAcred_Efe.xlsx");
+      expect(generarNombreDetalleExcel(storeEfe)).toBe("2026NovM0_DetAcred_Efe.xlsx");
+    });
+
+    it("genera nombres con sufijo _Ley cuando ley es 1", () => {
+      const storeLey = { liqCompactString: "2026NovM0", ley: 1 };
+      expect(generarNombreArchivoAcred(storeLey)).toBe("2026NovM0_Acred_Ley.txt");
+      expect(generarNombreResumenExcel(storeLey)).toBe("2026NovM0_ResAcred_Ley.xlsx");
+      expect(generarNombreDetalleExcel(storeLey)).toBe("2026NovM0_DetAcred_Ley.xlsx");
     });
   });
 });

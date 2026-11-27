@@ -5,6 +5,7 @@ import { useEndPoints } from "@/composables/useEndPoints";
 import { useFetch } from "@/composables/useFetch";
 import { financial, agregaTitulosExcel } from "@/utils/reportes.js";
 import { utils, writeFileXLSX } from "xlsx";
+import { generarNombreResumenExcel } from "../services/acreditacionDescargas.js";
 
 const { apiBase, getBoletasHeaders, buildApiHeaders } = useEndPoints();
 const store = useFilterStore();
@@ -106,7 +107,7 @@ function exportFile() {
   const wb = utils.book_new();
   utils.book_append_sheet(wb, ws, "Data");
 
-  writeFileXLSX(wb, `Resumen_Acred_${getPeriodo(store.periodoString) || store.liqCompactString}.xlsx`, {
+  writeFileXLSX(wb, generarNombreResumenExcel(store), {
     compression: true,
   });
 }
@@ -114,7 +115,7 @@ function exportFile() {
 
 <template>
   <v-container class="px-0">
-    <RepoHeader title="Resumen Acreditaciones" :subtitle="store.liqString">
+    <RepoHeader title="Resumen Acreditaciones" :subtitle="store.liqStringLey || store.liqString">
       <v-btn
         color="primary"
         :disabled="!data || data.length === 0"

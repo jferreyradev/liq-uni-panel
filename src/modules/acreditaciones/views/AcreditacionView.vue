@@ -184,7 +184,7 @@ async function onDescargarTodos() {
           <span>
             Período: <strong>{{ store.periodoString }}</strong> |
             {{ store.liqString }} |
-            <strong>{{ store.ley ? 'Ley Especial (1)' : 'Liquidación General / Efectivo (0)' }}</strong>
+            <strong>{{ store.ley ? 'Ley Especial (1)' : 'Liquidación Efectivo (0)' }}</strong>
           </span>
         </div>
 
